@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>主理人公社 · 运营后台原型</title>
+<style>
+:root{
+  --bg:#05070D; --side:#0A0E18; --top:#080C16; --panel:#0C1322; --panel2:#0E1626;
+  --bd:#1B2336; --bd2:#141C2B; --tx:#F2F4F8; --tx2:#AEB6C6; --tx3:#76809A; --mut:#6B7488;
+  --signal:#2E6BFF; --pulse:#20C8DF; --teal:#14D6B8; --purple:#A45CFF;
+  --ok:#2BD49A; --warn:#F0C45A; --bad:#F2899A;
+  --okbg:rgba(43,212,154,.14); --warnbg:rgba(240,196,90,.14); --badbg:rgba(242,137,154,.14);
+  --bluebg:rgba(46,107,255,.14); --tealbg:rgba(20,214,184,.14); --purplebg:rgba(164,92,255,.14); --slatebg:rgba(110,116,136,.18);
+  --shadow:0 8px 28px rgba(0,0,0,.35);
+}
+body.light{
+  --bg:#EEF1F7; --side:#FFFFFF; --top:#FFFFFF; --panel:#FFFFFF; --panel2:#F6F8FC;
+  --bd:#E3E8F1; --bd2:#EDF1F8; --tx:#1A2233; --tx2:#46506A; --tx3:#6B7488; --mut:#8A93A6;
+  --okbg:rgba(22,176,122,.12); --warnbg:rgba(224,169,43,.14); --badbg:rgba(236,91,111,.12);
+  --bluebg:rgba(46,107,255,.10); --tealbg:rgba(20,214,184,.12); --purplebg:rgba(164,92,255,.10); --slatebg:rgba(110,116,136,.12);
+  --shadow:0 8px 24px rgba(30,50,90,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif;
+  background:var(--bg);color:var(--tx);font-size:14px;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.app{display:flex;min-height:100vh}
+/* ---------- sidebar ---------- */
+.sidebar{width:248px;flex:0 0 248px;background:var(--side);border-right:1px solid var(--bd);position:sticky;top:0;height:100vh;overflow-y:auto;padding:0 0 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:18px 22px 10px}
+.gem{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#2E6BFF,#A45CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px}
+.brand b{font-size:15px;color:var(--tx)} .brand small{display:block;font-size:10.5px;color:var(--mut);font-weight:400}
+.navgrp{font-size:10px;font-weight:600;color:#566173;letter-spacing:1px;padding:14px 24px 6px}
+.nav-item{display:flex;align-items:center;gap:11px;margin:2px 10px;padding:9px 12px;border-radius:9px;color:var(--tx2);cursor:pointer;font-size:13.5px;position:relative;transition:background .15s,color .15s}
+.nav-item .ic{width:18px;height:18px;border-radius:5px;flex:0 0 18px;opacity:.9}
+.nav-item:hover{background:rgba(127,150,200,.08);color:var(--tx)}
+.nav-item.active{background:var(--bluebg);color:var(--tx);font-weight:600}
+.nav-item.active::before{content:"";position:absolute;left:-10px;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--signal)}
+.profile{display:flex;align-items:center;gap:10px;margin:14px 16px 0;padding-top:14px;border-top:1px solid var(--bd)}
+.av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#C46BFF,#2E6BFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:60px;background:var(--top);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:20}
+.crumb b{font-size:17px;font-weight:700} .crumb small{color:var(--mut);font-size:11px;margin-left:8px}
+.spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;width:230px;color:var(--tx3);font-size:12px}
+.search input{background:none;border:none;outline:none;color:var(--tx);font-size:12px;width:100%;font-family:inherit}
+.iconbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bd);background:var(--panel2);color:var(--tx2);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:15px}
+.iconbtn:hover{color:var(--tx);border-color:var(--signal)}
+.dot{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--bad)}
+.tagpill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--okbg);color:var(--ok)}
+.content{padding:22px 24px 40px}
+.page{display:none;animation:fade .25s ease} .page.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ptitle{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.ptitle h2{font-size:18px;font-weight:700} .ptitle .chip{font-size:10.5px;font-weight:700;color:var(--purple);background:var(--purplebg);padding:3px 9px;border-radius:999px}
+.psub{color:var(--mut);font-size:12px;margin-bottom:18px}
+/* ---------- components ---------- */
+.grid{display:grid;gap:16px}
+.g6{grid-template-columns:repeat(6,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:1.9fr 1fr}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.card h3{font-size:14px;font-weight:700;margin-bottom:2px} .card .h3sub{font-size:11px;color:var(--mut);margin-bottom:14px}
+.chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chead h3{margin:0}
+.link{color:var(--signal);font-size:11.5px;cursor:pointer} .link:hover{text-decoration:underline}
+.kpi .lbl{font-size:11px;color:var(--tx3);margin-bottom:8px} .kpi .val{font-size:24px;font-weight:700;letter-spacing:-.5px} .kpi .delta{font-size:11px;margin-top:6px}
+.up{color:var(--ok)} .down{color:var(--bad)} .flat{color:var(--warn)}
+.tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.t-blue{background:var(--bluebg);color:#7FA6FF} .t-teal{background:var(--tealbg);color:var(--teal)} .t-purple{background:var(--purplebg);color:#C79BFF}
+.t-ok{background:var(--okbg);color:var(--ok)} .t-warn{background:var(--warnbg);color:var(--warn)} .t-bad{background:var(--badbg);color:var(--bad)} .t-slate{background:var(--slatebg);color:var(--tx2)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;color:var(--mut);font-weight:600;padding:10px 8px;border-bottom:1px solid var(--bd)}
+td{padding:13px 8px;border-bottom:1px solid var(--bd2);font-size:12.5px;color:var(--tx2)}
+tbody tr{transition:background .12s} tbody tr:hover{background:rgba(127,150,200,.06)}
+td .mono{color:#7FA6FF;font-variant-numeric:tabular-nums}
+.btn{font-family:inherit;font-size:12.5px;border:1px solid var(--bd);background:var(--panel2);color:var(--tx2);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--signal);color:var(--tx)}
+.btn-pri{background:linear-gradient(90deg,#2E6BFF,#7A4DFF);border:none;color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(46,107,255,.35)}
+.btn-pri:hover{filter:brightness(1.08)}
+.btn-sm{padding:5px 10px;font-size:11.5px;border-radius:7px}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.sel{font-family:inherit;font-size:12.5px;background:var(--panel2);border:1px solid var(--bd);color:var(--tx2);padding:7px 12px;border-radius:8px;cursor:pointer}
+.tabs{display:flex;gap:6px;background:var(--panel2);border:1px solid var(--bd);border-radius:10px;padding:4px;width:fit-content;margin-bottom:16px}
+.tab{padding:7px 16px;border-radius:7px;font-size:12.5px;color:var(--tx3);cursor:pointer;transition:.15s}
+.tab.active{background:var(--signal);color:#fff;font-weight:600}
+.tabpane{display:none} .tabpane.show{display:block}
+.donut{width:148px;height:148px;border-radius:50%;background:conic-gradient(var(--signal) 0 50%,var(--pulse) 50% 82%,var(--teal) 82% 100%);position:relative;flex:0 0 148px}
+.donut::after{content:"";position:absolute;inset:26px;border-radius:50%;background:var(--panel)}
+.donut .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}
+.donut .ctr b{font-size:17px} .donut .ctr small{font-size:10px;color:var(--mut)}
+.legend .row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);margin:9px 0}
+.legend .sw{width:10px;height:10px;border-radius:3px} .legend .pct{margin-left:auto;font-weight:600;color:var(--tx)}
+.bar{height:8px;border-radius:5px;background:var(--bd2);overflow:hidden} .bar>i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#2E6BFF,#20C8DF)}
+.statline{display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.stat{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.stat .l{font-size:11px;color:var(--tx3)} .stat .v{font-size:20px;font-weight:700;margin-top:4px}
+.alert{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--bd2)}
+.alert:last-child{border-bottom:none} .alert .msg{font-size:13px;color:var(--tx2)} .alert .tm{margin-left:auto;font-size:11px;color:var(--mut)}
+.toggle{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11.5px;color:var(--tx3)}
+.sw2{width:38px;height:21px;border-radius:999px;background:var(--bd);position:relative;transition:.2s;border:1px solid var(--bd)}
+.sw2::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.2s}
+input.tg{display:none} input.tg:checked+.sw2{background:var(--signal)} input.tg:checked+.sw2::after{left:19px}
+.chip-on{font-size:10.5px;font-weight:700;color:var(--ok);background:var(--okbg);padding:3px 9px;border-radius:999px}
+/* rule editor */
+.rule{border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:12px;background:var(--panel2)}
+.rule .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rule .top b{font-size:13.5px} .flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pill{background:var(--panel);border:1px solid var(--bd);border-radius:9px;padding:9px 13px;font-size:12.5px;color:var(--tx2)}
+.arrow{color:var(--signal);font-weight:700}
+.field{background:var(--panel);border:1px solid var(--signal);border-radius:9px;padding:6px 10px;display:inline-flex;align-items:center;gap:8px}
+.field input[type=number]{width:62px;background:none;border:none;color:var(--signal);font-weight:700;font-size:15px;font-family:inherit;outline:none;text-align:right}
+input[type=range]{accent-color:var(--signal);width:180px}
+.netwrap{position:relative;height:430px;border-radius:12px;background:radial-gradient(circle at 40% 40%,rgba(46,107,255,.06),transparent 60%);overflow:hidden}
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--bluebg);border:1px solid rgba(46,107,255,.3);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--tx2);margin-bottom:16px}
+/* drawer */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;visibility:hidden;transition:.2s;z-index:40}
+.ov.show{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:380px;background:var(--side);border-left:1px solid var(--bd);z-index:50;transform:translateX(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:22px}
+.drawer.show{transform:none}
+.dhead{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:20px;line-height:1}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd2);font-size:12.5px}
+.kv span{color:var(--mut)} .kv b{color:var(--tx);font-weight:600}
+.chainflow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.node{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--tx3)}
+.node .av{width:34px;height:34px;font-size:12px}
+@media(max-width:1180px){.g6{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="brand"><div class="gem">主</div><div><b>主理人公社</b><small>运营后台 · Console</small></div></div>
+    <div class="navgrp">总览</div>
+    <div class="nav-item active" data-page="dashboard" onclick="go('dashboard')"><span class="ic" style="background:#2E6BFF"></span>仪表盘</div>
+    <div class="nav-item" data-page="members" onclick="go('members')"><span class="ic" style="background:#20C8DF"></span>会员管理</div>
+    <div class="nav-item" data-page="network" onclick="go('network')"><span class="ic" style="background:#A45CFF"></span>关系网络</div>
+    <div class="nav-item" data-page="commission" onclick="go('commission')"><span class="ic" style="background:#14D6B8"></span>分佣 &amp; 结算</div>
+    <div class="nav-item" data-page="rules" onclick="go('rules')"><span class="ic" style="background:#2E6BFF"></span>规则引擎</div>
+    <div class="navgrp">运营 &amp; 风控</div>
+    <div class="nav-item" data-page="training" onclick="go('training')"><span class="ic" style="background:#20C8DF"></span>培训内容</div>
+    <div class="nav-item" data-page="ai" onclick="go('ai')"><span class="ic" style="background:#C46BFF"></span>AI 洞察</div>
+    <div class="nav-item" data-page="risk" onclick="go('risk')"><span class="ic" style="background:#EC5B6F"></span>风控合规</div>
+    <div class="nav-item" data-page="dashboard" onclick="go('dashboard')"><span class="ic" style="background:#14D6B8"></span>公告管理</div>
+    <div class="navgrp">系统</div>
+    <div class="nav-item" data-page="dashboard" onclick="go('dashboard')"><span class="ic" style="background:#6B7488"></span>系统设置</div>
+    <div style="padding:0 16px"><div class="profile"><div class="av">林</div><div><b style="font-size:13px">林运营</b><small style="color:var(--mut);font-size:10.5px;display:block">超级管理员</small></div></div></div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb"><b id="crumb">仪表盘 · 总览</b><small id="crumbSub">实时运营数据看板</small></div>
+      <div class="spacer"></div>
+      <div class="search">🔍<input placeholder="搜索会员 / 订单 / 关系链…"/></div>
+      <label class="toggle"><input type="checkbox" class="tg" id="themeTg" onchange="toggleTheme()"/><span class="sw2"></span><span id="themeLbl">深色</span></label>
+      <div class="iconbtn">🔔<span class="dot"></span></div>
+      <div class="av">林</div>
+      <span class="tagpill">PROD</span>
+    </header>
+
+    <div class="content">
+
+      <!-- ========== DASHBOARD ========== -->
+      <section class="page show" id="pg-dashboard">
+        <div class="ptitle"><h2>仪表盘</h2><span class="chip">实时</span></div>
+        <div class="psub">主理人公社运营总览 · 数据均为模拟</div>
+        <div class="grid g6" style="margin-bottom:16px">
+          <div class="card kpi"><div class="lbl">会员总数</div><div class="val num">24,860</div><div class="delta up">▲ 3.2% 较上周</div></div>
+          <div class="card kpi"><div class="lbl">本月新增</div><div class="val num">1,284</div><div class="delta up">▲ 12.0% 环比</div></div>
+          <div class="card kpi"><div class="lbl">PRO 在期</div><div class="val num">18,902</div><div class="delta up">▲ 1.8%</div></div>
+          <div class="card kpi"><div class="lbl">本月 GMV</div><div class="val num">¥3.86M</div><div class="delta up">▲ 8.4%</div></div>
+          <div class="card kpi"><div class="lbl">待结算佣金</div><div class="val num">¥412K</div><div class="delta flat">⏳ 3 笔待审</div></div>
+          <div class="card kpi"><div class="lbl">流失预警</div><div class="val num">326</div><div class="delta down">▼ 续费偏低</div></div>
+        </div>
+        <div class="grid g2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="chead"><h3>会员与 GMV 增长趋势</h3><div style="font-size:11px;color:var(--tx3)"><span style="color:var(--signal)">●</span> 会员 &nbsp; <span style="color:var(--teal)">●</span> GMV</div></div>
+            <svg viewBox="0 0 660 240" width="100%" height="230">
+              <line x1="0" y1="20" x2="660" y2="20" stroke="var(--bd2)"/><line x1="0" y1="80" x2="660" y2="80" stroke="var(--bd2)"/><line x1="0" y1="140" x2="660" y2="140" stroke="var(--bd2)"/><line x1="0" y1="200" x2="660" y2="200" stroke="var(--bd2)"/>
+              <polygon points="0,200 0,170 94,150 188,135 282,108 376,84 470,54 564,30 660,14 660,200" fill="rgba(46,107,255,.18)"/>
+              <polyline points="0,170 94,150 188,135 282,108 376,84 470,54 564,30 660,14" fill="none" stroke="#2E6BFF" stroke-width="2.5"/>
+              <polyline points="0,185 94,176 188,158 282,148 376,124 470,100 564,74 660,44" fill="none" stroke="#14D6B8" stroke-width="2.5"/>
+              <g font-size="10" fill="var(--mut)" text-anchor="middle"><text x="0" y="225">1月</text><text x="94" y="225">2月</text><text x="188" y="225">3月</text><text x="282" y="225">4月</text><text x="376" y="225">5月</text><text x="470" y="225">6月</text><text x="564" y="225">7月</text><text x="655" y="225">8月</text></g>
+            </svg>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:16px">分佣构成（关系链层级）</h3>
+            <div style="display:flex;align-items:center;gap:18px">
+              <div class="donut"><div class="ctr"><b class="num">¥1.24M</b><small>本月分佣</small></div></div>
+              <div class="legend" style="flex:1">
+                <div class="row"><span class="sw" style="background:var(--signal)"></span>L1 推荐人<span class="pct num">50%</span></div>
+                <div class="row"><span class="sw" style="background:var(--pulse)"></span>L2 区域管理员<span class="pct num">32%</span></div>
+                <div class="row"><span class="sw" style="background:var(--teal)"></span>L3 服务老师<span class="pct num">18%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="chead"><h3>关系网络 · 裂变拓扑</h3><span class="link" onclick="go('network')">展开大图 →</span></div>
+            <div class="netwrap" style="height:240px"><svg viewBox="0 0 560 240" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+<defs><linearGradient id="gg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E6BFF"/><stop offset="1" stop-color="#A45CFF"/></linearGradient></defs>
+<style>.lk{stroke:var(--bd);stroke-width:1.4}.lk2{stroke:#2E6BFF;stroke-width:1.8;opacity:.5}.ndm{fill:var(--panel2);stroke:var(--bd);stroke-width:2}</style>
+<g fill="none"><line class="lk" x1="210" y1="120" x2="120" y2="70"/><line class="lk" x1="210" y1="120" x2="300" y2="64"/><line class="lk" x1="210" y1="120" x2="95" y2="170"/><line class="lk2" x1="210" y1="120" x2="390" y2="110"/><line class="lk2" x1="210" y1="120" x2="320" y2="180"/><line class="lk" x1="120" y1="70" x2="60" y2="120"/><line class="lk" x1="300" y1="64" x2="370" y2="55"/><line class="lk" x1="300" y1="64" x2="390" y2="110"/><line class="lk" x1="390" y1="110" x2="460" y2="110"/><line class="lk" x1="390" y1="110" x2="430" y2="170"/><line class="lk" x1="320" y1="180" x2="280" y2="210"/><line class="lk" x1="95" y1="170" x2="150" y2="210"/></g>
+<g stroke="var(--panel)" stroke-width="2"><circle class="ndm" cx="60" cy="120" r="5"/><circle class="ndm" cx="370" cy="55" r="5"/><circle class="ndm" cx="460" cy="110" r="5"/><circle class="ndm" cx="150" cy="210" r="5"/><circle class="ndm" cx="280" cy="210" r="5"/><circle cx="120" cy="70" r="9" fill="#2E6BFF"/><circle cx="300" cy="64" r="9" fill="#2E6BFF"/><circle cx="390" cy="110" r="9" fill="#2E6BFF"/><circle cx="95" cy="170" r="8" fill="#14D6B8"/><circle cx="210" cy="195" r="8" fill="#14D6B8"/><circle cx="320" cy="180" r="9" fill="#14D6B8"/><circle cx="430" cy="170" r="8" fill="#14D6B8"/><circle cx="210" cy="120" r="16" fill="url(#gg1)"/></g>
+<text x="210" y="125" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">创</text></svg></div>
+          </div>
+          <div class="card">
+            <div class="chead"><h3>风控告警 &amp; 待办</h3><span class="tag t-bad">5</span></div>
+            <div class="alert"><span class="tag t-bad">高</span><span class="msg">检测到疑似成环关系链 #RC-2208</span><span class="tm">2 分钟前</span></div>
+            <div class="alert"><span class="tag t-bad">高</span><span class="msg">异常分佣事件待复核 ¥18,600</span><span class="tm">12 分钟前</span></div>
+            <div class="alert"><span class="tag t-warn">中</span><span class="msg">3 笔结算待审批 ¥412K</span><span class="tm">1 小时前</span></div>
+            <div class="alert"><span class="tag t-slate">低</span><span class="msg">退费冲正待处理 #OR-7781</span><span class="tm">今天</span></div>
+            <div style="margin-top:12px"><span class="link" onclick="go('risk')">查看全部风控记录 →</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== MEMBERS ========== -->
+      <section class="page" id="pg-members">
+        <div class="ptitle"><h2>会员管理</h2></div>
+        <div class="psub">会员档案 · 身份 / 等级 / 关系链 / 成长值</div>
+        <div class="statline">
+          <div class="stat"><div class="l">会员总数</div><div class="v num">24,860</div></div>
+          <div class="stat"><div class="l">PRO 在期</div><div class="v num">18,902</div></div>
+          <div class="stat"><div class="l">本月新增</div><div class="v num">1,284</div></div>
+          <div class="stat"><div class="l">待跟进（流失预警）</div><div class="v num" style="color:var(--bad)">326</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search" style="width:240px">🔍<input placeholder="搜索姓名 / 手机号 / 会员ID"/></div>
+          <select class="sel"><option>全部身份</option><option>创始人</option><option>联合创始人</option><option>区域管理员</option><option>社群服务</option></select>
+          <select class="sel"><option>全部等级</option><option>LV.1-2</option><option>LV.3</option><option>LV.4+</option></select>
+          <select class="sel"><option>全部状态</option><option>在期</option><option>临期</option><option>流失预警</option></select>
+          <div class="spacer"></div>
+          <button class="btn">导出</button><button class="btn btn-pri">+ 新增会员</button>
+        </div>
+        <div class="card" style="padding:6px 18px 14px">
+          <table>
+            <thead><tr><th>会员</th><th>身份</th><th>等级</th><th>关系链上线</th><th>班级 / 大区</th><th>成长值</th><th>状态</th><th></th></tr></thead>
+            <tbody id="memTbody"></tbody>
+          </table>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--mut)">
+            <span>共 24,860 条 · 第 1 / 1,243 页</span>
+            <span><button class="btn btn-sm">上一页</button> <button class="btn btn-sm">下一页</button></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== NETWORK ========== -->
+      <section class="page" id="pg-network">
+        <div class="ptitle"><h2>关系网络</h2><span class="chip">AntV G6</span></div>
+        <div class="psub">三级关系链裂变拓扑 · 严格 ≤3 级 · 实时成环检测</div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="chead"><h3>裂变拓扑图</h3>
+              <div class="tabs" style="margin:0"><div class="tab active" onclick="tabSel(this)">力导向</div><div class="tab" onclick="tabSel(this)">层级</div></div>
+            </div>
+            <div class="netwrap"><svg viewBox="0 0 700 430" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+<defs><linearGradient id="gg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E6BFF"/><stop offset="1" stop-color="#A45CFF"/></linearGradient></defs>
+<style>.lk{stroke:var(--bd);stroke-width:1.3}.lk2{stroke:#2E6BFF;stroke-width:1.7;opacity:.5}.ndm{fill:var(--panel2);stroke:var(--bd);stroke-width:2}</style>
+<g fill="none"><line class="lk2" x1="300" y1="200" x2="180" y2="110"/><line class="lk2" x1="300" y1="200" x2="420" y2="100"/><line class="lk" x1="300" y1="200" x2="520" y2="180"/><line class="lk" x1="300" y1="200" x2="150" y2="260"/><line class="lk2" x1="300" y1="200" x2="220" y2="200"/><line class="lk" x1="300" y1="200" x2="400" y2="310"/><line class="lk" x1="180" y1="110" x2="90" y2="110"/><line class="lk" x1="180" y1="110" x2="240" y2="70"/><line class="lk" x1="180" y1="110" x2="110" y2="180"/><line class="lk" x1="420" y1="100" x2="470" y2="60"/><line class="lk" x1="420" y1="100" x2="520" y2="180"/><line class="lk" x1="520" y1="180" x2="610" y2="150"/><line class="lk" x1="520" y1="180" x2="560" y2="290"/><line class="lk" x1="520" y1="180" x2="470" y2="240"/><line class="lk" x1="150" y1="260" x2="80" y2="300"/><line class="lk" x1="150" y1="260" x2="180" y2="360"/><line class="lk" x1="250" y1="330" x2="330" y2="390"/><line class="lk" x1="250" y1="330" x2="150" y2="260"/><line class="lk" x1="400" y1="310" x2="540" y2="360"/><line class="lk" x1="470" y1="240" x2="560" y2="290"/><line class="lk" x1="610" y1="150" x2="660" y2="200"/><line class="lk" x1="110" y1="180" x2="220" y2="200"/></g>
+<g stroke="var(--panel)" stroke-width="2"><circle class="ndm" cx="90" cy="110" r="6"/><circle class="ndm" cx="240" cy="70" r="6"/><circle class="ndm" cx="470" cy="60" r="6"/><circle class="ndm" cx="610" cy="150" r="6"/><circle class="ndm" cx="660" cy="200" r="6"/><circle class="ndm" cx="180" cy="360" r="6"/><circle class="ndm" cx="330" cy="390" r="6"/><circle class="ndm" cx="540" cy="360" r="6"/><circle class="ndm" cx="80" cy="300" r="6"/><circle cx="180" cy="110" r="12" fill="#2E6BFF"/><circle cx="420" cy="100" r="12" fill="#2E6BFF"/><circle cx="520" cy="180" r="12" fill="#2E6BFF"/><circle cx="150" cy="260" r="11" fill="#2E6BFF"/><circle cx="110" cy="180" r="10" fill="#14D6B8"/><circle cx="250" cy="330" r="10" fill="#14D6B8"/><circle cx="400" cy="310" r="10" fill="#14D6B8"/><circle cx="560" cy="290" r="10" fill="#14D6B8"/><circle cx="470" cy="240" r="9" fill="#14D6B8"/><circle cx="220" cy="200" r="9" fill="#14D6B8"/><circle cx="300" cy="200" r="20" fill="url(#gg2)"/></g>
+<text x="300" y="205" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">创</text></svg></div>
+            <div style="display:flex;gap:14px;margin-top:12px;font-size:11px;color:var(--tx3)">
+              <span><span style="color:var(--purple)">●</span> 创始人</span><span><span style="color:var(--signal)">●</span> 区域管理员</span><span><span style="color:var(--teal)">●</span> 服务老师</span><span><span style="color:var(--mut)">●</span> 会员</span>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <h3 style="margin-bottom:14px">网络指标</h3>
+              <div class="kv"><span>节点总数</span><b class="num">24,860</b></div>
+              <div class="kv"><span>关系边数</span><b class="num">23,617</b></div>
+              <div class="kv"><span>最大深度</span><b class="num">3 级 ✓ 合规</b></div>
+              <div class="kv"><span>成环检测</span><b style="color:var(--ok)">通过 ✓</b></div>
+              <div class="kv"><span>孤立节点</span><b class="num">1,243</b></div>
+            </div>
+            <div class="card">
+              <h3 style="margin-bottom:14px">关键裂变节点 Top</h3>
+              <div class="kv"><span>① Victoria · 联合创始人</span><b class="num">直推 312</b></div>
+              <div class="kv"><span>② Amy · 区域管理员</span><b class="num">直推 208</b></div>
+              <div class="kv"><span>③ 林然 · 区域管理员</span><b class="num">直推 176</b></div>
+              <div class="kv"><span>④ Jessica · 服务老师</span><b class="num">直推 98</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== COMMISSION ========== -->
+      <section class="page" id="pg-commission">
+        <div class="ptitle"><h2>分佣 &amp; 结算</h2></div>
+        <div class="psub">沿关系链 ≤3 级计算分佣 · 周期结算 · 退费冲正</div>
+        <div class="tabs">
+          <div class="tab active" onclick="tabGo(this,'cm-detail')">分佣明细</div>
+          <div class="tab" onclick="tabGo(this,'cm-settle')">结算批次</div>
+        </div>
+        <div class="tabpane show" id="cm-detail">
+          <div class="statline">
+            <div class="stat"><div class="l">本月分佣总额</div><div class="v num">¥1.24M</div></div>
+            <div class="stat"><div class="l">待结算</div><div class="v num" style="color:var(--warn)">¥412K</div></div>
+            <div class="stat"><div class="l">已结算</div><div class="v num" style="color:var(--ok)">¥828K</div></div>
+            <div class="stat"><div class="l">退费冲正</div><div class="v num" style="color:var(--bad)">-¥36K</div></div>
+          </div>
+          <div class="card" style="padding:6px 18px 14px">
+            <table>
+              <thead><tr><th>订单号</th><th>受益人</th><th>层级</th><th>比例</th><th>金额</th><th>来源订单额</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">CE-55012</td><td>Victoria</td><td><span class="tag t-blue">L1</span></td><td class="num">15%</td><td class="num">¥447</td><td class="num">¥2,980</td><td><span class="tag t-warn">待结算</span></td></tr>
+                <tr><td class="mono">CE-55011</td><td>Amy</td><td><span class="tag t-teal">L2</span></td><td class="num">8%</td><td class="num">¥238</td><td class="num">¥2,980</td><td><span class="tag t-warn">待结算</span></td></tr>
+                <tr><td class="mono">CE-55010</td><td>Jessica</td><td><span class="tag t-purple">L3</span></td><td class="num">5%</td><td class="num">¥149</td><td class="num">¥2,980</td><td><span class="tag t-ok">已结算</span></td></tr>
+                <tr><td class="mono">CE-55009</td><td>林然</td><td><span class="tag t-blue">L1</span></td><td class="num">15%</td><td class="num">¥195</td><td class="num">¥1,299</td><td><span class="tag t-ok">已结算</span></td></tr>
+                <tr><td class="mono">CE-55008</td><td>Amy</td><td><span class="tag t-teal">L2</span></td><td class="num">8%</td><td class="num">-¥104</td><td class="num">退费</td><td><span class="tag t-bad">冲正</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tabpane" id="cm-settle">
+          <div class="notice">⚖️ 结算需经审批后执行；所有分佣严格沿关系链 ≤3 级，幂等且可对账。</div>
+          <div class="card" style="padding:6px 18px 14px">
+            <table>
+              <thead><tr><th>批次</th><th>结算周期</th><th>受益人数</th><th>总额</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">ST-2606</td><td>2026-06 上半月</td><td class="num">1,820</td><td class="num">¥412,300</td><td><span class="tag t-warn">待审批</span></td><td><button class="btn btn-sm">审批</button> <button class="btn btn-sm">模拟</button></td></tr>
+                <tr><td class="mono">ST-2605B</td><td>2026-05 下半月</td><td class="num">1,756</td><td class="num">¥398,100</td><td><span class="tag t-ok">已结算</span></td><td><button class="btn btn-sm">对账单</button></td></tr>
+                <tr><td class="mono">ST-2605A</td><td>2026-05 上半月</td><td class="num">1,690</td><td class="num">¥372,540</td><td><span class="tag t-ok">已结算</span></td><td><button class="btn btn-sm">对账单</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== RULES ========== -->
+      <section class="page" id="pg-rules">
+        <div class="ptitle"><h2>规则引擎</h2><span class="chip">Drools · 可配置</span></div>
+        <div class="psub">分佣 / 升级 / 分班 / 定价规则均为声明式配置 — 改规则不改代码、不发版</div>
+        <div class="tabs">
+          <div class="tab active" onclick="tabGo(this,'rl-grow')">成长 / 升级</div>
+          <div class="tab" onclick="tabGo(this,'rl-comm')">分佣</div>
+          <div class="tab" onclick="tabGo(this,'rl-class')">分班</div>
+        </div>
+        <div class="tabpane show" id="rl-grow">
+          <div class="notice">💡 下面的「邀请奖励」就是文档评论里提到的 <b style="color:var(--tx)">成长值 288 可配置</b> —— 拖动滑块即可改默认值，无需改代码。</div>
+          <div class="rule">
+            <div class="top"><b>邀请奖励规则</b><span class="tag t-blue">growth</span><span class="chip-on" style="margin-left:auto">已启用</span></div>
+            <div class="flow">
+              <span class="pill">当 <b style="color:var(--tx)">好友成功入会</b></span>
+              <span class="arrow">→</span>
+              <span class="pill">推荐人获得</span>
+              <span class="field"><input type="number" id="gpVal" value="288" min="0" max="1000" step="1" oninput="syncGP(this.value)"/> 成长值</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+              <input type="range" min="0" max="1000" step="1" value="288" id="gpRange" oninput="syncGP(this.value)"/>
+              <span style="font-size:12px;color:var(--tx3)">当前默认：<b id="gpEcho" style="color:var(--signal)" class="num">288</b> 成长值 / 人</span>
+              <div class="spacer"></div>
+              <button class="btn btn-sm">模拟</button><button class="btn btn-sm btn-pri">保存</button>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="top"><b>等级升级规则</b><span class="tag t-blue">level-up</span><span class="chip-on" style="margin-left:auto">已启用</span></div>
+            <div class="flow"><span class="pill">当 <b style="color:var(--tx)">成长值 ≥ 20,000</b></span><span class="arrow">→</span><span class="pill">升级为 <b style="color:var(--tx)">LV.4</b></span><span class="arrow">→</span><span class="pill">解锁更高分佣权益</span></div>
+          </div>
+        </div>
+        <div class="tabpane" id="rl-comm">
+          <div class="card" style="padding:6px 18px 14px">
+            <table>
+              <thead><tr><th>规则</th><th>层级</th><th>分佣比例</th><th>适用商品</th><th>状态</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>L1 推荐人分佣</td><td><span class="tag t-blue">L1</span></td><td class="num">15%</td><td>全部</td><td><span class="chip-on">启用</span></td><td><button class="btn btn-sm">编辑</button></td></tr>
+                <tr><td>L2 区域管理员分佣</td><td><span class="tag t-teal">L2</span></td><td class="num">8%</td><td>全部</td><td><span class="chip-on">启用</span></td><td><button class="btn btn-sm">编辑</button></td></tr>
+                <tr><td>L3 服务老师分佣</td><td><span class="tag t-purple">L3</span></td><td class="num">5%</td><td>全部</td><td><span class="chip-on">启用</span></td><td><button class="btn btn-sm">编辑</button></td></tr>
+              </tbody>
+            </table>
+            <div class="notice" style="margin:14px 0 0">🛡️ 合规硬约束：分佣层级 <b style="color:var(--tx)">最多 3 级</b>，系统禁止配置第 4 级及以上。</div>
+          </div>
+        </div>
+        <div class="tabpane" id="rl-class">
+          <div class="rule"><div class="top"><b>AI 自动分班规则</b><span class="tag t-purple">AI</span><span class="chip-on" style="margin-left:auto">已启用</span></div>
+            <div class="flow"><span class="pill">按 <b style="color:var(--tx)">城市 + 社群方向</b></span><span class="arrow">→</span><span class="pill">匹配 <b style="color:var(--tx)">大区 + 班级</b></span><span class="arrow">→</span><span class="pill">分配 <b style="color:var(--tx)">专属服务老师</b></span></div>
+            <div style="font-size:12px;color:var(--tx3);margin-top:12px">班级容量上限：128 人 / 班 · 满班自动开新班</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== TRAINING ========== -->
+      <section class="page" id="pg-training">
+        <div class="ptitle"><h2>培训内容</h2></div>
+        <div class="psub">课程 / 训练营 / 直播 · 报名与学习进度</div>
+        <div class="grid g3">
+          <div class="card"><span class="tag t-bad">直播</span><h3 style="margin:12px 0 6px">高阶增长策略私享课</h3><div class="h3sub">6/20 20:00 · 128 人已预约</div><div class="bar"><i style="width:64%"></i></div><div style="font-size:11px;color:var(--tx3);margin-top:8px">报名 128 / 200</div></div>
+          <div class="card"><span class="tag t-teal">训练营</span><h3 style="margin:12px 0 6px">华东增长营 A1 期</h3><div class="h3sub">21 天 · 学习中</div><div class="bar"><i style="width:42%"></i></div><div style="font-size:11px;color:var(--tx3);margin-top:8px">平均进度 42%</div></div>
+          <div class="card"><span class="tag t-purple">录播</span><h3 style="margin:12px 0 6px">私域操盘 30 讲</h3><div class="h3sub">长期开放</div><div class="bar"><i style="width:88%"></i></div><div style="font-size:11px;color:var(--tx3);margin-top:8px">完课率 88%</div></div>
+        </div>
+      </section>
+
+      <!-- ========== AI ========== -->
+      <section class="page" id="pg-ai">
+        <div class="ptitle"><h2>AI 洞察</h2><span class="chip">Claude</span></div>
+        <div class="psub">AI 商业诊断 · 四维指标 · 由自研 AI 服务直连大模型</div>
+        <div class="grid g4">
+          <div class="card kpi"><div class="lbl">活跃度</div><div class="val num">88</div><div class="delta up">健康</div></div>
+          <div class="card kpi"><div class="lbl">影响力</div><div class="val num">82</div><div class="delta up">良好</div></div>
+          <div class="card kpi"><div class="lbl">续费概率</div><div class="val num">76%</div><div class="delta flat">需关注</div></div>
+          <div class="card kpi"><div class="lbl">服务力</div><div class="val num">91</div><div class="delta up">优秀</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h3 style="margin-bottom:12px">AI 问题识别 &amp; 建议动作</h3>
+          <div class="alert"><span class="tag t-bad">高</span><span class="msg">326 名会员续费概率 &lt; 60%，建议触发专属服务老师跟进</span><span class="tm">立即处理</span></div>
+          <div class="alert"><span class="tag t-warn">中</span><span class="msg">华南大区活跃度环比下降 8%，建议加开直播</span><span class="tm">本周</span></div>
+          <div class="alert"><span class="tag t-slate">低</span><span class="msg">建议为 LV.3 会员推送闭门会权益以提升影响力</span><span class="tm">可选</span></div>
+        </div>
+      </section>
+
+      <!-- ========== RISK ========== -->
+      <section class="page" id="pg-risk">
+        <div class="ptitle"><h2>风控合规</h2><span class="chip">合规红线</span></div>
+        <div class="psub">≤3 级硬约束 · 防成环 · 单一推荐人 · 全程留痕</div>
+        <div class="statline">
+          <div class="stat"><div class="l">待处理告警</div><div class="v num" style="color:var(--bad)">5</div></div>
+          <div class="stat"><div class="l">成环检测</div><div class="v" style="color:var(--ok)">通过 ✓</div></div>
+          <div class="stat"><div class="l">实名异常</div><div class="v num" style="color:var(--warn)">7</div></div>
+          <div class="stat"><div class="l">退费冲正</div><div class="v num">3</div></div>
+        </div>
+        <div class="notice">🛡️ 合规自检：分佣 ≤3 级 <b style="color:var(--ok)">✓</b> &nbsp; 防循环上线 <b style="color:var(--ok)">✓</b> &nbsp; 单一直接推荐人 <b style="color:var(--ok)">✓</b> &nbsp; 操作留痕 <b style="color:var(--ok)">✓</b></div>
+        <div class="card" style="padding:6px 18px 14px">
+          <table>
+            <thead><tr><th>类型</th><th>等级</th><th>描述</th><th>关联对象</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>关系成环</td><td><span class="tag t-bad">高</span></td><td>检测到疑似成环关系链</td><td class="mono">#RC-2208</td><td>2 分钟前</td><td><button class="btn btn-sm">排查</button></td></tr>
+              <tr><td>异常分佣</td><td><span class="tag t-bad">高</span></td><td>单笔分佣金额异常 ¥18,600</td><td class="mono">CE-54980</td><td>12 分钟前</td><td><button class="btn btn-sm">复核</button></td></tr>
+              <tr><td>结算审批</td><td><span class="tag t-warn">中</span></td><td>3 笔结算待审批</td><td class="mono">ST-2606</td><td>1 小时前</td><td><button class="btn btn-sm">去审批</button></td></tr>
+              <tr><td>实名异常</td><td><span class="tag t-warn">中</span></td><td>会员实名信息异常 ×7</td><td>批量</td><td>3 小时前</td><td><button class="btn btn-sm">处理</button></td></tr>
+              <tr><td>退费冲正</td><td><span class="tag t-slate">低</span></td><td>退费触发分佣冲正</td><td class="mono">#OR-7781</td><td>今天</td><td><button class="btn btn-sm">查看</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- member drawer -->
+<div class="ov" id="ov" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead"><div class="av" style="width:42px;height:42px;font-size:16px" id="dAv">王</div>
+    <div><b id="dName" style="font-size:15px">王晓</b><small style="display:block;color:var(--mut);font-size:11px" id="dRole">PRO · 区域管理员 · LV.3</small></div>
+    <span class="x" onclick="closeDrawer()">✕</span></div>
+  <div class="card" style="padding:14px;margin-bottom:14px;box-shadow:none">
+    <div class="kv"><span>会员 ID</span><b class="num" id="dId">M-100871</b></div>
+    <div class="kv"><span>所在大区 / 班级</span><b id="dClass">华东 · 增长班 A1</b></div>
+    <div class="kv"><span>有效期</span><b>剩余 312 天</b></div>
+    <div class="kv"><span>成长值</span><b class="num">12,890 / 20,000</b></div>
+    <div class="bar" style="margin-top:10px"><i style="width:64%"></i></div>
+    <div style="font-size:11px;color:var(--tx3);margin-top:6px">距 LV.4 还需 7,110</div>
+  </div>
+  <h3 style="font-size:13px;margin-bottom:8px">我的关系链（≤3 级）</h3>
+  <div class="chainflow">
+    <div class="node"><div class="av" style="background:linear-gradient(135deg,#C46BFF,#A45CFF)">V</div>推荐人</div>
+    <span class="arrow">→</span>
+    <div class="node"><div class="av" style="background:linear-gradient(135deg,#2E6BFF,#20C8DF)">A</div>区域</div>
+    <span class="arrow">→</span>
+    <div class="node"><div class="av" style="background:linear-gradient(135deg,#14D6B8,#20C8DF)">J</div>服务老师</div>
+  </div>
+  <h3 style="font-size:13px;margin:16px 0 8px">AI 诊断摘要</h3>
+  <div class="card" style="padding:14px;box-shadow:none">
+    <div class="kv"><span>综合评分</span><b style="color:var(--ok)">A+</b></div>
+    <div class="kv"><span>续费概率</span><b class="num" style="color:var(--warn)">76%</b></div>
+    <div class="kv" style="border:none"><span>建议</span><b style="color:var(--tx2);font-weight:500;text-align:right;max-width:200px">推送闭门会权益，安排服务老师跟进</b></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:18px"><button class="btn" style="flex:1">发起 AI 诊断</button><button class="btn btn-pri" style="flex:1">联系服务老师</button></div>
+</aside>
+
+<script>
+var titles={dashboard:["仪表盘 · 总览","实时运营数据看板"],members:["会员管理","会员档案与关系链"],network:["关系网络","裂变拓扑 · 成环检测"],commission:["分佣 & 结算","沿关系链 ≤3 级计算"],rules:["规则引擎","声明式可配置规则"],training:["培训内容","课程 / 训练营 / 直播"],ai:["AI 洞察","AI 商业诊断"],risk:["风控合规","合规红线与告警"]};
+function go(p){
+  document.querySelectorAll('.page').forEach(function(s){s.classList.toggle('show',s.id==='pg-'+p)});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.toggle('active',n.dataset.page===p)});
+  if(titles[p]){document.getElementById('crumb').textContent=titles[p][0];document.getElementById('crumbSub').textContent=titles[p][1];}
+  document.querySelector('.content').scrollTo(0,0);window.scrollTo(0,0);
+}
+function tabGo(el,id){var box=el.closest('.page');box.querySelectorAll('.tabs .tab').forEach(function(t){if(t.parentNode===el.parentNode)t.classList.remove('active')});el.classList.add('active');
+  el.closest('.page').querySelectorAll('.tabpane').forEach(function(p){p.classList.remove('show')});document.getElementById(id).classList.add('show');}
+function tabSel(el){el.parentNode.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');}
+function toggleTheme(){document.body.classList.toggle('light');document.getElementById('themeLbl').textContent=document.body.classList.contains('light')?'浅色':'深色';}
+function syncGP(v){document.getElementById('gpVal').value=v;document.getElementById('gpRange').value=v;document.getElementById('gpEcho').textContent=v;}
+function openDrawer(name,role,id,cls,av){document.getElementById('dName').textContent=name;document.getElementById('dRole').textContent=role;document.getElementById('dId').textContent=id;document.getElementById('dClass').textContent=cls;document.getElementById('dAv').textContent=av;document.getElementById('ov').classList.add('show');document.getElementById('drawer').classList.add('show');}
+function closeDrawer(){document.getElementById('ov').classList.remove('show');document.getElementById('drawer').classList.remove('show');}
+// member rows
+var members=[
+ ["王晓","王","PRO · 区域","t-blue","LV.3","王 → Amy → Jess","华东 · A1","12,890","在期","t-ok","M-100871"],
+ ["李娜","李","PRO","t-slate","LV.2","张 → Amy","华东 · A2","6,420","在期","t-ok","M-100870"],
+ ["陈昊","陈","创始人","t-purple","LV.5","—","华南 · 总部","48,200","在期","t-ok","M-100012"],
+ ["周敏","周","PRO","t-slate","LV.1","王 → Amy → Jess","华东 · A1","980","流失预警","t-bad","M-100868"],
+ ["赵磊","赵","联合创始人","t-purple","LV.4","林 → Amy","华北 · B1","21,300","在期","t-ok","M-100099"],
+ ["孙悦","孙","区域管理员","t-blue","LV.3","Victoria → —","华东 · A3","13,560","临期","t-warn","M-100201"],
+ ["吴芳","吴","社群服务","t-teal","LV.2","Amy → Jess","华东 · A1","5,210","在期","t-ok","M-100455"]
+];
+var tb=document.getElementById('memTbody');
+members.forEach(function(m){
+ var tr=document.createElement('tr');
+ tr.innerHTML='<td><div style="display:flex;align-items:center;gap:9px"><span class="av" style="width:28px;height:28px;font-size:11px">'+m[1]+'</span>'+m[0]+'</td>'+
+ '<td><span class="tag '+m[3]+'">'+m[2]+'</span></td><td class="num">'+m[4]+'</td><td style="color:var(--tx3)">'+m[5]+'</td><td>'+m[6]+'</td><td class="num">'+m[7]+'</td>'+
+ '<td><span class="tag '+m[9]+'">'+m[8]+'</span></td><td><button class="btn btn-sm" onclick="openDrawer(\''+m[0]+'\',\'PRO · '+m[2]+' · '+m[4]+'\',\''+m[10]+'\',\''+m[6]+'\',\''+m[1]+'\')">查看</button></td>';
+ tb.appendChild(tr);
+});
+</script>
+</body>
+</html>
