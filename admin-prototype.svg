@@ -1,0 +1,329 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1160" viewBox="0 0 1440 1160" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC','Source Han Sans SC',sans-serif">
+  <defs>
+    <linearGradient id="gemGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2E6BFF"/><stop offset="1" stop-color="#A45CFF"/>
+    </linearGradient>
+    <linearGradient id="avatarGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C46BFF"/><stop offset="1" stop-color="#2E6BFF"/>
+    </linearGradient>
+    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E6BFF" stop-opacity="0.30"/><stop offset="1" stop-color="#2E6BFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="ctaGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2E6BFF"/><stop offset="1" stop-color="#7A4DFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== page bg ===== -->
+  <rect x="0" y="0" width="1440" height="1160" fill="#05070D"/>
+
+  <!-- ===== sidebar ===== -->
+  <rect x="0" y="0" width="248" height="1160" fill="#0A0E18"/>
+  <line x1="248" y1="0" x2="248" y2="1160" stroke="#161D2C" stroke-width="1"/>
+  <!-- logo -->
+  <rect x="24" y="22" width="30" height="30" rx="9" fill="url(#gemGrad)"/>
+  <text x="40" y="42" font-size="15" font-weight="700" fill="#0A0E18" text-anchor="middle">主</text>
+  <text x="66" y="36" font-size="15" font-weight="700" fill="#EDEFF5">主理人公社</text>
+  <text x="66" y="51" font-size="10.5" fill="#6B7488">运营后台 · Console</text>
+
+  <!-- nav group: 总览 -->
+  <text x="22" y="92" font-size="10" font-weight="600" fill="#566173" letter-spacing="1">总览</text>
+  <!-- active: 仪表盘 -->
+  <rect x="10" y="104" width="228" height="36" rx="9" fill="#16213C"/>
+  <rect x="10" y="104" width="3" height="36" rx="2" fill="#2E6BFF"/>
+  <rect x="22" y="113" width="18" height="18" rx="5" fill="#2E6BFF"/>
+  <text x="50" y="127" font-size="13.5" font-weight="600" fill="#FFFFFF">仪表盘</text>
+  <!-- 会员管理 -->
+  <rect x="22" y="153" width="18" height="18" rx="5" fill="#20C8DF" opacity="0.85"/>
+  <text x="50" y="167" font-size="13.5" fill="#9098AB">会员管理</text>
+  <!-- 关系网络 -->
+  <rect x="22" y="193" width="18" height="18" rx="5" fill="#A45CFF" opacity="0.85"/>
+  <text x="50" y="207" font-size="13.5" fill="#9098AB">关系网络</text>
+  <!-- 订单&交易 -->
+  <rect x="22" y="233" width="18" height="18" rx="5" fill="#14D6B8" opacity="0.85"/>
+  <text x="50" y="247" font-size="13.5" fill="#9098AB">订单 &amp; 交易</text>
+  <!-- 分佣&结算 -->
+  <rect x="22" y="273" width="18" height="18" rx="5" fill="#E0A92B" opacity="0.85"/>
+  <text x="50" y="287" font-size="13.5" fill="#9098AB">分佣 &amp; 结算</text>
+  <!-- 规则引擎 -->
+  <rect x="22" y="313" width="18" height="18" rx="5" fill="#2E6BFF" opacity="0.85"/>
+  <text x="50" y="327" font-size="13.5" fill="#9098AB">规则引擎</text>
+
+  <!-- nav group: 运营&风控 -->
+  <text x="22" y="356" font-size="10" font-weight="600" fill="#566173" letter-spacing="1">运营 &amp; 风控</text>
+  <rect x="22" y="369" width="18" height="18" rx="5" fill="#20C8DF" opacity="0.85"/>
+  <text x="50" y="383" font-size="13.5" fill="#9098AB">培训内容</text>
+  <rect x="22" y="409" width="18" height="18" rx="5" fill="#C46BFF" opacity="0.85"/>
+  <text x="50" y="423" font-size="13.5" fill="#9098AB">AI 洞察</text>
+  <rect x="22" y="449" width="18" height="18" rx="5" fill="#EC5B6F" opacity="0.85"/>
+  <text x="50" y="463" font-size="13.5" fill="#9098AB">风控合规</text>
+  <rect x="22" y="489" width="18" height="18" rx="5" fill="#14D6B8" opacity="0.85"/>
+  <text x="50" y="503" font-size="13.5" fill="#9098AB">公告管理</text>
+
+  <!-- nav group: 系统 -->
+  <text x="22" y="540" font-size="10" font-weight="600" fill="#566173" letter-spacing="1">系统</text>
+  <rect x="22" y="553" width="18" height="18" rx="5" fill="#6B7488"/>
+  <text x="50" y="567" font-size="13.5" fill="#9098AB">系统设置</text>
+
+  <!-- sidebar profile -->
+  <line x1="16" y1="1088" x2="232" y2="1088" stroke="#161D2C"/>
+  <circle cx="38" cy="1118" r="15" fill="url(#avatarGrad)"/>
+  <text x="38" y="1123" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">林</text>
+  <text x="62" y="1114" font-size="13" font-weight="600" fill="#E6E9F0">林运营</text>
+  <text x="62" y="1130" font-size="10.5" fill="#6B7488">超级管理员</text>
+
+  <!-- ===== topbar ===== -->
+  <rect x="248" y="0" width="1192" height="64" fill="#080C16"/>
+  <line x1="248" y1="64" x2="1440" y2="64" stroke="#18202F"/>
+  <text x="280" y="33" font-size="18" font-weight="700" fill="#F2F4F8">仪表盘 · 总览</text>
+  <text x="280" y="51" font-size="11" fill="#6B7488">实时运营数据看板 · 更新于 09:36</text>
+  <!-- search -->
+  <rect x="1014" y="16" width="226" height="32" rx="8" fill="#10162600" stroke="#222B3D"/>
+  <rect x="1014" y="16" width="226" height="32" rx="8" fill="#0E1422"/>
+  <circle cx="1032" cy="32" r="5.5" fill="none" stroke="#5A6378" stroke-width="1.5"/>
+  <line x1="1036" y1="36" x2="1040" y2="40" stroke="#5A6378" stroke-width="1.5"/>
+  <text x="1050" y="36" font-size="12" fill="#5A6378">搜索会员 / 订单 / 关系链…</text>
+  <!-- bell -->
+  <path d="M1294 26 a8 8 0 0 1 16 0 c0 7 3 8 3 11 h-22 c0 -3 3 -4 3 -11 z" fill="none" stroke="#8A93A6" stroke-width="1.6"/>
+  <circle cx="1311" cy="24" r="3.5" fill="#EC5B6F"/>
+  <!-- avatar -->
+  <circle cx="1356" cy="32" r="15" fill="url(#avatarGrad)"/>
+  <text x="1356" y="37" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">林</text>
+  <rect x="1378" y="22" width="44" height="20" rx="6" fill="#16B07A" opacity="0.16"/>
+  <text x="1400" y="36" font-size="10.5" font-weight="700" fill="#2BD49A" text-anchor="middle">PROD</text>
+
+  <!-- ===== KPI cards ===== -->
+  <!-- c1 -->
+  <rect x="280" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="296" y="116" font-size="11" fill="#76809A">会员总数</text>
+  <text x="296" y="148" font-size="25" font-weight="700" fill="#F2F4F8">24,860</text>
+  <text x="296" y="172" font-size="11" fill="#2BD49A">▲ 3.2% 较上周</text>
+  <!-- c2 -->
+  <rect x="472" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="488" y="116" font-size="11" fill="#76809A">本月新增会员</text>
+  <text x="488" y="148" font-size="25" font-weight="700" fill="#F2F4F8">1,284</text>
+  <text x="488" y="172" font-size="11" fill="#2BD49A">▲ 12.0% 环比</text>
+  <!-- c3 -->
+  <rect x="664" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="680" y="116" font-size="11" fill="#76809A">PRO 在期会员</text>
+  <text x="680" y="148" font-size="25" font-weight="700" fill="#F2F4F8">18,902</text>
+  <text x="680" y="172" font-size="11" fill="#2BD49A">▲ 1.8% 续费良好</text>
+  <!-- c4 -->
+  <rect x="856" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="872" y="116" font-size="11" fill="#76809A">本月 GMV</text>
+  <text x="872" y="148" font-size="25" font-weight="700" fill="#F2F4F8">¥3.86M</text>
+  <text x="872" y="172" font-size="11" fill="#2BD49A">▲ 8.4% 环比</text>
+  <!-- c5 -->
+  <rect x="1048" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="1064" y="116" font-size="11" fill="#76809A">待结算佣金</text>
+  <text x="1064" y="148" font-size="25" font-weight="700" fill="#F2F4F8">¥412K</text>
+  <text x="1064" y="172" font-size="11" fill="#F0C45A">⏳ 3 笔待审批</text>
+  <!-- c6 -->
+  <rect x="1240" y="88" width="176" height="96" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="1256" y="116" font-size="11" fill="#76809A">流失预警</text>
+  <text x="1256" y="148" font-size="25" font-weight="700" fill="#F2F4F8">326</text>
+  <text x="1256" y="172" font-size="11" fill="#F2899A">▼ 续费概率偏低</text>
+
+  <!-- ===== row2: trend panel ===== -->
+  <rect x="280" y="200" width="712" height="300" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="300" y="234" font-size="14" font-weight="700" fill="#E6E9F0">会员与 GMV 增长趋势</text>
+  <circle cx="812" cy="229" r="4" fill="#2E6BFF"/><text x="822" y="233" font-size="11" fill="#9098AB">会员</text>
+  <circle cx="880" cy="229" r="4" fill="#14D6B8"/><text x="890" y="233" font-size="11" fill="#9098AB">GMV</text>
+  <!-- gridlines -->
+  <line x1="312" y1="272" x2="960" y2="272" stroke="#16202F"/>
+  <line x1="312" y1="317" x2="960" y2="317" stroke="#16202F"/>
+  <line x1="312" y1="362" x2="960" y2="362" stroke="#16202F"/>
+  <line x1="312" y1="407" x2="960" y2="407" stroke="#16202F"/>
+  <line x1="312" y1="452" x2="960" y2="452" stroke="#16202F"/>
+  <text x="306" y="276" font-size="9.5" fill="#566173" text-anchor="end">30k</text>
+  <text x="306" y="366" font-size="9.5" fill="#566173" text-anchor="end">15k</text>
+  <text x="306" y="456" font-size="9.5" fill="#566173" text-anchor="end">0</text>
+  <!-- area + member line -->
+  <polygon points="312,452 312,430 405,412 497,398 590,372 682,350 775,322 867,296 960,276 960,452" fill="url(#areaGrad)"/>
+  <polyline points="312,430 405,412 497,398 590,372 682,350 775,322 867,296 960,276" fill="none" stroke="#2E6BFF" stroke-width="2.5" stroke-linejoin="round"/>
+  <polyline points="312,446 405,436 497,420 590,410 682,388 775,366 867,342 960,312" fill="none" stroke="#14D6B8" stroke-width="2.5" stroke-linejoin="round"/>
+  <g fill="#2E6BFF"><circle cx="312" cy="430" r="3"/><circle cx="405" cy="412" r="3"/><circle cx="497" cy="398" r="3"/><circle cx="590" cy="372" r="3"/><circle cx="682" cy="350" r="3"/><circle cx="775" cy="322" r="3"/><circle cx="867" cy="296" r="3"/><circle cx="960" cy="276" r="3.5"/></g>
+  <!-- x labels -->
+  <g font-size="9.5" fill="#566173" text-anchor="middle">
+    <text x="312" y="470">1月</text><text x="405" y="470">2月</text><text x="497" y="470">3月</text><text x="590" y="470">4月</text><text x="682" y="470">5月</text><text x="775" y="470">6月</text><text x="867" y="470">7月</text><text x="960" y="470">8月</text>
+  </g>
+
+  <!-- ===== row2: donut panel ===== -->
+  <rect x="1008" y="200" width="408" height="300" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="1028" y="234" font-size="14" font-weight="700" fill="#E6E9F0">分佣构成（按关系链层级）</text>
+  <circle cx="1100" cy="372" r="57" fill="none" stroke="#141B2B" stroke-width="26"/>
+  <circle cx="1100" cy="372" r="57" fill="none" stroke="#2E6BFF" stroke-width="26" stroke-dasharray="179.07 358.14" transform="rotate(-90 1100 372)"/>
+  <circle cx="1100" cy="372" r="57" fill="none" stroke="#20C8DF" stroke-width="26" stroke-dasharray="114.60 358.14" transform="rotate(90 1100 372)"/>
+  <circle cx="1100" cy="372" r="57" fill="none" stroke="#14D6B8" stroke-width="26" stroke-dasharray="64.46 358.14" transform="rotate(205.2 1100 372)"/>
+  <text x="1100" y="368" font-size="17" font-weight="700" fill="#F2F4F8" text-anchor="middle">¥1.24M</text>
+  <text x="1100" y="386" font-size="10" fill="#6B7488" text-anchor="middle">本月分佣</text>
+  <!-- legend -->
+  <circle cx="1244" cy="346" r="5" fill="#2E6BFF"/><text x="1258" y="350" font-size="12" fill="#AEB6C6">L1 推荐人</text><text x="1396" y="350" font-size="12" font-weight="600" fill="#E6E9F0" text-anchor="end">50%</text>
+  <circle cx="1244" cy="374" r="5" fill="#20C8DF"/><text x="1258" y="378" font-size="12" fill="#AEB6C6">L2 区域管理员</text><text x="1396" y="378" font-size="12" font-weight="600" fill="#E6E9F0" text-anchor="end">32%</text>
+  <circle cx="1244" cy="402" r="5" fill="#14D6B8"/><text x="1258" y="406" font-size="12" fill="#AEB6C6">L3 服务老师</text><text x="1396" y="406" font-size="12" font-weight="600" fill="#E6E9F0" text-anchor="end">18%</text>
+
+  <!-- ===== row3: network graph panel ===== -->
+  <rect x="280" y="516" width="560" height="300" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="300" y="548" font-size="14" font-weight="700" fill="#E6E9F0">关系网络 · 裂变拓扑</text>
+  <text x="300" y="566" font-size="11" fill="#566173">AntV G6 力导向图 · 示意</text>
+  <!-- links -->
+  <g stroke="#233049" stroke-width="1.4">
+    <line x1="440" y1="690" x2="340" y2="612"/>
+    <line x1="440" y1="690" x2="560" y2="606"/>
+    <line x1="440" y1="690" x2="300" y2="724"/>
+    <line x1="440" y1="690" x2="620" y2="690"/>
+    <line x1="340" y1="612" x2="312" y2="566"/>
+    <line x1="340" y1="612" x2="250" y2="672"/>
+    <line x1="560" y1="606" x2="610" y2="566"/>
+    <line x1="560" y1="606" x2="660" y2="648"/>
+    <line x1="660" y1="648" x2="740" y2="700"/>
+    <line x1="560" y1="750" x2="430" y2="786"/>
+    <line x1="560" y1="750" x2="690" y2="742"/>
+    <line x1="560" y1="750" x2="700" y2="792"/>
+    <line x1="300" y1="724" x2="250" y2="772"/>
+    <line x1="300" y1="724" x2="430" y2="786"/>
+  </g>
+  <g stroke="#2E6BFF" stroke-width="1.8" opacity="0.6">
+    <line x1="440" y1="690" x2="660" y2="648"/>
+    <line x1="440" y1="690" x2="560" y2="750"/>
+  </g>
+  <!-- small member nodes -->
+  <g fill="#222B3D" stroke="#05070D" stroke-width="2">
+    <circle cx="312" cy="566" r="6"/><circle cx="610" cy="566" r="6"/><circle cx="740" cy="700" r="6"/><circle cx="250" cy="772" r="6"/><circle cx="700" cy="792" r="6"/><circle cx="620" cy="690" r="9"/>
+  </g>
+  <!-- main nodes -->
+  <circle cx="340" cy="612" r="12" fill="#2E6BFF" stroke="#05070D" stroke-width="2"/>
+  <circle cx="560" cy="606" r="12" fill="#2E6BFF" stroke="#05070D" stroke-width="2"/>
+  <circle cx="660" cy="648" r="12" fill="#2E6BFF" stroke="#05070D" stroke-width="2"/>
+  <circle cx="300" cy="724" r="11" fill="#14D6B8" stroke="#05070D" stroke-width="2"/>
+  <circle cx="430" cy="786" r="11" fill="#14D6B8" stroke="#05070D" stroke-width="2"/>
+  <circle cx="560" cy="750" r="12" fill="#14D6B8" stroke="#05070D" stroke-width="2"/>
+  <circle cx="690" cy="742" r="11" fill="#14D6B8" stroke="#05070D" stroke-width="2"/>
+  <circle cx="250" cy="672" r="10" fill="#14D6B8" stroke="#05070D" stroke-width="2"/>
+  <circle cx="440" cy="690" r="19" fill="url(#gemGrad)" stroke="#05070D" stroke-width="2"/>
+  <text x="440" y="695" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">创</text>
+  <!-- legend -->
+  <g font-size="10" fill="#76809A">
+    <circle cx="306" cy="800" r="4.5" fill="#A45CFF"/><text x="316" y="804">创始人</text>
+    <circle cx="386" cy="800" r="4.5" fill="#2E6BFF"/><text x="396" y="804">区域</text>
+    <circle cx="452" cy="800" r="4.5" fill="#14D6B8"/><text x="462" y="804">服务</text>
+    <circle cx="520" cy="800" r="4.5" fill="#222B3D" stroke="#34405a"/><text x="530" y="804">会员</text>
+  </g>
+
+  <!-- ===== row3: risk/alert panel ===== -->
+  <rect x="856" y="516" width="560" height="300" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="876" y="548" font-size="14" font-weight="700" fill="#E6E9F0">风控告警 &amp; 待办</text>
+  <rect x="978" y="535" width="22" height="18" rx="9" fill="#EC5B6F" opacity="0.18"/>
+  <text x="989" y="548" font-size="11" font-weight="700" fill="#F2899A" text-anchor="middle">5</text>
+  <!-- rows -->
+  <g>
+    <rect x="876" y="574" width="40" height="22" rx="6" fill="#EC5B6F" opacity="0.16"/>
+    <text x="896" y="589" font-size="11" font-weight="700" fill="#F2899A" text-anchor="middle">高</text>
+    <text x="930" y="589" font-size="13" fill="#C7CDDA">检测到疑似成环关系链 #RC-2208</text>
+    <text x="1396" y="589" font-size="11" fill="#6B7488" text-anchor="end">2 分钟前</text>
+    <line x1="876" y1="610" x2="1396" y2="610" stroke="#141C2B"/>
+
+    <rect x="876" y="618" width="40" height="22" rx="6" fill="#EC5B6F" opacity="0.16"/>
+    <text x="896" y="633" font-size="11" font-weight="700" fill="#F2899A" text-anchor="middle">高</text>
+    <text x="930" y="633" font-size="13" fill="#C7CDDA">异常分佣事件待复核 ¥18,600</text>
+    <text x="1396" y="633" font-size="11" fill="#6B7488" text-anchor="end">12 分钟前</text>
+    <line x1="876" y1="654" x2="1396" y2="654" stroke="#141C2B"/>
+
+    <rect x="876" y="662" width="40" height="22" rx="6" fill="#E0A92B" opacity="0.16"/>
+    <text x="896" y="677" font-size="11" font-weight="700" fill="#F0C45A" text-anchor="middle">中</text>
+    <text x="930" y="677" font-size="13" fill="#C7CDDA">3 笔结算待审批 合计 ¥412K</text>
+    <text x="1396" y="677" font-size="11" fill="#6B7488" text-anchor="end">1 小时前</text>
+    <line x1="876" y1="698" x2="1396" y2="698" stroke="#141C2B"/>
+
+    <rect x="876" y="706" width="40" height="22" rx="6" fill="#E0A92B" opacity="0.16"/>
+    <text x="896" y="721" font-size="11" font-weight="700" fill="#F0C45A" text-anchor="middle">中</text>
+    <text x="930" y="721" font-size="13" fill="#C7CDDA">会员实名信息异常 ×7</text>
+    <text x="1396" y="721" font-size="11" fill="#6B7488" text-anchor="end">3 小时前</text>
+    <line x1="876" y1="742" x2="1396" y2="742" stroke="#141C2B"/>
+
+    <rect x="876" y="750" width="40" height="22" rx="6" fill="#5A6378" opacity="0.20"/>
+    <text x="896" y="765" font-size="11" font-weight="700" fill="#AEB6C6" text-anchor="middle">低</text>
+    <text x="930" y="765" font-size="13" fill="#C7CDDA">退费冲正待处理 #OR-7781</text>
+    <text x="1396" y="765" font-size="11" fill="#6B7488" text-anchor="end">今天</text>
+  </g>
+  <rect x="876" y="784" width="520" height="14" fill="none"/>
+  <text x="876" y="799" font-size="11" fill="#2E6BFF">查看全部风控记录 →</text>
+
+  <!-- ===== row4: recent orders table ===== -->
+  <rect x="280" y="832" width="1136" height="296" rx="12" fill="#0C1322" stroke="#1B2336"/>
+  <text x="300" y="866" font-size="14" font-weight="700" fill="#E6E9F0">最近订单 / 交易</text>
+  <text x="1396" y="866" font-size="11" fill="#2E6BFF" text-anchor="end">查看全部 →</text>
+  <!-- header -->
+  <g font-size="11" fill="#6B7488">
+    <text x="300" y="902">订单号</text>
+    <text x="430" y="902">会员</text>
+    <text x="545" y="902">身份</text>
+    <text x="650" y="902">商品</text>
+    <text x="832" y="902">金额</text>
+    <text x="930" y="902">归因关系链</text>
+    <text x="1180" y="902">状态</text>
+    <text x="1330" y="902">时间</text>
+  </g>
+  <line x1="300" y1="912" x2="1396" y2="912" stroke="#1B2336"/>
+
+  <!-- rows -->
+  <g font-size="12.5">
+    <!-- r1 -->
+    <text x="300" y="945" fill="#7FA6FF">OR-100871</text>
+    <text x="430" y="945" fill="#C7CDDA">王晓</text>
+    <text x="545" y="945" fill="#9098AB">PRO · 区域</text>
+    <text x="650" y="945" fill="#C7CDDA">高阶增长训练营</text>
+    <text x="832" y="945" fill="#E6E9F0">¥2,980</text>
+    <text x="930" y="945" fill="#9098AB">王 → Amy → Jess</text>
+    <rect x="1180" y="932" width="58" height="21" rx="6" fill="#16B07A" opacity="0.16"/>
+    <text x="1209" y="947" font-size="11" fill="#2BD49A" text-anchor="middle">已支付</text>
+    <text x="1330" y="945" fill="#6B7488">10:24</text>
+    <line x1="300" y1="962" x2="1396" y2="962" stroke="#141C2B"/>
+    <!-- r2 -->
+    <text x="300" y="983" fill="#7FA6FF">OR-100870</text>
+    <text x="430" y="983" fill="#C7CDDA">李娜</text>
+    <text x="545" y="983" fill="#9098AB">PRO</text>
+    <text x="650" y="983" fill="#C7CDDA">年度会员</text>
+    <text x="832" y="983" fill="#E6E9F0">¥1,299</text>
+    <text x="930" y="983" fill="#9098AB">张 → Amy</text>
+    <rect x="1180" y="970" width="58" height="21" rx="6" fill="#16B07A" opacity="0.16"/>
+    <text x="1209" y="985" font-size="11" fill="#2BD49A" text-anchor="middle">已支付</text>
+    <text x="1330" y="983" fill="#6B7488">10:18</text>
+    <line x1="300" y1="1000" x2="1396" y2="1000" stroke="#141C2B"/>
+    <!-- r3 -->
+    <text x="300" y="1021" fill="#7FA6FF">OR-100869</text>
+    <text x="430" y="1021" fill="#C7CDDA">陈昊</text>
+    <text x="545" y="1021" fill="#9098AB">PRO · 创始</text>
+    <text x="650" y="1021" fill="#C7CDDA">一对一咨询</text>
+    <text x="832" y="1021" fill="#E6E9F0">¥6,800</text>
+    <text x="930" y="1021" fill="#9098AB">直签</text>
+    <rect x="1180" y="1008" width="58" height="21" rx="6" fill="#E0A92B" opacity="0.16"/>
+    <text x="1209" y="1023" font-size="11" fill="#F0C45A" text-anchor="middle">待结算</text>
+    <text x="1330" y="1021" fill="#6B7488">09:52</text>
+    <line x1="300" y1="1038" x2="1396" y2="1038" stroke="#141C2B"/>
+    <!-- r4 -->
+    <text x="300" y="1059" fill="#7FA6FF">OR-100868</text>
+    <text x="430" y="1059" fill="#C7CDDA">周敏</text>
+    <text x="545" y="1059" fill="#9098AB">PRO</text>
+    <text x="650" y="1059" fill="#C7CDDA">闭门会门票</text>
+    <text x="832" y="1059" fill="#E6E9F0">¥980</text>
+    <text x="930" y="1059" fill="#9098AB">王 → Amy → Jess</text>
+    <rect x="1180" y="1046" width="58" height="21" rx="6" fill="#EC5B6F" opacity="0.16"/>
+    <text x="1209" y="1061" font-size="11" fill="#F2899A" text-anchor="middle">已退款</text>
+    <text x="1330" y="1059" fill="#6B7488">09:31</text>
+    <line x1="300" y1="1076" x2="1396" y2="1076" stroke="#141C2B"/>
+    <!-- r5 -->
+    <text x="300" y="1097" fill="#7FA6FF">OR-100867</text>
+    <text x="430" y="1097" fill="#C7CDDA">赵磊</text>
+    <text x="545" y="1097" fill="#9098AB">PRO · 联创</text>
+    <text x="650" y="1097" fill="#C7CDDA">年度会员</text>
+    <text x="832" y="1097" fill="#E6E9F0">¥1,299</text>
+    <text x="930" y="1097" fill="#9098AB">林 → Amy</text>
+    <rect x="1180" y="1084" width="58" height="21" rx="6" fill="#16B07A" opacity="0.16"/>
+    <text x="1209" y="1099" font-size="11" fill="#2BD49A" text-anchor="middle">已支付</text>
+    <text x="1330" y="1097" fill="#6B7488">09:07</text>
+  </g>
+
+  <!-- footer -->
+  <text x="848" y="1148" font-size="10.5" fill="#44506A" text-anchor="middle">原型示意 · 数据均为模拟 · 主理人公社 · 运营后台 Dashboard v0.1（深色主题 · 设计系统「声量算法」）</text>
+</svg>

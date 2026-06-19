@@ -1,0 +1,3 @@
+# Node (used only to render the prototype SVG -> PNG)
+node_modules/
+npm-debug.log*
