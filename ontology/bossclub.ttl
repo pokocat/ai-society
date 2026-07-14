@@ -1,0 +1,399 @@
+@prefix : <https://fenglema.com/ontology/scp#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://fenglema.com/ontology/scp> a owl:Ontology ;
+    rdfs:label "蜂乐玛社群运营中台本体"@zh ;
+    rdfs:comment """设计期概念权威（design-time authority）。
+本体定义中台全部核心业务概念、对象属性与公理，是数据库 schema 与 API DTO 的映射源头
+（对照关系见同目录 MAPPING.md）。运行时存储为 PostgreSQL，不做运行时推理——
+本文件服务于建模评审、术语统一与未来的语义校验（Jena/RDF4J 可直接加载）。
+概念与状态机对齐《蜂乐玛社群运营中台-业务逻辑与项目说明》V1.0（SPEC §4/§5/§8/§13.3）。"""@zh ;
+    owl:versionInfo "0.1.0" .
+
+#################################################################
+# 一、顶层划分
+#################################################################
+
+:BusinessObject a owl:Class ;
+    rdfs:label "业务对象"@zh .
+
+:Resource a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "资源"@zh ;
+    rdfs:comment "统一资源库中的实体：账号、设备、员工、企业微信群。资源主数据只维护一份，项目归属经关系对象表达（SPEC §13.1）。"@zh .
+
+:RelationObject a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "关系对象"@zh ;
+    rdfs:comment "表达两个主数据实体间业务关系的对象（授权、编组、入群、好友关系等），关系必须显式建档、可追溯，不允许用冗余字段代替（SPEC §5）。"@zh .
+
+:GovernanceObject a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "治理对象"@zh ;
+    rdfs:comment "审批、风险事件、审计日志、同步作业等保障可控可查可追责的对象（SPEC §11/§12）。"@zh .
+
+#################################################################
+# 二、项目域（SPEC §4.1）
+#################################################################
+
+:Project a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "项目"@zh ;
+    rdfs:comment "资源授权、会员身份、数据隔离和运营统计的主要业务边界。状态机：筹备中→配置中→待发布→运行中→暂停→已结束/已归档（SPEC §8.1）。"@zh .
+
+:ProjectIntegration a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "项目接入配置"@zh ;
+    rdfs:comment "项目与外部系统的连接方式（OpenAPI/REST/Webhook/DB只读）、数据权限（双向/仅读/仅回写）与鉴权状态（SPEC §6.2/§13.2）。"@zh .
+
+:ProjectResourceVersion a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "项目资源方案版本"@zh ;
+    rdfs:comment "某项目在一个版本中使用的账号、群、员工和规则配置。草稿→校验→发布；发布后不可变，变更开新版本；高风险变更需审批（SPEC §6.3、§18「资源方案」）。"@zh .
+
+#################################################################
+# 三、资源域（SPEC §4.2/§4.3）
+#################################################################
+
+:Account a owl:Class ;
+    rdfs:subClassOf :Resource ;
+    rdfs:label "账号"@zh ;
+    rdfs:comment "手机号、个人微信、企业微信、媒体账号和其他凭证。状态机：库存→待激活→可用→使用中→风险/冻结→待交接→已停用/已归档（SPEC §8.2）。"@zh .
+
+:PersonalWechatAccount a owl:Class ;
+    rdfs:subClassOf :Account ;
+    rdfs:label "个人微信账号"@zh ;
+    rdfs:comment "重点记录保管人、实际使用人、设备、实名状态、好友数、服务群数、风险与交接状态。负载受硬性约束：≤20 群/号、好友 1800 预警 2000 硬上限（SPEC §7.1）。"@zh .
+
+:WecomAccount a owl:Class ;
+    rdfs:subClassOf :Account ;
+    rdfs:label "企业微信账号"@zh ;
+    rdfs:comment "记录企业主体、企微员工、部门、服务区域、已建群与同步状态。群原则上由企业微信建立（SPEC §4.4）。"@zh .
+
+:PhoneAccount a owl:Class ;
+    rdfs:subClassOf :Account ;
+    rdfs:label "手机号资产"@zh .
+
+:MediaAccount a owl:Class ;
+    rdfs:subClassOf :Account ;
+    rdfs:label "媒体账号"@zh .
+
+:Device a owl:Class ;
+    rdfs:subClassOf :Resource ;
+    rdfs:label "设备"@zh .
+
+:Employee a owl:Class ;
+    rdfs:subClassOf :Resource ;
+    rdfs:label "员工"@zh ;
+    rdfs:comment "组织人员主体。员工与账号、项目、群之间必须通过关系对象绑定，不得把员工姓名写死在账号或群上（SPEC §4.3）。"@zh .
+
+:AccountAssignment a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "账号项目授权"@zh ;
+    rdfs:comment "账号被某项目使用的授权关系，可设有效期（SPEC §5「项目—账号」）。"@zh .
+
+:AccountHandover a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "账号交接单"@zh ;
+    rdfs:comment "保管人/使用人变更的交接过程记录，属高风险操作，需审批（SPEC §11.2）。"@zh .
+
+#################################################################
+# 四、群域（SPEC §4.4）
+#################################################################
+
+:CommunityGroup a owl:Class ;
+    rdfs:subClassOf :Resource ;
+    rdfs:label "企业微信群"@zh ;
+    rdfs:comment "统一群库成员。状态机：待建群→待配置→可承接→服务中→容量预警→已满/冻结→待交接→已归档（SPEC §8.3）。容量默认 100 人/群，90% 触发预警（SPEC §7.1）。"@zh .
+
+:GroupStaffing a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "群服务编组"@zh ;
+    rdfs:comment "群×角色(企微客服|个微客服)×员工×账号 的服务关系，支持主责/协同。群进入服务中前必须配齐企微客服与个微客服（SPEC §5/§7）。"@zh .
+
+:GroupQrCode a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "群二维码版本"@zh .
+
+:GroupLifecycleEvent a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "群生命周期事件"@zh .
+
+#################################################################
+# 五、会员域（SPEC §4.5/§4.6）
+#################################################################
+
+:Member a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "统一会员"@zh ;
+    rdfs:comment "采用统一会员 ID（U-xxxxx）跨项目识别同一自然人（SPEC §4.5、§18）。"@zh .
+
+:MemberIdentifier a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "会员身份标识"@zh ;
+    rdfs:comment "可合并标识：手机号、个微号、unionid、企微外部联系人ID、订单用户ID、报名ID。合并优先级 unionid>手机号>企微external_userid>个微号，冲突进人工核对。"@zh .
+
+:MemberProjectIdentity a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "会员项目身份"@zh ;
+    rdfs:comment "会员在指定项目中的身份（游客/体验官/PRO/尊享官/代理/城市合伙人/学员），含有效期、来源、状态与变更历史（SPEC §4.6）。"@zh .
+
+:ReferralRelation a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "推荐关系（关系链）"@zh ;
+    rdfs:comment """裂变推荐关系。三条公理：
+① 深度公理：链上溯不超过 3 级（lv1/lv2/lv3），存储采用物化路径；
+② 单推荐人公理：一个会员至多一个直接推荐人（hasReferrer 函数型属性）；
+③ 无环公理：推荐关系图必须是森林，绑定时服务端校验。
+影响力 = 按（层级×身份）对链上成员聚合。"""@zh .
+
+:MemberTimelineEntry a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "会员档案时间线条目"@zh ;
+    rdfs:comment "回访、沟通、订单、身份、入群等事件的统一追加流水（SPEC §10）。"@zh .
+
+#################################################################
+# 六、关系与分配域（SPEC §4.7）
+#################################################################
+
+:MemberWechatRelation a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "会员微信好友关系"@zh ;
+    rdfs:comment "会员与个微/企微的好友状态，确认方式为接口同步或人工回填，保留最近确认时间（SPEC §7.2 校准）。"@zh .
+
+:MemberGroupAssignment a owl:Class ;
+    rdfs:subClassOf :RelationObject ;
+    rdfs:label "会员入群分配"@zh ;
+    rdfs:comment """会员被推荐、分配、邀请和实际进入某个群的全过程对象——不允许只改群人数代替（SPEC §4.7）。
+状态机（SPEC §8.4）：待匹配→已推荐→待确认→待加好友→已加好友→待邀请→已邀请→已入群；
+异常分支：匹配失败/好友申请失败/邀请失败/拒绝入群/重复入群/人工取消/群已满。
+只有入群成功事件或人工确认可置「已入群」（SPEC §6.7）。"""@zh .
+
+:CapacityReservation a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "容量预占"@zh ;
+    rdfs:comment "并发分配时对群容量或个微好友额度的预留，任务完成前生效，带 TTL（SPEC §7.2、§18「负载预占」）。"@zh .
+
+#################################################################
+# 七、任务域（SPEC §4.8）
+#################################################################
+
+:TaskBatch a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "任务批次"@zh .
+
+:TaskItem a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "执行任务"@zh ;
+    rdfs:comment "加好友/邀请入群/回访/工单/交接/群码更新/同步异常/配置整改。必须有负责人、状态、优先级、截止时间、执行记录、失败原因和完成证据（SPEC §4.8）。状态机：待创建→待领取/已分配→处理中→待复核→已完成 + 失败/超时/已取消/需人工（SPEC §8.5）。"@zh .
+
+:TaskAttempt a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "任务执行记录"@zh .
+
+:TaskEvidence a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "任务完成证据"@zh .
+
+#################################################################
+# 八、运营域
+#################################################################
+
+:FollowUp a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "回访"@zh ;
+    rdfs:comment "完成后必须追加会员档案时间线，并按开关回写来源项目（SPEC §16-6）。"@zh .
+
+:Ticket a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "工单"@zh .
+
+:OrderReference a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "订单引用（只读镜像）"@zh ;
+    rdfs:comment "订单、支付、退款、佣金和财务结果由外部订单/支付系统负责（SPEC §2.2）；中台仅保留外部订单的引用镜像用于档案与查询，保留来源系统、外部 ID、同步时间和版本（SPEC §13.1）。"@zh .
+
+:ActivityRecord a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "活动记录"@zh .
+
+:MemberTask a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "会员端任务"@zh .
+
+:PointsLedgerEntry a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "积分账目"@zh .
+
+:GrowthLedgerEntry a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "成长值账目"@zh ;
+    rdfs:comment "成长值驱动等级成长；邀请成功默认 +288，数值为可配置规则而非硬编码。"@zh .
+
+:InviteCode a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "邀请码/推广码"@zh ;
+    rdfs:comment "短码与场景值映射，7 天有效自动轮换；扫码归因写入统一会员档案。"@zh .
+
+#################################################################
+# 九、治理域（SPEC §11/§12/§13.2）
+#################################################################
+
+:Approval a owl:Class ;
+    rdfs:subClassOf :GovernanceObject ;
+    rdfs:label "审批单"@zh ;
+    rdfs:comment "需审批操作：资源方案发布/超容量分配/跨项目共用/交接/批量导出/删除退款等高风险操作（SPEC §11.2）。采用审批单→回调执行器模式，审批通过才执行。"@zh .
+
+:RiskEvent a owl:Class ;
+    rdfs:subClassOf :GovernanceObject ;
+    rdfs:label "风险事件"@zh ;
+    rdfs:comment "统一异常中心条目（SPEC §12 八类来源），有等级、负责人、截止时间、处理状态与关联对象，可转任务或审批。"@zh .
+
+:AuditLog a owl:Class ;
+    rdfs:subClassOf :GovernanceObject ;
+    rdfs:label "审计日志"@zh ;
+    rdfs:comment "记录操作对象、前后值、操作者、时间、项目、原因、审批单、来源与结果；append-only，不可修改删除（SPEC §11.3）。"@zh .
+
+:SyncJob a owl:Class ;
+    rdfs:subClassOf :GovernanceObject ;
+    rdfs:label "同步作业"@zh ;
+    rdfs:comment "API/Webhook/定时/人工导入四类来源；具备字段映射版本、游标、失败队列、重试、幂等键、冲突处理与对账（SPEC §13.2）。"@zh .
+
+:SyncError a owl:Class ;
+    rdfs:subClassOf :GovernanceObject ;
+    rdfs:label "同步失败记录"@zh .
+
+#################################################################
+# 十、对象属性（关系公理）
+#################################################################
+
+:belongsToProject a owl:ObjectProperty ;
+    rdfs:label "归属项目"@zh ;
+    rdfs:range :Project ;
+    rdfs:comment "群单归属（跨项目共用需显式审批）；身份/任务/审批等按项目隔离（SPEC §5）。"@zh .
+
+:authorizedForProject a owl:ObjectProperty ;
+    rdfs:label "授权给项目"@zh ;
+    rdfs:domain :Account ;
+    rdfs:range :Project ;
+    rdfs:comment "账号↔项目多对多，经 AccountAssignment 具体化（reified）。"@zh .
+
+:builtByWecom a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "建群企业微信"@zh ;
+    rdfs:domain :CommunityGroup ;
+    rdfs:range :WecomAccount ;
+    rdfs:comment "服务中状态必须有有效企微（SPEC §5「群—企业微信」）。"@zh .
+
+:servedByWecomStaff a owl:ObjectProperty ;
+    rdfs:label "企微客服"@zh ;
+    rdfs:domain :CommunityGroup ;
+    rdfs:range :Employee .
+
+:servedByPersonalWechat a owl:ObjectProperty ;
+    rdfs:label "个微客服"@zh ;
+    rdfs:domain :CommunityGroup ;
+    rdfs:range :PersonalWechatAccount ;
+    rdfs:comment "分配前必须校验该个微的群数与好友负载（SPEC §5）。"@zh .
+
+:usedByEmployee a owl:ObjectProperty ;
+    rdfs:label "实际使用人"@zh ;
+    rdfs:domain :Account ;
+    rdfs:range :Employee .
+
+:custodiedBy a owl:ObjectProperty ;
+    rdfs:label "保管人"@zh ;
+    rdfs:domain :Account ;
+    rdfs:range :Employee .
+
+:hasIdentifier a owl:ObjectProperty ;
+    rdfs:label "拥有身份标识"@zh ;
+    rdfs:domain :Member ;
+    rdfs:range :MemberIdentifier .
+
+:hasProjectIdentity a owl:ObjectProperty ;
+    rdfs:label "拥有项目身份"@zh ;
+    rdfs:domain :Member ;
+    rdfs:range :MemberProjectIdentity .
+
+:hasReferrer a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "直接推荐人"@zh ;
+    rdfs:domain :Member ;
+    rdfs:range :Member ;
+    rdfs:comment "函数型：至多一个直接推荐人（单推荐人公理）。深度与无环公理由服务端在写入时校验。"@zh .
+
+:friendOf a owl:ObjectProperty ;
+    rdfs:label "微信好友关系"@zh ;
+    rdfs:domain :Member ;
+    rdfs:range :Account ;
+    rdfs:comment "经 MemberWechatRelation 具体化，含确认方式与校准时间。"@zh .
+
+:assignedToGroup a owl:ObjectProperty ;
+    rdfs:label "分配至群"@zh ;
+    rdfs:domain :MemberGroupAssignment ;
+    rdfs:range :CommunityGroup .
+
+:assignmentOfMember a owl:ObjectProperty ;
+    rdfs:label "分配的会员"@zh ;
+    rdfs:domain :MemberGroupAssignment ;
+    rdfs:range :Member .
+
+:reserves a owl:ObjectProperty ;
+    rdfs:label "预占对象"@zh ;
+    rdfs:domain :CapacityReservation ;
+    rdfs:comment "指向群（容量）或个微账号（好友额度）。"@zh .
+
+:relatesToMember a owl:ObjectProperty ;
+    rdfs:label "关联会员"@zh ;
+    rdfs:range :Member ;
+    rdfs:comment "任务/回访/工单/订单引用/时间线通用关联。"@zh .
+
+:executedBy a owl:ObjectProperty ;
+    rdfs:label "执行/负责人"@zh ;
+    rdfs:range :Employee .
+
+:requiresApproval a owl:ObjectProperty ;
+    rdfs:label "需要审批"@zh ;
+    rdfs:range :Approval ;
+    rdfs:comment "超容量/跨项目/交接/发布等高风险动作与审批单的关联（SPEC §11.2）。"@zh .
+
+:convertedToTask a owl:ObjectProperty ;
+    rdfs:label "转为任务"@zh ;
+    rdfs:domain :RiskEvent ;
+    rdfs:range :TaskItem .
+
+#################################################################
+# 十一、关键数据属性（阈值公理，运行时读 resource_rules 表）
+#################################################################
+
+:targetGroupSize a owl:DatatypeProperty ;
+    rdfs:label "单群目标容量"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "默认 100 人/群（SPEC §7.1），可按群调整。"@zh .
+
+:maxGroupsPerPersonalWechat a owl:DatatypeProperty ;
+    rdfs:label "单个微服务群上限"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "默认 20 群/个微。"@zh .
+
+:friendWarnThreshold a owl:DatatypeProperty ;
+    rdfs:label "个微好友预警线"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "默认 1800，达到后降低推荐权重并预警。"@zh .
+
+:friendHardLimit a owl:DatatypeProperty ;
+    rdfs:label "个微好友硬上限"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "默认 2000，达到后禁止分配新好友任务。"@zh .
+
+:capacityWarnRatio a owl:DatatypeProperty ;
+    rdfs:label "群容量预警比例"@zh ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "默认 0.9（90%），触发新群准备或分流提醒。"@zh .
+
+:growthPointsPerInvite a owl:DatatypeProperty ;
+    rdfs:label "邀请成长值"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "邀请成功默认 +288，可配置。"@zh .
