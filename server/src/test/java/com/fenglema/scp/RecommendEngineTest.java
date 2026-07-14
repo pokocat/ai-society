@@ -31,8 +31,15 @@ class RecommendEngineTest extends TestSupport {
         assertTrue(goodC.hitRules().stream().anyMatch(r -> r.contains("城市匹配")));
         assertTrue(goodC.hitRules().stream().anyMatch(r -> r.contains("身份匹配")));
         assertTrue(goodC.score() > crowdedC.score(), "99% 填充的群必须被降权");
-        assertTrue(goodC.score() > otherCityC.score(), "异地群得分应低于同城群");
         assertTrue(crowdedC.riskHints().stream().anyMatch(r -> r.contains("降权")), "高填充群应带降权风险提示");
+        // SPEC §7.3 优先级字典序：业务匹配（第2级）优先于负载（第3级）——
+        // 同城满档位群（即便 99% 填充被降权）也必须排在异地群之前
+        List<String> ordered = list.stream().map(RecommendEngine.Candidate::groupId)
+                .filter(id -> id.equals(good) || id.equals(crowded) || id.equals(otherCity)).toList();
+        assertEquals(List.of(good, crowded, otherCity), ordered,
+                "排序必须为 同城低填充 > 同城高填充 > 异地（匹配档位优先，同档位比分数）");
+        assertEquals(3, goodC.matchTier());
+        assertEquals(2, otherCityC.matchTier());
         assertEquals(good, list.stream()
                         .filter(c -> c.groupId().equals(good) || c.groupId().equals(crowded) || c.groupId().equals(otherCity))
                         .findFirst().orElseThrow().groupId(),

@@ -24,7 +24,8 @@ public class RecommendEngine {
     }
 
     public record Candidate(String groupId, String groupName, double score, List<String> hitRules,
-                            List<String> riskHints, String personalWechatId, int memberCount, int targetCapacity) {
+                            List<String> riskHints, String personalWechatId, int memberCount, int targetCapacity,
+                            int matchTier) {
     }
 
     /** 身份 → 目标群类型（业务匹配层）。 */
@@ -143,9 +144,14 @@ public class RecommendEngine {
             }
             candidates.add(new Candidate((String) g.get("id"), (String) g.get("name"),
                     Math.round(total * 100) / 100.0, hits, risks,
-                    (String) g.get("personal_wechat_id"), memberCount, capacity));
+                    (String) g.get("personal_wechat_id"), memberCount, capacity,
+                    (typeMatch ? 2 : 0) + (cityMatch ? 1 : 0)));
         }
-        candidates.sort((a, b) -> Double.compare(b.score(), a.score()));
+        // 排序按 SPEC §7.3 优先级字典序：第 2 级业务匹配（身份>城市）优先于第 3/4/5 级评分——
+        // 身份+城市匹配的群永远排在仅部分匹配/不匹配的群之前，评分只在同档位内比较。
+        candidates.sort((a, b) -> a.matchTier() != b.matchTier()
+                ? Integer.compare(b.matchTier(), a.matchTier())
+                : Double.compare(b.score(), a.score()));
         return candidates;
     }
 
