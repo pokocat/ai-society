@@ -34,8 +34,8 @@ public class RiskController {
                                                        @RequestParam(required = false) String level) {
         return ApiResponse.ok(db.sql("""
                         SELECT * FROM risk_event
-                        WHERE (:status IS NULL OR status = :status)
-                          AND (:level IS NULL OR level = :level)
+                        WHERE (CAST(:status AS text) IS NULL OR status = :status)
+                          AND (CAST(:level AS text) IS NULL OR level = :level)
                         ORDER BY CASE level WHEN '高' THEN 0 WHEN '中' THEN 1 ELSE 2 END, created_at DESC
                         LIMIT 200
                         """)

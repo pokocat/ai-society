@@ -49,9 +49,9 @@ public class TaskService {
                 LEFT JOIN community_group g ON g.id = t.group_id
                 LEFT JOIN employee e ON e.id = t.assignee_employee_id
                 LEFT JOIN account a ON a.id = t.account_id
-                WHERE (:type IS NULL OR t.task_type = :type)
-                  AND (:status IS NULL OR t.status = :status)
-                  AND (:pid IS NULL OR t.project_id = :pid)
+                WHERE (CAST(:type AS text) IS NULL OR t.task_type = :type)
+                  AND (CAST(:status AS text) IS NULL OR t.status = :status)
+                  AND (CAST(:pid AS text) IS NULL OR t.project_id = :pid)
                 ORDER BY t.created_at DESC LIMIT 200
                 """)
                 .param("type", taskType).param("status", status).param("pid", projectId)

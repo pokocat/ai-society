@@ -65,7 +65,7 @@ public class AssignmentService {
                 LEFT JOIN referral_relation rr ON rr.member_id = m.id
                 LEFT JOIN member ref ON ref.id = rr.referrer_id
                 WHERE mpi.status = '待分配'
-                  AND (:pid IS NULL OR mpi.project_id = :pid)
+                  AND (CAST(:pid AS text) IS NULL OR mpi.project_id = :pid)
                   AND NOT EXISTS (SELECT 1 FROM member_group_assignment a
                         WHERE a.member_id = m.id AND a.project_id = mpi.project_id
                           AND a.status IN ('待匹配','已推荐','待确认','待加好友','已加好友','待邀请','已邀请'))
@@ -327,9 +327,9 @@ public class AssignmentService {
                 FROM member_group_assignment a
                 JOIN member m ON m.id = a.member_id
                 JOIN community_group g ON g.id = a.group_id
-                WHERE (:pid IS NULL OR a.project_id = :pid)
-                  AND (:status IS NULL OR a.status = :status)
-                  AND (:gid IS NULL OR a.group_id = :gid)
+                WHERE (CAST(:pid AS text) IS NULL OR a.project_id = :pid)
+                  AND (CAST(:status AS text) IS NULL OR a.status = :status)
+                  AND (CAST(:gid AS text) IS NULL OR a.group_id = :gid)
                 ORDER BY a.updated_at DESC LIMIT 200
                 """)
                 .param("pid", projectId).param("status", status).param("gid", groupId)

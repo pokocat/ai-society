@@ -45,7 +45,7 @@ public class TicketController {
                         FROM ticket t
                         LEFT JOIN member m ON m.id = t.member_id
                         LEFT JOIN employee e ON e.id = t.assignee_employee_id
-                        WHERE (:status IS NULL OR t.status = :status) AND (:type IS NULL OR t.ticket_type = :type)
+                        WHERE (CAST(:status AS text) IS NULL OR t.status = :status) AND (CAST(:type AS text) IS NULL OR t.ticket_type = :type)
                         ORDER BY t.status = '已解决', CASE t.priority WHEN '高' THEN 0 WHEN '中' THEN 1 ELSE 2 END, t.created_at
                         LIMIT 200
                         """)

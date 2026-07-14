@@ -30,10 +30,10 @@ public class EmployeeController {
     public ApiResponse<List<Map<String, Object>>> list(@RequestParam(required = false) String jobRole) {
         return ApiResponse.ok(db.sql("""
                         SELECT e.*,
-                               (SELECT array_agg(DISTINCT gs.group_id) FROM group_staffing gs WHERE gs.employee_id = e.id) AS serving_groups,
-                               (SELECT array_agg(DISTINCT a.id) FROM account a WHERE a.user_employee_id = e.id) AS using_accounts
+                               (SELECT COALESCE(jsonb_agg(DISTINCT gs.group_id), '[]'::jsonb) FROM group_staffing gs WHERE gs.employee_id = e.id) AS serving_groups,
+                               (SELECT COALESCE(jsonb_agg(DISTINCT a.id), '[]'::jsonb) FROM account a WHERE a.user_employee_id = e.id) AS using_accounts
                         FROM employee e
-                        WHERE (:role IS NULL OR e.job_role = :role)
+                        WHERE (CAST(:role AS text) IS NULL OR e.job_role = :role)
                         ORDER BY e.emp_no
                         """)
                 .param("role", jobRole)

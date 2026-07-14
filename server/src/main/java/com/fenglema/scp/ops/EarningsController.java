@@ -48,8 +48,8 @@ public class EarningsController {
         return ApiResponse.ok(db.sql("""
                         SELECT o.*, m.member_no, m.name AS member_name
                         FROM order_reference o LEFT JOIN member m ON m.id = o.member_id
-                        WHERE (:status IS NULL OR o.status = :status)
-                          AND (:mid IS NULL OR o.member_id = :mid)
+                        WHERE (CAST(:status AS text) IS NULL OR o.status = :status)
+                          AND (CAST(:mid AS text) IS NULL OR o.member_id = :mid)
                         ORDER BY o.external_time DESC LIMIT 200
                         """)
                 .param("status", status).param("mid", memberId)
@@ -63,7 +63,7 @@ public class EarningsController {
         long memberId = memberService.idOf(memberNo);
         Map<String, Object> snapshot = db.sql("""
                         SELECT * FROM earnings_snapshot
-                        WHERE member_id = :mid AND ((:pid IS NULL AND project_id IS NULL) OR project_id = :pid)
+                        WHERE member_id = :mid AND ((CAST(:pid AS text) IS NULL AND project_id IS NULL) OR project_id = :pid)
                         """)
                 .param("mid", memberId).param("pid", projectId)
                 .query(Rows.MAP).optional()

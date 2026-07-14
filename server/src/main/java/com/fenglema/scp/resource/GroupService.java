@@ -37,10 +37,10 @@ public class GroupService {
                 LEFT JOIN employee ee ON ee.id = ecs.employee_id
                 LEFT JOIN group_staffing pcs ON pcs.group_id = g.id AND pcs.role = '个微客服' AND pcs.is_primary
                 LEFT JOIN account pa ON pa.id = pcs.account_id
-                WHERE (:pid IS NULL OR g.project_id = :pid)
+                WHERE (CAST(:pid AS text) IS NULL OR g.project_id = :pid)
                   AND (NOT :poolOnly OR g.project_id IS NULL)
-                  AND (:status IS NULL OR g.status = :status)
-                  AND (:type IS NULL OR g.group_type = :type)
+                  AND (CAST(:status AS text) IS NULL OR g.status = :status)
+                  AND (CAST(:type AS text) IS NULL OR g.group_type = :type)
                 ORDER BY g.id
                 """)
                 .param("pid", projectId).param("poolOnly", poolOnly)

@@ -41,7 +41,7 @@ public class InviteCodeController {
         var current = db.sql("""
                         SELECT * FROM invite_code
                         WHERE owner_member_id = :mid
-                          AND ((:scope IS NULL AND project_scope IS NULL) OR project_scope = :scope)
+                          AND ((CAST(:scope AS text) IS NULL AND project_scope IS NULL) OR project_scope = :scope)
                           AND valid_until > now()
                         ORDER BY created_at DESC LIMIT 1
                         """)
@@ -63,7 +63,7 @@ public class InviteCodeController {
     private Map<String, Object> rotateInternal(long memberId, String projectScope) {
         Long previous = db.sql("""
                         SELECT id FROM invite_code WHERE owner_member_id = :mid
-                          AND ((:scope IS NULL AND project_scope IS NULL) OR project_scope = :scope)
+                          AND ((CAST(:scope AS text) IS NULL AND project_scope IS NULL) OR project_scope = :scope)
                         ORDER BY created_at DESC LIMIT 1
                         """)
                 .param("mid", memberId).param("scope", projectScope)

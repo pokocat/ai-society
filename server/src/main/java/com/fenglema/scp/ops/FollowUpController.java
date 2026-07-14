@@ -40,7 +40,7 @@ public class FollowUpController {
         return ApiResponse.ok(db.sql("""
                         SELECT f.*, m.member_no, m.name AS member_name
                         FROM follow_up f JOIN member m ON m.id = f.member_id
-                        WHERE (:q IS NULL OR f.queue = :q) AND (:pid IS NULL OR f.project_id = :pid)
+                        WHERE (CAST(:q AS text) IS NULL OR f.queue = :q) AND (CAST(:pid AS text) IS NULL OR f.project_id = :pid)
                         ORDER BY f.done, CASE f.priority WHEN '非常重要' THEN 0 WHEN '重要' THEN 1 ELSE 2 END, f.created_at DESC
                         LIMIT 200
                         """)

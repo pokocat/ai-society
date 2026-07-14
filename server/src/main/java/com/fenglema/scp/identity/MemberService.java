@@ -44,10 +44,10 @@ public class MemberService {
                 LEFT JOIN referral_relation rr ON rr.member_id = m.id
                 LEFT JOIN member ref ON ref.id = rr.referrer_id
                 WHERE m.merged_into IS NULL
-                  AND (:kw IS NULL OR m.name ILIKE '%' || :kw || '%' OR m.phone LIKE '%' || :kw || '%' OR m.member_no ILIKE '%' || :kw || '%')
-                  AND (:pid IS NULL OR EXISTS (SELECT 1 FROM member_project_identity mpi
+                  AND (CAST(:kw AS text) IS NULL OR m.name ILIKE '%' || :kw || '%' OR m.phone LIKE '%' || :kw || '%' OR m.member_no ILIKE '%' || :kw || '%')
+                  AND (CAST(:pid AS text) IS NULL OR EXISTS (SELECT 1 FROM member_project_identity mpi
                         WHERE mpi.member_id = m.id AND mpi.project_id = :pid))
-                  AND (:identity IS NULL OR EXISTS (SELECT 1 FROM member_project_identity mpi
+                  AND (CAST(:identity AS text) IS NULL OR EXISTS (SELECT 1 FROM member_project_identity mpi
                         WHERE mpi.member_id = m.id AND mpi.identity = :identity))
                 ORDER BY m.id
                 """)

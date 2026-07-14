@@ -33,8 +33,8 @@ public class ApprovalService {
     public List<Map<String, Object>> list(String type, String status) {
         return db.sql("""
                 SELECT * FROM approval
-                WHERE (:type IS NULL OR approval_type = :type)
-                  AND (:status IS NULL OR status = :status)
+                WHERE (CAST(:type AS text) IS NULL OR approval_type = :type)
+                  AND (CAST(:status AS text) IS NULL OR status = :status)
                 ORDER BY urgent DESC, created_at DESC LIMIT 200
                 """)
                 .param("type", type).param("status", status)

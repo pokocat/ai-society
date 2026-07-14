@@ -38,17 +38,17 @@ public class AccountService {
         return db.sql("""
                 SELECT a.*,
                        ce.name AS custodian_name, ue.name AS user_name,
-                       (SELECT array_agg(aa.project_id) FROM account_assignment aa
+                       (SELECT COALESCE(jsonb_agg(aa.project_id), '[]'::jsonb) FROM account_assignment aa
                          WHERE aa.account_id = a.id AND NOT aa.revoked) AS project_ids,
                        (SELECT count(*) FROM group_staffing gs
                          WHERE gs.account_id = a.id AND gs.role = '个微客服') AS staffing_group_count
                 FROM account a
                 LEFT JOIN employee ce ON ce.id = a.custodian_employee_id
                 LEFT JOIN employee ue ON ue.id = a.user_employee_id
-                WHERE (:type IS NULL OR a.account_type = :type)
-                  AND (:status IS NULL OR a.status = :status)
-                  AND (:kw IS NULL OR a.name ILIKE '%' || :kw || '%' OR a.identifier ILIKE '%' || :kw || '%')
-                  AND (:pid IS NULL OR EXISTS (SELECT 1 FROM account_assignment aa
+                WHERE (CAST(:type AS text) IS NULL OR a.account_type = :type)
+                  AND (CAST(:status AS text) IS NULL OR a.status = :status)
+                  AND (CAST(:kw AS text) IS NULL OR a.name ILIKE '%' || :kw || '%' OR a.identifier ILIKE '%' || :kw || '%')
+                  AND (CAST(:pid AS text) IS NULL OR EXISTS (SELECT 1 FROM account_assignment aa
                         WHERE aa.account_id = a.id AND aa.project_id = :pid AND NOT aa.revoked))
                 ORDER BY a.id
                 """)
