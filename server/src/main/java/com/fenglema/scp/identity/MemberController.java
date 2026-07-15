@@ -2,6 +2,7 @@ package com.fenglema.scp.identity;
 
 import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.common.Perm;
+import com.fenglema.scp.common.UserContext;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,12 +36,14 @@ public class MemberController {
     @GetMapping("/{memberNo}/profile")
     @Perm(module = "users")
     public ApiResponse<Map<String, Object>> profile(@PathVariable String memberNo) {
+        UserContext.assertMemberAccess(memberNo);
         return ApiResponse.ok(service.profile(memberNo));
     }
 
     @GetMapping("/{memberNo}/timeline")
     @Perm(module = "users")
     public ApiResponse<List<Map<String, Object>>> timeline(@PathVariable String memberNo) {
+        UserContext.assertMemberAccess(memberNo);
         return ApiResponse.ok(service.timeline(memberNo));
     }
 

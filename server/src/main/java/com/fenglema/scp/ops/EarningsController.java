@@ -61,6 +61,7 @@ public class EarningsController {
     @Perm(module = "users")
     public ApiResponse<Map<String, Object>> earnings(@RequestParam String memberNo,
                                                      @RequestParam(required = false) String projectId) {
+        UserContext.assertMemberAccess(memberNo);
         long memberId = memberService.idOf(memberNo);
         Map<String, Object> snapshot = db.sql("""
                         SELECT * FROM earnings_snapshot
@@ -88,6 +89,7 @@ public class EarningsController {
     @Transactional
     public ApiResponse<Map<String, Object>> withdraw(@RequestBody WithdrawalReq req,
                                                      @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        UserContext.assertMemberAccess(req.memberNo());
         if (!idempotency.tryRegister(key, "/withdrawals")) {
             return ApiResponse.ok(Map.of("result", "重复提交，已按首次受理", "idempotent", true));
         }

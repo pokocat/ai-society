@@ -4,6 +4,7 @@ import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.common.BusinessException;
 import com.fenglema.scp.common.Perm;
 import com.fenglema.scp.common.Rows;
+import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.identity.MemberService;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class MemberTaskController {
     @GetMapping
     @Perm(module = "users")
     public ApiResponse<List<Map<String, Object>>> list(@RequestParam String memberNo) {
+        UserContext.assertMemberAccess(memberNo);
         long memberId = memberService.idOf(memberNo);
         return ApiResponse.ok(db.sql("SELECT * FROM member_task WHERE member_id = :mid ORDER BY done, created_at")
                 .param("mid", memberId).query(Rows.MAP).list());

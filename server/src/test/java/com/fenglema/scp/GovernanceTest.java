@@ -24,6 +24,18 @@ class GovernanceTest extends TestSupport {
     @Autowired
     ApprovalService approvalService;
 
+    /** 直调控制器绕过了拦截器,需手动置登录态(创始人 ALL 范围,通过 IDOR 兜底)。 */
+    @org.junit.jupiter.api.BeforeEach
+    void login() {
+        com.fenglema.scp.common.UserContext.set(
+                new com.fenglema.scp.common.CurrentUser(1L, "boss", "王总·创始人", "founder", "ALL", null));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void logout() {
+        com.fenglema.scp.common.UserContext.clear();
+    }
+
     private String memberWithBalance(String balance) {
         String memberNo = ingestMember("提现" + uid(), "北京", "flm-membership", "运营商", null);
         syncService.ingestEarnings("mock-project-system", memberNo, null,
@@ -107,6 +119,25 @@ class GovernanceTest extends TestSupport {
         int count = db.sql("SELECT count(*) FROM withdrawal_request WHERE member_id = :m")
                 .param("m", memberIdOf(memberNo)).query(Integer.class).single();
         assertEquals(1, count, "超额的第二单不得入库");
+    }
+
+    @Test
+    void selfScopeUserCannotAccessOtherMembers() {
+        // IDOR 回归：dataScope=SELF 的会员/运营商只能访问自己的 memberNo
+        try {
+            com.fenglema.scp.common.UserContext.set(
+                    new com.fenglema.scp.common.CurrentUser(2L, "liyuntian", "李云天", "member", "SELF", "U-100024"));
+            assertThrows(BusinessException.class,
+                    () -> com.fenglema.scp.common.UserContext.assertMemberAccess("U-100086"),
+                    "SELF 用户访问他人 memberNo 必须被拒");
+            com.fenglema.scp.common.UserContext.assertMemberAccess("U-100024"); // 自己 → 放行
+            // ALL 范围（创始人）→ 任意放行
+            com.fenglema.scp.common.UserContext.set(
+                    new com.fenglema.scp.common.CurrentUser(1L, "boss", "王总", "founder", "ALL", null));
+            com.fenglema.scp.common.UserContext.assertMemberAccess("U-100086");
+        } finally {
+            com.fenglema.scp.common.UserContext.clear();
+        }
     }
 
     @Test
