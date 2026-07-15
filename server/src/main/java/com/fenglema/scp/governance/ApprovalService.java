@@ -110,21 +110,11 @@ public class ApprovalService {
         }
     }
 
-    /** 超容量分配覆盖：同意→放行（待确认→待加好友/待邀请由 confirm 逻辑重放）；拒绝→人工取消。 */
+    /** 超容量分配覆盖：同意→执行(预占+建任务+推进,见 executeApprovedOverride)；拒绝→人工取消。 */
     private void onOverrideAssignDecision(long assignmentId, boolean approve) {
         if (approve) {
-            // 审批通过后直接按好友分支推进（容量校验已被审批覆盖）
-            Map<String, Object> a = db.sql("SELECT * FROM member_group_assignment WHERE id = :id FOR UPDATE")
-                    .param("id", assignmentId).query(Rows.MAP).single();
-            long memberId = ((Number) a.get("member_id")).longValue();
-            String wechatId = (String) a.get("personal_wechat_id");
-            boolean isFriend = !db.sql("""
-                            SELECT 1 FROM member_wechat_relation
-                            WHERE member_id = :m AND account_id = :a AND relation = '好友'
-                            """)
-                    .param("m", memberId).param("a", wechatId)
-                    .query(Rows.MAP).list().isEmpty();
-            assignmentService.transition(assignmentId, "待确认", isFriend ? "待邀请" : "待加好友", null);
+            // 审批通过 → 补齐 confirm 省略的预占与建任务(容量已被审批覆盖),否则分配无任务可回填而永久卡死
+            assignmentService.executeApprovedOverride(assignmentId);
         } else {
             assignmentService.transition(assignmentId, "待确认", "人工取消", "超容量分配审批被拒绝");
         }

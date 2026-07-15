@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fenglema.scp.common.AuditService;
 import com.fenglema.scp.common.BusinessException;
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.identity.MemberService;
@@ -246,6 +247,61 @@ public class AssignmentService {
                 "isFriend", isFriend, "groupId", groupId, "personalWechatId", personalWechatId);
     }
 
+    /**
+     * 超容量分配审批通过后的执行段（修复：原 onOverrideAssignDecision 只迁移状态、不预占也不建任务，
+     * 导致分配永久卡在「待加好友」无任务可回填）。此处补齐 confirm 正常路径省略的 预占 + 建任务，
+     * 容量校验已由审批显式覆盖,故不再复核群容量。
+     */
+    @Transactional
+    public Map<String, Object> executeApprovedOverride(long assignmentId) {
+        Map<String, Object> a = db.sql("SELECT * FROM member_group_assignment WHERE id = :id FOR UPDATE")
+                .param("id", assignmentId).query(Rows.MAP).single();
+        if (!"待确认".equals(a.get("status"))) {
+            throw BusinessException.conflict("分配状态「" + a.get("status") + "」非待确认，不可执行超容量放行");
+        }
+        long memberId = ((Number) a.get("member_id")).longValue();
+        String projectId = (String) a.get("project_id");
+        String groupId = (String) a.get("group_id");
+        String personalWechatId = (String) a.get("personal_wechat_id");
+        boolean isFriend = !db.sql("""
+                        SELECT 1 FROM member_wechat_relation
+                        WHERE member_id = :m AND account_id = :a AND relation = '好友'
+                        """)
+                .param("m", memberId).param("a", personalWechatId).query(Rows.MAP).list().isEmpty();
+        if (!isFriend) {
+            reserve("个微好友额度", personalWechatId, assignmentId);
+        }
+        reserve("群容量", groupId, assignmentId);
+        String next;
+        Long taskId;
+        if (isFriend) {
+            next = "待邀请";
+            taskId = createTask("邀请入群", memberId, projectId, groupId, personalWechatId, assignmentId);
+            db.sql("UPDATE member_group_assignment SET invite_task_id = :t WHERE id = :id")
+                    .param("t", taskId).param("id", assignmentId).update();
+        } else {
+            next = "待加好友";
+            taskId = createTask("加好友", memberId, projectId, groupId, personalWechatId, assignmentId);
+            db.sql("UPDATE member_group_assignment SET friend_task_id = :t WHERE id = :id")
+                    .param("t", taskId).param("id", assignmentId).update();
+        }
+        db.sql("UPDATE member_group_assignment SET status = :s, confirmed_at = now(), updated_at = now() WHERE id = :id")
+                .param("s", next).param("id", assignmentId).update();
+        audit.log("member_group_assignment", String.valueOf(assignmentId), "超容量分配审批通过·执行",
+                Map.of("status", "待确认"), Map.of("status", next), projectId, null, null);
+        return Map.of("assignmentId", assignmentId, "status", next, "taskId", taskId, "isFriend", isFriend);
+    }
+
+    /** 退群处理（修复：webhook quit 原来只减人数不刷新群状态，导致满群退人后永不回收、被推荐引擎永久剔除）。 */
+    @Transactional
+    public Map<String, Object> handleQuit(long assignmentId, String groupId) {
+        transition(assignmentId, "已入群", "已退群", "群成员退群事件");
+        db.sql("UPDATE community_group SET member_count = GREATEST(member_count - 1, 0), updated_at = now() WHERE id = :g")
+                .param("g", groupId).update();
+        groupService.refreshStatus(groupId);
+        return Map.of("assignmentId", assignmentId, "status", "已退群", "groupId", groupId);
+    }
+
     /** 状态推进（校验合法迁移）。 */
     @Transactional
     public void transition(long assignmentId, String expectFrom, String to, String failReason) {
@@ -336,11 +392,22 @@ public class AssignmentService {
                 .query(Rows.MAP).list();
     }
 
-    /** 过期预占释放（SPEC §7.2 预占 TTL）。 */
+    /**
+     * 过期预占释放（SPEC §7.2 预占 TTL）。修复：只回收「孤儿或已终结分配」的过期预占;
+     * 仍在途的分配(待匹配→已邀请)其预占代表真实占位,不能在 TTL 到点时被释放,
+     * 否则延迟入群会击穿 target_capacity(§16-4)。在途分配最终会 confirmJoin(消耗) 或 transition 失败(释放)。
+     */
     @Scheduled(fixedDelay = 60_000)
     @Transactional
     public void releaseExpiredReservations() {
-        db.sql("UPDATE capacity_reservation SET status = '已释放' WHERE status = '生效' AND expires_at <= now()")
+        db.sql("""
+                UPDATE capacity_reservation r SET status = '已释放'
+                WHERE r.status = '生效' AND r.expires_at <= now()
+                  AND (r.assignment_id IS NULL OR NOT EXISTS (
+                        SELECT 1 FROM member_group_assignment a
+                        WHERE a.id = r.assignment_id
+                          AND a.status IN ('待匹配','已推荐','待确认','待加好友','已加好友','待邀请','已邀请')))
+                """)
                 .update();
     }
 
@@ -382,8 +449,10 @@ public class AssignmentService {
                         """)
                 .param("title", "超容量分配审批：群 " + groupId + "（" + current + "+" + reserved + "/" + capacity + "）")
                 .param("submitter", operatorName())
-                .param("detail", "{\"assignmentId\":" + assignmentId + ",\"groupId\":\"" + groupId
-                        + "\",\"原因\":\"" + (reason == null ? "" : reason) + "\"}")
+                .param("detail", Json.obj(
+                        "assignmentId", assignmentId,
+                        "groupId", groupId,
+                        "原因", reason == null ? "" : reason))
                 .param("ref", String.valueOf(assignmentId))
                 .query(Long.class).single();
     }

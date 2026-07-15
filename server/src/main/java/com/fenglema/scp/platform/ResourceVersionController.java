@@ -2,6 +2,7 @@ package com.fenglema.scp.platform;
 
 import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.common.BusinessException;
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Perm;
 import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.common.UserContext;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -138,7 +140,7 @@ public class ResourceVersionController {
                 .param("title", "发布项目 " + projectId + " 资源方案 v" + versionId)
                 .param("submitter", UserContext.get().displayName())
                 .param("pid", projectId)
-                .param("detail", "{\"versionId\":" + versionId + "}")
+                .param("detail", Json.obj("versionId", versionId))
                 .param("ref", String.valueOf(versionId))
                 .query(Long.class).single();
         db.sql("UPDATE project_resource_version SET approval_id = :aid WHERE id = :id")
@@ -163,17 +165,17 @@ public class ResourceVersionController {
         throw BusinessException.conflict("资源方案版本状态「" + status + "」不允许该操作");
     }
 
+    /** 群名/账号名等用户可控字段含引号时,字符串拼 JSON 会破坏结构导致方案永远校验不过(§4)——用 ObjectMapper。 */
     private String toJsonArray(List<Map<String, Object>> issues) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < issues.size(); i++) {
-            Map<String, Object> issue = issues.get(i);
-            if (i > 0) {
-                sb.append(',');
-            }
-            sb.append("{\"objectId\":\"").append(issue.get("object_id"))
-              .append("\",\"name\":\"").append(issue.get("name"))
-              .append("\",\"issue\":\"").append(issue.get("issue")).append("\"}");
-        }
-        return sb.append(']').toString();
+        List<Map<String, Object>> normalized = issues.stream()
+                .map(issue -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("objectId", issue.get("object_id"));
+                    m.put("name", issue.get("name"));
+                    m.put("issue", issue.get("issue"));
+                    return m;
+                })
+                .toList();
+        return Json.write(normalized);
     }
 }

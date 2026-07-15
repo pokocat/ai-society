@@ -2,6 +2,7 @@ package com.fenglema.scp.resource;
 
 import com.fenglema.scp.common.AuditService;
 import com.fenglema.scp.common.BusinessException;
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -145,7 +146,9 @@ public class AccountService {
                         """)
                 .param("title", account.get("name") + " 账号交接")
                 .param("submitter", "系统")
-                .param("detail", "{\"账号\":\"" + account.get("identifier") + "\",\"原因\":\"" + (reason == null ? "" : reason) + "\"}")
+                .param("detail", Json.obj(
+                        "账号", account.get("identifier"),
+                        "原因", reason == null ? "" : reason))
                 .param("ref", String.valueOf(handoverId))
                 .query(Long.class).single();
         db.sql("UPDATE account_handover SET approval_id = :apid WHERE id = :id")

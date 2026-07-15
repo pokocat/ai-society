@@ -58,10 +58,7 @@ public class WebhookController {
                     .param("m", memberId).param("g", event.groupId())
                     .query(Long.class).optional()
                     .orElseThrow(() -> BusinessException.conflict("未找到已入群记录"));
-            assignmentService.transition(assignmentId, "已入群", "已退群", "群成员退群事件");
-            db.sql("UPDATE community_group SET member_count = GREATEST(member_count - 1, 0) WHERE id = :g")
-                    .param("g", event.groupId()).update();
-            return ApiResponse.ok(Map.of("assignmentId", assignmentId, "status", "已退群"));
+            return ApiResponse.ok(assignmentService.handleQuit(assignmentId, event.groupId()));
         }
         throw new BusinessException("不支持的事件类型：" + event.eventType());
     }

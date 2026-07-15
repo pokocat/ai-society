@@ -1,5 +1,6 @@
 package com.fenglema.scp.sync;
 
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.identity.MemberService;
 import com.fenglema.scp.identity.ReferralService;
@@ -104,7 +105,7 @@ public class SyncService {
             return Map.of("memberNo", memberNo, "memberId", memberId, "created", created,
                     "referral", referralNote == null ? "无" : referralNote, "syncJobId", jobId);
         } catch (RuntimeException e) {
-            recordError(jobId, "{\"member\":\"" + in.name() + "\"}", e.getMessage());
+            recordError(jobId, Json.obj("member", in.name()), e.getMessage());
             finishJob(jobId, 1, 0, 1);
             throw e;
         }

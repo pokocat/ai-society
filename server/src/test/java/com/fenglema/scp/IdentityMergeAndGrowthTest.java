@@ -91,4 +91,31 @@ class IdentityMergeAndGrowthTest extends TestSupport {
         assertTrue(((java.util.List<?>) db.sql("SELECT * FROM member_timeline WHERE member_id = :m")
                 .param("m", memberIdOf(memberNo)).query(Rows.MAP).list()).size() >= 1, "进线即有时间线");
     }
+
+    @Test
+    void mergePreservesProfileBlocksAndChain() {
+        // H2 回归：并档必须迁移全部档案块与关系链，原来只迁 3 表致订单/积分/群/下级整段丢失
+        String winner = ingestMember("主档" + uid(), "北京", "flm-membership", "PRO会员", null);
+        String loser = ingestMember("败档" + uid(), "上海", "experience-camp", "游客", null);
+        long wid = memberIdOf(winner), lid = memberIdOf(loser);
+        // 败档挂：订单、积分、一个下级
+        db.sql("""
+                INSERT INTO order_reference (external_order_no, source_system, member_id, product_name, amount, status, external_time)
+                VALUES (:no, 'test', :l, '年卡', 2480, '已完成', now())
+                """).param("no", "O-" + uid()).param("l", lid).update();
+        db.sql("INSERT INTO points_ledger (member_id, delta, reason) VALUES (:l, 500, 'test')").param("l", lid).update();
+        String down = ingestMember("下级" + uid(), "上海", "experience-camp", "游客", loser);
+
+        memberService.merge(wid, lid, "test-merge");
+
+        Map<String, Object> profile = memberService.profile(winner);
+        assertTrue(!((java.util.List<?>) profile.get("orders")).isEmpty(), "并档后主档档案应含败档订单（H2）");
+        assertTrue(((Number) profile.get("points")).longValue() >= 500, "并档后主档应含败档积分");
+        Long downRef = db.sql("SELECT referrer_id FROM referral_relation WHERE member_id = :d")
+                .param("d", memberIdOf(down)).query(Long.class).single();
+        assertEquals(wid, downRef, "败档的下级关系链应 re-point 到主档（H2 关系链）");
+        // 败档已隐藏（merged_into 指向主档）
+        Long mergedInto = db.sql("SELECT merged_into FROM member WHERE id = :l").param("l", lid).query(Long.class).single();
+        assertEquals(wid, mergedInto);
+    }
 }

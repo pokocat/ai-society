@@ -2,6 +2,7 @@ package com.fenglema.scp.governance;
 
 import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.common.BusinessException;
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Perm;
 import com.fenglema.scp.common.Rows;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -74,7 +75,7 @@ public class RiskController {
                             RETURNING id
                             """)
                     .param("title", "风险处置审批：" + risk.get("title"))
-                    .param("detail", "{\"riskId\":" + id + ",\"类型\":\"" + risk.get("risk_type") + "\"}")
+                    .param("detail", Json.obj("riskId", id, "类型", risk.get("risk_type")))
                     .query(Long.class).single();
             db.sql("UPDATE risk_event SET converted_approval_id = :a, status = '处理中' WHERE id = :id")
                     .param("a", approvalId).param("id", id).update();

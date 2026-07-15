@@ -96,6 +96,20 @@ class GovernanceTest extends TestSupport {
     }
 
     @Test
+    void inFlightWithdrawalsCannotExceedBalance() {
+        // H3 回归：多张待审提现叠加不得超过可提余额（原来各自 ≤ 余额即放行，可超额批准致镜像为负）
+        String memberNo = memberWithBalance("800");
+        earningsController.withdraw(
+                new EarningsController.WithdrawalReq(memberNo, new BigDecimal("500"), "支付宝", "a@b.com"), "wd-" + uid());
+        assertThrows(BusinessException.class, () -> earningsController.withdraw(
+                new EarningsController.WithdrawalReq(memberNo, new BigDecimal("500"), "支付宝", "a@b.com"), "wd-" + uid()),
+                "在途 500 + 本单 500 > 余额 800，第二单必须被拒");
+        int count = db.sql("SELECT count(*) FROM withdrawal_request WHERE member_id = :m")
+                .param("m", memberIdOf(memberNo)).query(Integer.class).single();
+        assertEquals(1, count, "超额的第二单不得入库");
+    }
+
+    @Test
     void auditLogIsAppendOnly() {
         db.sql("""
                 INSERT INTO audit_log (object_type, object_id, action, operator) VALUES ('test', :id, '测试', '测试')

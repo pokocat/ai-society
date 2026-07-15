@@ -180,6 +180,9 @@ public class GroupService {
                     .param("acc", req.wecomAccountId()).update();
         }
         if (req.personalWechatId() != null) {
+            // 换绑前先取旧个微,换绑后两个账号都要重算负载(修复:原来只重算新账号,旧账号服务群数虚高、对账打破)
+            String oldPersonal = db.sql("SELECT account_id FROM group_staffing WHERE group_id = :gid AND role = '个微客服' AND is_primary")
+                    .param("gid", groupId).query(String.class).optional().orElse(null);
             db.sql("DELETE FROM group_staffing WHERE group_id = :gid AND role = '个微客服' AND is_primary")
                     .param("gid", groupId).update();
             db.sql("""
@@ -188,6 +191,9 @@ public class GroupService {
                     """)
                     .param("gid", groupId).param("acc", req.personalWechatId()).update();
             recalcWechatLoad(req.personalWechatId());
+            if (oldPersonal != null && !oldPersonal.equals(req.personalWechatId())) {
+                recalcWechatLoad(oldPersonal);
+            }
         }
         refreshStatus(groupId);
         audit.log("group_staffing", groupId, "服务编组变更");

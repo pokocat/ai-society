@@ -156,15 +156,54 @@ public class MemberService {
                 """)
                 .param("w", winner).param("l", loser).param("on", matchedOn)
                 .param("op", "系统").update();
+        // 无唯一约束的子表：整体 re-point（修复:原来只迁 3 张表,档案 6 块与关系链整段丢失）。
+        // 逐条显式 UPDATE(不拼表名,遵守 SQL 护栏 §1/§2)。
+        db.sql("UPDATE member_timeline SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE order_reference SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE follow_up SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE ticket SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE points_ledger SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE growth_ledger SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE member_task SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE withdrawal_request SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE member_identity_history SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
         db.sql("UPDATE member_identifier SET member_id = :w WHERE member_id = :l")
                 .param("w", winner).param("l", loser).update();
+        db.sql("UPDATE invite_code SET owner_member_id = :w WHERE owner_member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE attribution_log SET new_member_id = :w WHERE new_member_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE attribution_log SET referrer_member_id = :w WHERE referrer_member_id = :l").param("w", winner).param("l", loser).update();
+        // 有唯一约束的子表：仅迁不冲突的行,冲突则保留主档已有（避免破坏 UNIQUE/部分唯一索引）
         db.sql("""
                 UPDATE member_project_identity SET member_id = :w WHERE member_id = :l
-                  AND NOT EXISTS (SELECT 1 FROM member_project_identity x
-                                  WHERE x.member_id = :w AND x.project_id = member_project_identity.project_id)
-                """)
-                .param("w", winner).param("l", loser).update();
-        db.sql("UPDATE member_timeline SET member_id = :w WHERE member_id = :l").param("w", winner).param("l", loser).update();
+                  AND NOT EXISTS (SELECT 1 FROM member_project_identity x WHERE x.member_id = :w AND x.project_id = member_project_identity.project_id)
+                """).param("w", winner).param("l", loser).update();
+        db.sql("""
+                UPDATE earnings_snapshot SET member_id = :w WHERE member_id = :l
+                  AND NOT EXISTS (SELECT 1 FROM earnings_snapshot x WHERE x.member_id = :w
+                                  AND x.project_id IS NOT DISTINCT FROM earnings_snapshot.project_id)
+                """).param("w", winner).param("l", loser).update();
+        db.sql("""
+                UPDATE member_wechat_relation SET member_id = :w WHERE member_id = :l
+                  AND NOT EXISTS (SELECT 1 FROM member_wechat_relation x WHERE x.member_id = :w AND x.account_id = member_wechat_relation.account_id)
+                """).param("w", winner).param("l", loser).update();
+        // 入群分配：迁移非「已入群」冲突的记录（同会员同群已入群唯一）
+        db.sql("""
+                UPDATE member_group_assignment SET member_id = :w WHERE member_id = :l
+                  AND NOT (status = '已入群' AND EXISTS (SELECT 1 FROM member_group_assignment x
+                           WHERE x.member_id = :w AND x.group_id = member_group_assignment.group_id AND x.status = '已入群'))
+                """).param("w", winner).param("l", loser).update();
+        // 关系链：败档的下级边 lv1/lv2/lv3/referrer 指针 re-point 到主档
+        db.sql("UPDATE referral_relation SET referrer_id = :w WHERE referrer_id = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE referral_relation SET lv1_parent = :w WHERE lv1_parent = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE referral_relation SET lv2_parent = :w WHERE lv2_parent = :l").param("w", winner).param("l", loser).update();
+        db.sql("UPDATE referral_relation SET lv3_parent = :w WHERE lv3_parent = :l").param("w", winner).param("l", loser).update();
+        // 败档自身的推荐关系行：主档无上级时继承（member_id 是 PK，冲突则保留主档的）
+        db.sql("""
+                UPDATE referral_relation SET member_id = :w WHERE member_id = :l
+                  AND NOT EXISTS (SELECT 1 FROM referral_relation x WHERE x.member_id = :w)
+                  AND referrer_id <> :w
+                """).param("w", winner).param("l", loser).update();
+        db.sql("DELETE FROM referral_relation WHERE member_id = :l").param("l", loser).update();
         db.sql("UPDATE member SET merged_into = :w, updated_at = now() WHERE id = :l").param("w", winner).param("l", loser).update();
         String winnerNo = db.sql("SELECT member_no FROM member WHERE id = :id").param("id", winner).query(String.class).single();
         appendTimeline(winner, null, "合并", "统一会员合并（命中 " + matchedOn + "）", "系统");

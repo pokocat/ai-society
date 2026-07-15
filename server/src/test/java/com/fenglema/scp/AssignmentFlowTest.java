@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,5 +114,82 @@ class AssignmentFlowTest extends TestSupport {
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> assignmentService.recommend(memberNo, "flm-membership"));
         assertTrue(ex.getMessage().contains("进行中"));
+    }
+
+    @Autowired
+    com.fenglema.scp.governance.ApprovalService approvalService;
+
+    @Test
+    void overrideApprovalActuallyExecutesReserveAndTask() {
+        // H1 回归：超容量覆盖审批通过后必须真正 预占+建任务+推进，否则分配永久卡死无任务可回填
+        String fullGroup = createServiceableGroup("北京", "PRO会员群", 1, 1);   // 1/1 已满（覆盖目标）
+        String recGroup = createServiceableGroup("北京", "PRO会员群", 100, 0);  // 推荐群（非满）
+        String memberNo = ingestMember("超容量" + uid(), "北京", "flm-membership", "PRO会员", null);
+        Long aid = db.sql("""
+                        INSERT INTO member_group_assignment (member_id, project_id, group_id, status, assign_way, recommended_at)
+                        VALUES (:m, 'flm-membership', :g, '已推荐', 'AI推荐', now()) RETURNING id
+                        """)
+                .param("m", memberIdOf(memberNo)).param("g", recGroup).query(Long.class).single();
+
+        // 人工改选满群 fullGroup（≠推荐群）+ 覆盖原因 → 触发超容量覆盖审批
+        Map<String, Object> r = assignmentService.confirm(aid, fullGroup, "VIP 插队，已与负责人确认");
+        assertEquals("待确认", r.get("status"), "满群+覆盖原因应进审批");
+        long approvalId = ((Number) r.get("approvalId")).longValue();
+
+        approvalService.decide(approvalId, true, "同意超容量");
+        Map<String, Object> a = assignmentService.get(aid);
+        assertEquals("待加好友", a.get("status"), "审批通过后应推进到待加好友");
+        assertNotNull(a.get("friend_task_id"), "审批通过后必须已建加好友任务（H1 核心）");
+        int resv = db.sql("SELECT count(*) FROM capacity_reservation WHERE assignment_id = :id AND status = '生效'")
+                .param("id", aid).query(Integer.class).single();
+        assertTrue(resv >= 1, "审批通过后必须已预占");
+        // 闭环可继续：回填加好友任务 → 待邀请（证明不再卡死）
+        long ft = ((Number) a.get("friend_task_id")).longValue();
+        taskService.attempt(ft, "成功", null, "k-" + uid());
+        assertEquals("待邀请", assignmentService.get(aid).get("status"));
+    }
+
+    @Test
+    void quitRefreshesGroupStatusSoFullGroupRecovers() {
+        // M1 回归：退群事件必须刷新群状态，否则满群退人后永不回收、被推荐引擎永久剔除
+        String g = createServiceableGroup("北京", "PRO会员群", 1, 1);
+        String memberNo = ingestMember("退群" + uid(), "北京", "flm-membership", "PRO会员", null);
+        Long aid = db.sql("""
+                        INSERT INTO member_group_assignment (member_id, project_id, group_id, status, joined_at)
+                        VALUES (:m, 'flm-membership', :g, '已入群', now()) RETURNING id
+                        """)
+                .param("m", memberIdOf(memberNo)).param("g", g).query(Long.class).single();
+        db.sql("UPDATE community_group SET status = '已满' WHERE id = :g").param("g", g).update();
+
+        assignmentService.handleQuit(aid, g);
+        Map<String, Object> grp = db.sql("SELECT * FROM community_group WHERE id = :g").param("g", g).query(Rows.MAP).single();
+        assertEquals(0, ((Number) grp.get("member_count")).intValue(), "退群后人数 -1");
+        assertNotEquals("已满", grp.get("status"), "退群后状态必须刷新（不再是已满）");
+    }
+
+    @Test
+    void expiredReservationRetainedWhileAssignmentInFlight() {
+        // M5 回归：在途分配的过期预占不得被调度器释放，否则延迟入群击穿 target_capacity
+        String g = createServiceableGroup("北京", "PRO会员群", 100, 0);
+        String memberNo = ingestMember("预占" + uid(), "北京", "flm-membership", "PRO会员", null);
+        Long aid = db.sql("""
+                        INSERT INTO member_group_assignment (member_id, project_id, group_id, status)
+                        VALUES (:m, 'flm-membership', :g, '待加好友') RETURNING id
+                        """)
+                .param("m", memberIdOf(memberNo)).param("g", g).query(Long.class).single();
+        Long rid = db.sql("""
+                        INSERT INTO capacity_reservation (target_type, target_id, amount, assignment_id, status, expires_at)
+                        VALUES ('群容量', :g, 1, :a, '生效', now() - interval '1 minute') RETURNING id
+                        """)
+                .param("g", g).param("a", aid).query(Long.class).single();
+
+        assignmentService.releaseExpiredReservations();
+        assertEquals("生效", db.sql("SELECT status FROM capacity_reservation WHERE id = :id").param("id", rid).query(String.class).single(),
+                "在途分配的过期预占必须保留");
+        // 对照：分配置终态后，过期预占应被回收
+        db.sql("UPDATE member_group_assignment SET status = '人工取消' WHERE id = :id").param("id", aid).update();
+        assignmentService.releaseExpiredReservations();
+        assertEquals("已释放", db.sql("SELECT status FROM capacity_reservation WHERE id = :id").param("id", rid).query(String.class).single(),
+                "分配终结后过期预占应回收");
     }
 }
