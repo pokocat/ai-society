@@ -23,3 +23,18 @@ export interface ResourceRulesRow {
 export function getRules(): Promise<ResourceRulesRow> {
   return request<ResourceRulesRow>("/rules");
 }
+
+export interface UpdateRulesParams {
+  targetGroupSize: number;
+  maxGroupsPerWechat: number;
+  warnFriends: number;
+  hardFriends: number;
+  requireEnterpriseCs: boolean;
+  requirePersonalCs: boolean;
+  blockOverload: boolean;
+  growthPointsPerInvite: number;
+}
+
+export function updateRules(params: UpdateRulesParams): Promise<ResourceRulesRow> {
+  return request<ResourceRulesRow>("/rules", { method: "PUT", body: params });
+}
