@@ -70,6 +70,12 @@ const navGroups = [
       { id: "ecosystem",  label: "生态层级管理", icon: Layers,          badge: null },
     ]
   },
+  {
+    label: "风险中心",
+    items: [
+      { id: "risk",       label: "异常与风险",  icon: AlertTriangle,   badge: null },
+    ]
+  },
 ];
 
 const navItems = navGroups.flatMap(g => g.items);
@@ -165,10 +171,10 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
           </div>
         </div>
 
-        {/* Risk alert */}
-        <div className="mx-3 mt-3 px-2.5 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]" style={{ background: "rgba(255,77,79,0.12)", border: "1px solid rgba(255,77,79,0.32)" }}>
+        {/* Risk alert —— 点击跳转风险中心 */}
+        <div onClick={() => onModuleChange("risk")} className="mx-3 mt-3 px-2.5 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]" style={{ background: "rgba(255,77,79,0.12)", border: "1px solid rgba(255,77,79,0.32)" }}>
           <AlertTriangle size={11} style={{ color: D.danger, flexShrink: 0 }} />
-          <span style={{ color: "#ffb4b5", fontSize: "11px" }}>2 个高风险事项待处理</span>
+          <span style={{ color: "#ffb4b5", fontSize: "11px" }}>高风险事项待处理</span>
         </div>
 
         {/* Nav */}
