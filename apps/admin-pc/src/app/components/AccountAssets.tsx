@@ -1,130 +1,215 @@
-import { useState } from "react";
-import { Search, Plus, AlertTriangle, X, Phone, Mail, MessageCircle, Globe, ChevronDown, Filter, ExternalLink, Upload, CreditCard, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Plus, AlertTriangle, X, Phone, Mail, MessageCircle, Globe, ChevronDown, Filter, ExternalLink, Upload, CreditCard, Eye, EyeOff, CheckCircle, Loader2, Check, ArrowLeftRight } from "lucide-react";
+import { accountsApi, employeesApi, ApiError } from "../../api";
+import type { AccountRow } from "../../api/accounts";
+import type { EmployeeRow } from "../../api/employees";
 
 const S = { surface: "#ffffff", border: "rgba(5,8,5,0.14)", borderLight: "rgba(5,8,5,0.1)", muted: "#68705a", bg: "#ffffff", primary: "#b6ff00", primaryBg: "rgba(182,255,0,0.24)", text: "#050805", textSec: "#2f3a29", surface2: "#f7ffd9" };
 
-// ─── 模拟数据 ───────────────────────────────────────────────
-const phones = [
-  { id: 1, number: "138-0012-3456", carrier: "中国移动", region: "北京市朝阳区",  idOwner: "吴思远", idNumber: "110105198801011234", idFront: true,  idBack: true,  assignedTo: "吴思远", assignedProject: "北京PRO服务",    registrations: ["微信 fengle_bj_01", "支付宝"],           manager: "吴思远",         status: "使用中", risk: "normal",   note: "北京主号" },
-  { id: 2, number: "139-0012-3457", carrier: "中国联通", region: "上海市浦东新区", idOwner: "林小燕", idNumber: "310115199203154321", idFront: true,  idBack: true,  assignedTo: "林小燕", assignedProject: "上海体验官服务",  registrations: ["微信 fengle_sh_01", "抖音 @fenglema_sh"], manager: "林小燕",         status: "使用中", risk: "normal",   note: "上海主号" },
-  { id: 3, number: "138-0012-3458", carrier: "中国移动", region: "广州市天河区",  idOwner: "刘刚",   idNumber: "440106199507223456", idFront: true,  idBack: false, assignedTo: "刘刚",   assignedProject: "广州代理培训",    registrations: ["微信 fengle_gz_01"],                     manager: "刘刚",           status: "异常",   risk: "high",     note: "30天未登录微信，身份证背面未上传" },
-  { id: 4, number: "152-0012-3461", carrier: "中国电信", region: "成都市武侯区",  idOwner: "赵志远", idNumber: "510104199212075678", idFront: true,  idBack: true,  assignedTo: "赵志远", assignedProject: "成都分站",         registrations: ["微信 fengle_cd_01"],                     manager: "赵志远（待交接）", status: "待交接", risk: "warning",  note: "人员离职，待交接" },
-  { id: 5, number: "186-0012-3462", carrier: "中国移动", region: "深圳市南山区",  idOwner: "李梦华", idNumber: "440305199409186789", idFront: true,  idBack: true,  assignedTo: "李梦华", assignedProject: "深圳代理",          registrations: ["微信 fengle_sz_01"],                     manager: "李梦华",         status: "使用中", risk: "normal",   note: "深圳主号" },
-  { id: 6, number: "135-0012-3463", carrier: "中国联通", region: "待分配",        idOwner: "—",      idNumber: "—",                 idFront: false, idBack: false, assignedTo: "—",      assignedProject: "—",                registrations: [],                                        manager: "—",              status: "空闲",   risk: "normal",   note: "备用号，身份证信息待补充" },
-  { id: 7, number: "158-0012-3464", carrier: "中国移动", region: "杭州市西湖区",  idOwner: "陈明",   idNumber: "330106199305280123", idFront: true,  idBack: true,  assignedTo: "陈明",   assignedProject: "杭州分站",          registrations: ["微信 fengle_hz_01"],                     manager: "陈明",           status: "使用中", risk: "normal",   note: "杭州主号" },
-];
+// UI 沿用「异常」文案（后端状态机为「风险」，标红一致）
+const displayStatus = (s: string) => (s === "风险" ? "异常" : s);
+const riskOf = (status: string): "high" | "warning" | "normal" =>
+  status === "风险" || status === "异常" ? "high" : status === "待交接" ? "warning" : "normal";
 
-const wechats = [
-  { id: 1, wechatId: "fengle_bj_01", boundPhone: "138-0012-3456", friendCount: 487, groups: ["北京PRO会员群01", "北京PRO会员群02", "北京体验官备用群"], manager: "吴思远", project: "北京PRO服务", status: "使用中", risk: "normal", lastLogin: "2026-07-05" },
-  { id: 2, wechatId: "fengle_sh_01", boundPhone: "139-0012-3457", friendCount: 356, groups: ["上海PRO会员群01", "上海游客群01"], manager: "林小燕", project: "上海体验官", status: "使用中", risk: "normal", lastLogin: "2026-07-05" },
-  { id: 3, wechatId: "fengle_gz_01", boundPhone: "138-0012-3458", friendCount: 234, groups: ["广州代理群01"], manager: "刘刚", project: "广州代理培训", status: "异常", risk: "high", lastLogin: "2026-06-05" },
-  { id: 4, wechatId: "fengle_cd_01", boundPhone: "152-0012-3461", friendCount: 67, groups: ["成都分站群01"], manager: "赵志远", project: "成都分站", status: "待交接", risk: "warning", lastLogin: "2026-07-01" },
-  { id: 5, wechatId: "fengle_sz_01", boundPhone: "186-0012-3462", friendCount: 310, groups: ["深圳代理群01", "深圳游客群01"], manager: "李梦华", project: "深圳代理", status: "使用中", risk: "normal", lastLogin: "2026-07-04" },
-  { id: 6, wechatId: "fengle_bj_02", boundPhone: "—（未绑定手机）", friendCount: 0, groups: [], manager: "—", project: "—", status: "库存", risk: "normal", lastLogin: "—" },
-  { id: 7, wechatId: "fengle_hz_01", boundPhone: "158-0012-3464", friendCount: 140, groups: ["杭州会员群01"], manager: "陈明", project: "杭州分站", status: "使用中", risk: "normal", lastLogin: "2026-07-05" },
-];
+type Notify = (text: string, kind?: "success" | "error") => void;
 
-const mediaAccounts = [
-  {
-    id: 1, group: "微信生态", platform: "公众号", emoji: "📢", color: "#10b981", colorBg: "rgba(16,185,129,0.1)",
-    name: "蜂乐玛官方", verified: true,
-    loginType: "邮箱登录", loginId: "admin@fenglema.com", pwdStore: "公司密码库 1Password",
-    followers: "12,800", contentCount: "286篇文章", lastPost: "2026-07-04", engagement: "4.2%",
-    manager: "内容运营团队", status: "使用中", risk: "normal",
-    note: "主要内容发布渠道，绑定小程序和视频号同一主体",
-    tags: ["认证账号", "已绑小程序", "已绑视频号"],
-  },
-  {
-    id: 2, group: "微信生态", platform: "视频号", emoji: "🎬", color: "#6366f1", colorBg: "rgba(99,102,241,0.1)",
-    name: "蜂乐玛视频", verified: true,
-    loginType: "微信账号关联（无独立账号密码）", loginId: "关联公众号主体登录", pwdStore: "无需单独密码",
-    followers: "4,200", contentCount: "68个视频", lastPost: "2026-07-03", engagement: "6.8%",
-    manager: "内容运营团队", status: "使用中", risk: "normal",
-    note: "与公众号同一主体，通过公众号后台管理，无需单独账号",
-    tags: ["挂载公众号", "直播功能已开通"],
-  },
-  {
-    id: 3, group: "内容平台", platform: "抖音", emoji: "🎵", color: "#ec4899", colorBg: "rgba(236,72,153,0.1)",
-    name: "@fenglema_official", verified: true,
-    loginType: "手机号登录", loginId: "139-0012-3459", pwdStore: "公司密码库 1Password",
-    followers: "28,600", contentCount: "142个视频", lastPost: "2026-07-05", engagement: "8.3%",
-    manager: "张晓红", status: "使用中", risk: "normal",
-    note: "主推流量渠道，已开通企业号橱窗，每周3-5条更新",
-    tags: ["企业蓝V", "橱窗已开通", "直播已开通"],
-  },
-  {
-    id: 4, group: "内容平台", platform: "小红书", emoji: "📕", color: "#ef4444", colorBg: "rgba(239,68,68,0.1)",
-    name: "fenglema_life", verified: false,
-    loginType: "手机号登录（无需微信绑定）", loginId: "140-0012-3460", pwdStore: "公司密码库 1Password",
-    followers: "9,300", contentCount: "234篇笔记", lastPost: "2026-07-04", engagement: "5.1%",
-    manager: "王美丽", status: "使用中", risk: "normal",
-    note: "生活方式内容为主，引流私域主账号",
-    tags: ["个人号", "已申请专业号"],
-  },
-  {
-    id: 5, group: "内容平台", platform: "小红书", emoji: "📕", color: "#ef4444", colorBg: "rgba(239,68,68,0.1)",
-    name: "fenglema_pro", verified: true,
-    loginType: "邮箱登录（独立账号，不绑手机）", loginId: "pro@fenglema.com", pwdStore: "公司密码库 1Password",
-    followers: "3,100", contentCount: "87篇笔记", lastPost: "2026-06-28", engagement: "7.4%",
-    manager: "王美丽", status: "使用中", risk: "normal",
-    note: "PRO会员专属内容账号，主打深度干货，导流加入PRO",
-    tags: ["专业号", "PRO专属"],
-  },
-  {
-    id: 6, group: "内容平台", platform: "微博", emoji: "🐦", color: "#f59e0b", colorBg: "rgba(245,158,11,0.1)",
-    name: "@蜂乐玛", verified: true,
-    loginType: "手机号登录", loginId: "158-0012-3465", pwdStore: "公司密码库 1Password",
-    followers: "5,700", contentCount: "1,240条微博", lastPost: "2026-07-02", engagement: "1.8%",
-    manager: "内容运营团队", status: "使用中", risk: "normal",
-    note: "品牌官微，更新频率低，主要用于品牌背书和官方声明",
-    tags: ["蓝V认证", "低频更新"],
-  },
-  {
-    id: 7, group: "内容平台", platform: "B站", emoji: "📺", color: "#60a5fa", colorBg: "rgba(96,165,250,0.1)",
-    name: "蜂乐玛官方", verified: false,
-    loginType: "邮箱登录", loginId: "bili@fenglema.com", pwdStore: "公司密码库 1Password",
-    followers: "2,100", contentCount: "23个投稿", lastPost: "2026-03-10", engagement: "3.2%",
-    manager: "内容运营团队", status: "空闲", risk: "normal",
-    note: "长视频内容账号，目前暂停更新，待规划内容方向后重启",
-    tags: ["暂停更新", "待重启"],
-  },
-  {
-    id: 8, group: "内容平台", platform: "快手", emoji: "⚡", color: "#f97316", colorBg: "rgba(249,115,22,0.1)",
-    name: "蜂乐玛快手号", verified: false,
-    loginType: "手机号登录", loginId: "186-0012-3470", pwdStore: "公司密码库 1Password",
-    followers: "1,340", contentCount: "31个视频", lastPost: "2026-05-20", engagement: "2.9%",
-    manager: "张晓红", status: "空闲", risk: "normal",
-    note: "下沉市场测试账号，ROI不佳，暂停投入",
-    tags: ["测试阶段", "暂停更新"],
-  },
-  {
-    id: 9, group: "内容平台", platform: "知乎", emoji: "🔵", color: "#3b82f6", colorBg: "rgba(59,130,246,0.1)",
-    name: "蜂乐玛创始人", verified: true,
-    loginType: "手机号登录", loginId: "138-0012-3456", pwdStore: "创始人本人保管",
-    followers: "4,680", contentCount: "56篇专栏", lastPost: "2026-06-30", engagement: "9.1%",
-    manager: "创始人王总", status: "使用中", risk: "normal",
-    note: "创始人个人IP，主写私域运营方法论，高质量引流",
-    tags: ["创始人IP", "专栏已开通", "知乎认证"],
-  },
-  {
-    id: 10, group: "内容平台", platform: "领英", emoji: "💼", color: "#0ea5e9", colorBg: "rgba(14,165,233,0.1)",
-    name: "蜂乐玛 FengleMa", verified: false,
-    loginType: "邮箱登录（境外平台）", loginId: "admin@fenglema.com", pwdStore: "公司密码库 1Password",
-    followers: "890", contentCount: "34篇动态", lastPost: "2026-06-15", engagement: "5.6%",
-    manager: "内容运营团队", status: "空闲", risk: "normal",
-    note: "面向B端和招募合伙人，更新频率低",
-    tags: ["B端获客", "低频更新"],
-  },
-];
+/** 详情面板通用：状态流转（合法迁移下拉）+ 发起交接（审批协同）。样式贴合深色详情面板。 */
+function AccountActions({ account, employees, onReload, notify }: {
+  account: AccountRow;
+  employees: EmployeeRow[];
+  onReload: () => void;
+  notify: Notify;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [handoverOpen, setHandoverOpen] = useState(false);
+  const [toEmp, setToEmp] = useState("");
+  const [reason, setReason] = useState("");
+  const legal = accountsApi.ACCOUNT_STATUS_TRANSITIONS[account.status] ?? [];
+  const inp = { background: "#1a2640", border: "1px solid rgba(99,102,241,0.15)", color: "#e2e8f0" };
 
-const emailOthers = [
-  { id: 1, type: "邮箱", identifier: "admin@fenglema.com", usedFor: "公众号后台、小程序、视频号管理", manager: "系统管理", status: "使用中", risk: "normal" },
-  { id: 2, type: "邮箱", identifier: "pro@fenglema.com", usedFor: "小红书PRO账号", manager: "王美丽", status: "使用中", risk: "normal" },
-  { id: 3, type: "邮箱", identifier: "bili@fenglema.com", usedFor: "B站账号", manager: "内容运营团队", status: "使用中", risk: "normal" },
-  { id: 4, type: "苹果ID", identifier: "apple@fenglema.com", usedFor: "iPhone 设备管理、TestFlight", manager: "技术团队", status: "使用中", risk: "normal" },
-  { id: 5, type: "企业微信", identifier: "蜂乐玛科技有限公司", usedFor: "内部协作、客服接待", manager: "HR 团队", status: "使用中", risk: "normal" },
-  { id: 6, type: "云账号", identifier: "阿里云 main@fenglema.com", usedFor: "服务器、OSS、域名", manager: "技术团队", status: "使用中", risk: "warning" },
-];
+  const changeStatus = async (target: string) => {
+    setBusy(true); setErr(""); setMenuOpen(false);
+    try {
+      await accountsApi.changeAccountStatus(account.id, target, "手动流转");
+      notify(`状态已更新为「${displayStatus(target)}」`);
+      onReload();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "状态流转失败（可能为非法迁移）");
+    } finally { setBusy(false); }
+  };
+
+  const submitHandover = async () => {
+    if (!toEmp) { setErr("请选择交接对象"); return; }
+    setBusy(true); setErr("");
+    try {
+      const r = await accountsApi.createHandover(account.id, Number(toEmp), reason.trim() || "发起交接");
+      notify(`已提交交接审批 #${r.approvalId}`);
+      setHandoverOpen(false); setToEmp(""); setReason("");
+      onReload();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "发起交接失败");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {err && <div className="text-xs px-2 py-1.5 rounded-lg" style={{ background: "rgba(239,68,68,0.1)", color: "#fca5a5" }}>{err}</div>}
+
+      {/* 状态流转（合法迁移菜单） */}
+      <div className="relative">
+        <button disabled={busy} onClick={() => setMenuOpen(o => !o)}
+          className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+          style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <ArrowLeftRight size={12} />} 状态流转
+          <span style={{ color: S.muted }}>· 当前 {displayStatus(account.status)}</span>
+        </button>
+        {menuOpen && (
+          <div className="absolute left-0 right-0 bottom-full mb-1 z-30 rounded-lg overflow-hidden shadow-2xl" style={{ background: "#131f35", border: "1px solid rgba(99,102,241,0.25)" }}>
+            {legal.length === 0 ? (
+              <div className="px-3 py-2 text-xs" style={{ color: S.muted }}>无可用流转</div>
+            ) : legal.map(target => (
+              <button key={target} onClick={() => changeStatus(target)}
+                className="w-full px-3 py-2 text-left text-xs flex items-center justify-between hover:opacity-90"
+                style={{ color: "#e2e8f0", borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
+                <span>{displayStatus(target)}</span>
+                <ChevronDown size={11} style={{ color: S.muted, transform: "rotate(-90deg)" }} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 发起交接（走审批） */}
+      {!handoverOpen ? (
+        <button disabled={busy} onClick={() => { setHandoverOpen(true); setErr(""); }}
+          className="w-full py-2 rounded-lg text-xs disabled:opacity-60" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>
+          发起交接
+        </button>
+      ) : (
+        <div className="rounded-lg p-2.5 flex flex-col gap-2" style={{ background: "#1a2640", border: "1px solid rgba(99,102,241,0.15)" }}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs" style={{ color: "#4361ee" }}>发起账号交接</span>
+            <X size={12} style={{ color: S.muted, cursor: "pointer" }} onClick={() => setHandoverOpen(false)} />
+          </div>
+          <select className="w-full px-2 py-1.5 rounded-md text-xs outline-none" style={inp} value={toEmp} onChange={e => setToEmp(e.target.value)}>
+            <option value="" style={{ background: "#131f35" }}>选择交接对象…</option>
+            {employees.map(emp => <option key={emp.id} value={emp.id} style={{ background: "#131f35" }}>{emp.name}（{emp.job_role}）</option>)}
+          </select>
+          <input className="w-full px-2 py-1.5 rounded-md text-xs outline-none" style={inp} placeholder="交接原因（必填审批依据）" value={reason} onChange={e => setReason(e.target.value)} />
+          <button disabled={busy} onClick={submitHandover} className="w-full py-1.5 rounded-md text-xs text-white flex items-center justify-center gap-1.5 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
+            {busy ? <Loader2 size={12} className="animate-spin" /> : null} 提交交接审批
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface TabProps {
+  search: string;
+  accounts: AccountRow[];
+  employees: EmployeeRow[];
+  onReload: () => void;
+  notify: Notify;
+}
+
+// ─── 后端 AccountRow → 各 Tab 展示行（mock 专有字段无后端来源→占位 "—"，不臆造） ───
+const isoDay = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : "—");
+
+interface PhoneRow {
+  id: string; number: string; carrier: string; region: string; idOwner: string; idNumber: string;
+  idFront: boolean; idBack: boolean; assignedTo: string; assignedProject: string; registrations: string[];
+  manager: string; status: string; risk: string; note: string;
+}
+function toPhoneRow(a: AccountRow): PhoneRow {
+  return {
+    id: a.id,
+    number: a.phone ?? a.identifier ?? a.name,
+    carrier: "—",                                   // 运营商：无后端来源
+    region: a.region ?? a.city ?? "—",
+    idOwner: "—",                                   // 身份证信息：无后端来源
+    idNumber: "—",
+    idFront: false, idBack: false,
+    assignedTo: a.user_name ?? "—",
+    assignedProject: a.project_ids?.[0] ?? "—",
+    registrations: [],                              // 关联注册账号：无后端来源
+    manager: a.custodian_name ?? a.user_name ?? "—",
+    status: displayStatus(a.status),
+    risk: riskOf(a.status),
+    note: a.risk_note ?? "",
+  };
+}
+
+interface WechatRow {
+  id: string; wechatId: string; boundPhone: string; friendCount: number; groupCount: number;
+  groups: string[]; manager: string; project: string; status: string; risk: string; lastLogin: string; accountType: string;
+}
+function toWechatRow(a: AccountRow): WechatRow {
+  return {
+    id: a.id,
+    wechatId: a.identifier ?? a.name,
+    boundPhone: a.phone ?? "—（未绑定手机）",
+    friendCount: a.friend_count,
+    groupCount: a.serving_group_count,
+    groups: [],                                     // 群名单：需下钻，列表不展开
+    manager: a.custodian_name ?? a.user_name ?? "—",
+    project: a.project_ids?.[0] ?? "—",
+    status: displayStatus(a.status),
+    risk: riskOf(a.status),
+    lastLogin: isoDay(a.last_login_at),
+    accountType: a.account_type,
+  };
+}
+
+const MEDIA_STYLE: Record<string, { emoji: string; color: string; colorBg: string }> = {
+  "小红书": { emoji: "📕", color: "#ef4444", colorBg: "rgba(239,68,68,0.1)" },
+  "抖音":   { emoji: "🎵", color: "#ec4899", colorBg: "rgba(236,72,153,0.1)" },
+  "公众号": { emoji: "📢", color: "#10b981", colorBg: "rgba(16,185,129,0.1)" },
+  "视频号": { emoji: "🎬", color: "#6366f1", colorBg: "rgba(99,102,241,0.1)" },
+  "微博":   { emoji: "🐦", color: "#f59e0b", colorBg: "rgba(245,158,11,0.1)" },
+  "B站":    { emoji: "📺", color: "#60a5fa", colorBg: "rgba(96,165,250,0.1)" },
+  "知乎":   { emoji: "🔵", color: "#3b82f6", colorBg: "rgba(59,130,246,0.1)" },
+};
+const DEFAULT_MEDIA_STYLE = { emoji: "📱", color: "#6366f1", colorBg: "rgba(99,102,241,0.1)" };
+function mediaPlatform(a: AccountRow): string {
+  for (const key of Object.keys(MEDIA_STYLE)) if (a.name.includes(key)) return key;
+  const hay = `${a.name} ${a.identifier ?? ""}`.toLowerCase();
+  if (hay.includes("xhs") || hay.includes("redbook")) return "小红书";
+  if (hay.includes("douyin")) return "抖音";
+  return "媒体账号";
+}
+
+interface MediaItem {
+  id: string; group: string; platform: string; emoji: string; color: string; colorBg: string;
+  name: string; verified: boolean; loginType: string; loginId: string; pwdStore: string;
+  followers: string; contentCount: string; lastPost: string; engagement: string;
+  manager: string; status: string; risk: string; note: string; tags: string[];
+}
+function toMediaItem(a: AccountRow): MediaItem {
+  const platform = mediaPlatform(a);
+  const st = MEDIA_STYLE[platform] ?? DEFAULT_MEDIA_STYLE;
+  return {
+    id: a.id, group: "内容平台", platform, emoji: st.emoji, color: st.color, colorBg: st.colorBg,
+    name: a.name, verified: a.real_name_verified,
+    // 粉丝/内容/互动率/登录凭证：无后端来源→占位 "—"
+    loginType: "—", loginId: a.identifier ?? "—", pwdStore: "—",
+    followers: "—", contentCount: "—", lastPost: isoDay(a.last_login_at), engagement: "—",
+    manager: a.custodian_name ?? a.user_name ?? "—", status: displayStatus(a.status), risk: riskOf(a.status),
+    note: a.risk_note ?? "", tags: [],
+  };
+}
+
+interface EmailRow { id: string; type: string; identifier: string; usedFor: string; manager: string; status: string; risk: string; }
+function toEmailRow(a: AccountRow): EmailRow {
+  return {
+    id: a.id, type: a.account_type, identifier: a.identifier ?? a.name, usedFor: a.risk_note ?? "—",
+    manager: a.custodian_name ?? a.user_name ?? "—", status: displayStatus(a.status), risk: riskOf(a.status),
+  };
+}
+
+const MAIN_TYPES = ["手机号", "个人微信", "企业微信", "媒体账号"];
 
 // ─── 工具 ────────────────────────────────────────────────────
 const statusStyle: Record<string, { bg: string; color: string }> = {
@@ -176,33 +261,43 @@ function Col({ children, width, highlight }: { children: React.ReactNode; width:
 }
 
 // ─── 总览 Tab ────────────────────────────────────────────────
-const allAccounts = [
-  ...phones.map(p => ({ id: `ph-${p.id}`, type: "手机号", identifier: p.number, detail: `${p.carrier} · 注册${p.registrations.length}个账号`, manager: p.manager, status: p.status, risk: p.risk })),
-  ...wechats.map(w => ({ id: `wx-${w.id}`, type: "微信号", identifier: w.wechatId, detail: `好友${w.friendCount}人 · ${w.groups.length}个群`, manager: w.manager, status: w.status, risk: w.risk })),
-  ...mediaAccounts.map(m => ({ id: `md-${m.id}`, type: m.platform, identifier: m.name, detail: `${m.loginType} · ${m.followers}粉丝`, manager: m.manager, status: m.status, risk: m.risk })),
-  ...emailOthers.map(e => ({ id: `em-${e.id}`, type: e.type, identifier: e.identifier, detail: e.usedFor, manager: e.manager, status: e.status, risk: e.risk })),
-];
+interface OverviewRow { id: string; type: string; identifier: string; detail: string; manager: string; status: string; risk: string; }
+function toOverviewRow(a: AccountRow): OverviewRow {
+  let detail: string;
+  if (a.account_type === "手机号") detail = a.region ?? a.city ?? "—";
+  else if (a.account_type.includes("微信")) detail = `好友 ${a.friend_count} · 承接 ${a.serving_group_count} 群`;
+  else detail = a.identifier ?? a.region ?? "—";
+  return {
+    id: a.id, type: a.account_type, identifier: a.identifier ?? a.name,
+    detail, manager: a.custodian_name ?? a.user_name ?? "—",
+    status: displayStatus(a.status), risk: riskOf(a.status),
+  };
+}
 
 const typeColors: Record<string, { bg: string; color: string }> = {
   "手机号":   { bg: "#ecffc4", color: "#050805" },
   "微信号":   { bg: "rgba(34,197,94,0.14)", color: "#047a32" },
+  "个人微信": { bg: "rgba(34,197,94,0.14)", color: "#047a32" },
+  "企业微信": { bg: "rgba(34,197,94,0.14)", color: "#047a32" },
+  "媒体账号": { bg: "#f7ffd9", color: "#050805" },
   "公众号":   { bg: "#f7ffd9", color: "#050805" },
   "视频号":   { bg: "#f7ffd9", color: "#050805" },
   "抖音":     { bg: "#f7ffd9", color: "#050805" },
   "小红书":   { bg: "#f7ffd9", color: "#050805" },
   "邮箱":     { bg: "#f7ffd9", color: "#050805" },
   "苹果ID":   { bg: "rgba(5,8,5,0.08)", color: "#050805" },
-  "企业微信": { bg: "rgba(34,197,94,0.14)", color: "#047a32" },
   "云账号":   { bg: "rgba(242,182,0,0.18)", color: "#9a6b00" },
 };
 
-function OverviewTab({ search }: { search: string }) {
+function OverviewTab({ search, accounts, employees, onReload, notify }: TabProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const filtered = allAccounts.filter(a =>
+  const rows = accounts.map(toOverviewRow);
+  const filtered = rows.filter(a =>
     a.identifier.toLowerCase().includes(search.toLowerCase()) ||
     a.manager.includes(search) || a.type.includes(search)
   );
-  const detail = allAccounts.find(a => a.id === selected);
+  const detail = rows.find(a => a.id === selected);
+  const detailAccount = accounts.find(a => a.id === selected);
 
   return (
     <div className="flex gap-4 flex-1 min-h-0">
@@ -251,8 +346,8 @@ function OverviewTab({ search }: { search: string }) {
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-2">
-            <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑</button>
-            <button className="w-full py-2 rounded-lg text-xs" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>发起交接</button>
+            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑</button>
+            {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
           </div>
         </div>
       )}
@@ -261,10 +356,34 @@ function OverviewTab({ search }: { search: string }) {
 }
 
 // ─── 新增手机号弹窗 ──────────────────────────────────────────
-function NewPhoneModal({ onClose }: { onClose: () => void }) {
+function NewPhoneModal({ onClose, onCreated }: { onClose: () => void; onCreated: (msg: string) => void }) {
   const [form, setForm] = useState({ number: "", carrier: "中国移动", region: "", idOwner: "", idNumber: "", assignedTo: "", assignedProject: "", note: "" });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
   const inp = { background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", color: "#e2e8f0" };
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setErr("");
+    if (!form.number.trim()) { setErr("请填写手机号码"); return; }
+    setSubmitting(true);
+    try {
+      await accountsApi.createAccount({
+        id: `TEL-${Date.now().toString().slice(-8)}`,
+        accountType: "手机号",
+        name: form.number.trim(),
+        identifier: form.number.trim(),
+        phone: form.number.trim(),
+        region: form.region || undefined,
+      });
+      onCreated(`已新增手机号 ${form.number.trim()}`);
+      onClose();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "新增失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}>
@@ -371,9 +490,12 @@ function NewPhoneModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {err && <div className="px-6 pt-3 text-xs" style={{ color: "#f87171" }}>{err}</div>}
         <div className="flex gap-3 px-6 py-4" style={{ borderTop: "1px solid rgba(99,102,241,0.15)" }}>
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>取消</button>
-          <button className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存</button>
+          <button onClick={onClose} disabled={submitting} className="flex-1 py-2.5 rounded-xl text-sm disabled:opacity-50" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>取消</button>
+          <button onClick={submit} disabled={submitting} className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium flex items-center justify-center gap-1.5 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
+            {submitting && <Loader2 size={14} className="animate-spin" />}保存
+          </button>
         </div>
       </div>
     </div>
@@ -381,32 +503,34 @@ function NewPhoneModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── 手机号 Tab ──────────────────────────────────────────────
-function PhoneTab({ search }: { search: string }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [showIdNum, setShowIdNum] = useState<Record<number, boolean>>({});
+function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showIdNum, setShowIdNum] = useState<Record<string, boolean>>({});
   const [showNewModal, setShowNewModal] = useState(false);
 
-  const filtered = phones.filter(p =>
+  const rows = accounts.map(toPhoneRow);
+  const filtered = rows.filter(p =>
     p.number.includes(search) || p.manager.includes(search) ||
     p.carrier.includes(search) || p.region.includes(search) ||
     p.idOwner.includes(search) || p.assignedTo.includes(search) ||
     p.assignedProject.includes(search)
   );
-  const detail = phones.find(p => p.id === selected);
+  const detail = rows.find(p => p.id === selected);
+  const detailAccount = accounts.find(a => a.id === selected);
 
   const maskId = (id: string) => id === "—" ? "—" : `${id.slice(0, 6)}****${id.slice(-4)}`;
 
   return (
     <div className="flex gap-4 flex-1 min-h-0">
-      {showNewModal && <NewPhoneModal onClose={() => setShowNewModal(false)} />}
+      {showNewModal && <NewPhoneModal onClose={() => setShowNewModal(false)} onCreated={(msg) => { notify(msg); onReload(); }} />}
 
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         {/* 操作栏 */}
         <div className="flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3 text-xs" style={{ color: S.muted }}>
             <span>共 <b style={{ color: "#e2e8f0" }}>{filtered.length}</b> 个手机号</span>
-            <span style={{ color: "#ef4444" }}>● 身份证未完整：{phones.filter(p => !p.idFront || !p.idBack).length} 个</span>
-            <span style={{ color: "#f59e0b" }}>● 待分配：{phones.filter(p => p.assignedTo === "—").length} 个</span>
+            <span style={{ color: "#ef4444" }}>● 风险：{rows.filter(p => p.risk === "high").length} 个</span>
+            <span style={{ color: "#f59e0b" }}>● 待分配：{rows.filter(p => p.assignedTo === "—").length} 个</span>
           </div>
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }} onClick={() => setShowNewModal(true)}>
             <Plus size={13} /> 新增手机号
@@ -634,11 +758,9 @@ function PhoneTab({ search }: { search: string }) {
 
           {/* 操作按钮 */}
           <div className="p-4 flex flex-col gap-2 flex-shrink-0" style={{ borderTop: `1px solid ${S.border}` }}>
-            <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
-            <div className="grid grid-cols-2 gap-2">
-              <button className="py-2 rounded-lg text-xs" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>登记关联账号</button>
-              <button className="py-2 rounded-lg text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>重新分配</button>
-            </div>
+            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
+            <button disabled title="M2 接线" className="py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>登记关联账号</button>
           </div>
         </div>
       )}
@@ -646,11 +768,13 @@ function PhoneTab({ search }: { search: string }) {
   );
 }
 
-// ─── 微信号 Tab ──────────────────────────────────────────────
-function WechatTab({ search }: { search: string }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const filtered = wechats.filter(w => w.wechatId.includes(search) || w.manager.includes(search) || w.project.includes(search));
-  const detail = wechats.find(w => w.id === selected);
+// ─── 微信号 Tab（含个人微信 + 企业微信） ─────────────────────────
+function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const rows = accounts.map(toWechatRow);
+  const filtered = rows.filter(w => w.wechatId.includes(search) || w.manager.includes(search) || w.project.includes(search) || w.accountType.includes(search));
+  const detail = rows.find(w => w.id === selected);
+  const detailAccount = accounts.find(a => a.id === selected);
 
   return (
     <div className="flex gap-4 flex-1 min-h-0">
@@ -674,8 +798,9 @@ function WechatTab({ search }: { search: string }) {
                 <Col width="160px" highlight>
                   <div className="flex items-center gap-1.5">
                     <RiskIcon risk={w.risk} />
-                    <MessageCircle size={12} style={{ color: "#10b981" }} />
+                    <MessageCircle size={12} style={{ color: w.accountType === "企业微信" ? "#4361ee" : "#10b981" }} />
                     {w.wechatId}
+                    <span className="px-1 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.1)", color: S.muted, fontSize: "9px" }}>{w.accountType === "企业微信" ? "企微" : "个微"}</span>
                   </div>
                 </Col>
                 <Col width="160px">
@@ -684,7 +809,7 @@ function WechatTab({ search }: { search: string }) {
                   ) : w.boundPhone}
                 </Col>
                 <Col width="70px">{w.friendCount}</Col>
-                <Col width="60px">{w.groups.length} 个</Col>
+                <Col width="60px">{w.groupCount} 个</Col>
                 <Col width="100px">{w.manager}</Col>
                 <Col width="120px">{w.project}</Col>
                 <div style={{ width: "80px" }}><StatusBadge status={w.status} /></div>
@@ -713,25 +838,20 @@ function WechatTab({ search }: { search: string }) {
             ) : <div className="text-xs mt-1" style={{ color: S.muted }}>{detail.boundPhone}</div>}
             <div className="mt-2"><StatusBadge status={detail.status} /></div>
           </div>
-          {detail.groups.length > 0 && (
-            <div>
-              <div className="text-xs mb-1.5" style={{ color: S.muted }}>管理 {detail.groups.length} 个群组</div>
-              {detail.groups.map((g, i) => (
-                <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg mb-1" style={{ background: "rgba(16,185,129,0.06)" }}>
-                  <span className="text-xs" style={{ color: "#6ee7b7" }}>{g}</span>
-                </div>
-              ))}
+          {detail.groupCount > 0 && (
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg" style={{ background: "rgba(16,185,129,0.06)" }}>
+              <span className="text-xs" style={{ color: "#6ee7b7" }}>承接 {detail.groupCount} 个服务群</span>
             </div>
           )}
-          {[["保管人", detail.manager], ["归属项目", detail.project], ["好友数", `${detail.friendCount} 人`], ["最近登录", detail.lastLogin]].map(([k, v]) => (
+          {[["账号类型", detail.accountType], ["保管人", detail.manager], ["归属项目", detail.project], ["好友数", `${detail.friendCount} 人`], ["最近登录", detail.lastLogin]].map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${S.border}` }}>
               <span className="text-xs" style={{ color: S.muted }}>{k}</span>
               <span className="text-xs" style={{ color: "#e2e8f0" }}>{v}</span>
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-auto">
-            <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
-            <button className="w-full py-2 rounded-lg text-xs" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>发起交接</button>
+            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
           </div>
         </div>
       )}
@@ -740,28 +860,27 @@ function WechatTab({ search }: { search: string }) {
 }
 
 // ─── 媒体账号 Tab ─────────────────────────────────────────────
-function MediaTab({ search }: { search: string }) {
-  const [selected, setSelected] = useState<number | null>(null);
+function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
+  const [selected, setSelected] = useState<string | null>(null);
 
-  const filtered = mediaAccounts.filter(m =>
+  const items = accounts.map(toMediaItem);
+  const filtered = items.filter(m =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
     m.platform.includes(search) ||
     m.manager.includes(search) ||
     m.loginId.includes(search)
   );
-  const detail = mediaAccounts.find(m => m.id === selected);
+  const detail = items.find(m => m.id === selected);
+  const detailAccount = accounts.find(a => a.id === selected);
 
   const wechatGroup = filtered.filter(m => m.group === "微信生态");
   const contentGroup = filtered.filter(m => m.group === "内容平台");
 
-  const totalFollowers = mediaAccounts.reduce((sum, m) => {
-    const n = parseInt(m.followers.replace(/,/g, ""));
-    return sum + (isNaN(n) ? 0 : n);
-  }, 0);
-  const activeCount = mediaAccounts.filter(m => m.status === "使用中").length;
-  const idleCount = mediaAccounts.filter(m => m.status === "空闲").length;
+  const totalFollowers = 0;   // 粉丝数无后端来源
+  const activeCount = items.filter(m => m.status === "使用中").length;
+  const idleCount = items.filter(m => m.status === "空闲").length;
 
-  function PlatformCard({ m }: { m: typeof mediaAccounts[0] }) {
+  function PlatformCard({ m }: { m: MediaItem }) {
     const isSelected = selected === m.id;
     return (
       <div
@@ -835,7 +954,7 @@ function MediaTab({ search }: { search: string }) {
     );
   }
 
-  function GroupSection({ title, accounts, accentColor }: { title: string; accounts: typeof mediaAccounts; accentColor: string }) {
+  function GroupSection({ title, accounts, accentColor }: { title: string; accounts: MediaItem[]; accentColor: string }) {
     if (accounts.length === 0) return null;
     return (
       <div>
@@ -858,7 +977,7 @@ function MediaTab({ search }: { search: string }) {
         {/* 汇总数据条 */}
         <div className="grid grid-cols-4 gap-3 flex-shrink-0">
           {[
-            { label: "媒体账号总数", value: mediaAccounts.length, color: "#6366f1" },
+            { label: "媒体账号总数", value: items.length, color: "#6366f1" },
             { label: "全平台粉丝合计", value: `${(totalFollowers / 10000).toFixed(1)}万`, color: "#10b981" },
             { label: "正常运营", value: activeCount, color: "#3b82f6" },
             { label: "暂停/空闲", value: idleCount, color: "#f59e0b" },
@@ -961,13 +1080,11 @@ function MediaTab({ search }: { search: string }) {
           )}
 
           <div className="flex flex-col gap-2 mt-auto">
-            <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
-            <button className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>
+            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
+            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1 opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>
               <ExternalLink size={11} /> 打开平台后台
             </button>
-            {detail.status === "空闲" && (
-              <button className="w-full py-2 rounded-lg text-xs" style={{ background: "rgba(16,185,129,0.08)", color: "#10b981" }}>重启账号运营</button>
-            )}
           </div>
         </div>
       )}
@@ -976,8 +1093,10 @@ function MediaTab({ search }: { search: string }) {
 }
 
 // ─── 邮箱/其他 Tab ────────────────────────────────────────────
-function EmailOtherTab({ search }: { search: string }) {
-  const filtered = emailOthers.filter(e => e.identifier.includes(search) || e.manager.includes(search) || e.type.includes(search) || e.usedFor.includes(search));
+function EmailOtherTab({ search, accounts }: TabProps) {
+  // 邮箱/苹果ID/云账号等非四大主类账号（当前无种子 → 空态）
+  const rows = accounts.filter(a => !MAIN_TYPES.includes(a.account_type)).map(toEmailRow);
+  const filtered = rows.filter(e => e.identifier.includes(search) || e.manager.includes(search) || e.type.includes(search) || e.usedFor.includes(search));
   return (
     <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
       <div className="flex items-center px-4 py-2.5 gap-4 flex-shrink-0" style={{ background: "#1a2640", borderBottom: `1px solid ${S.border}` }}>
@@ -1006,6 +1125,9 @@ function EmailOtherTab({ search }: { search: string }) {
             </div>
           );
         })}
+        {filtered.length === 0 && (
+          <div className="flex items-center justify-center py-16 text-xs" style={{ color: S.muted }}>暂无邮箱及其他类账号</div>
+        )}
       </div>
     </div>
   );
@@ -1013,22 +1135,65 @@ function EmailOtherTab({ search }: { search: string }) {
 
 // ─── 主组件 ──────────────────────────────────────────────────
 const tabs = [
-  { id: "all",   label: "总览",    count: allAccounts.length,    icon: Globe },
-  { id: "phone", label: "手机号",  count: phones.length,         icon: Phone },
-  { id: "wx",    label: "微信号",  count: wechats.length,        icon: MessageCircle },
-  { id: "media", label: "媒体账号", count: mediaAccounts.length,  icon: Globe },
-  { id: "other", label: "邮箱/其他", count: emailOthers.length,  icon: Mail },
+  { id: "all",   label: "总览",    icon: Globe },
+  { id: "phone", label: "手机号",  icon: Phone },
+  { id: "wx",    label: "微信号",  icon: MessageCircle },
+  { id: "media", label: "媒体账号", icon: Globe },
+  { id: "other", label: "邮箱/其他", icon: Mail },
 ];
 
 export default function AccountAssets() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部状态");
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState<{ text: string; kind: "success" | "error" } | null>(null);
+  const notify: Notify = (text, kind = "success") => setToast({ text, kind });
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
-  const riskCount = allAccounts.filter(a => a.risk !== "normal").length;
+  const reload = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const [acc, emp] = await Promise.all([accountsApi.listAccounts(), employeesApi.listEmployees()]);
+      setAccounts(acc); setEmployees(emp);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "加载账号资产失败");
+    } finally { setLoading(false); }
+  }, []);
+  useEffect(() => { reload(); }, [reload]);
+
+  // 后端 /accounts 的 accountType 过滤未生效（后端读的是 type 参数）→ 前端按 account_type 分流
+  const scoped = accounts.filter(a => statusFilter === "全部状态" || displayStatus(a.status) === statusFilter);
+  const tabAccounts: Record<string, AccountRow[]> = {
+    all: scoped,
+    phone: scoped.filter(a => a.account_type === "手机号"),
+    wx: scoped.filter(a => a.account_type.includes("微信")),
+    media: scoped.filter(a => a.account_type === "媒体账号"),
+    other: scoped.filter(a => !MAIN_TYPES.includes(a.account_type)),
+  };
+  const counts: Record<string, number> = {
+    all: scoped.length, phone: tabAccounts.phone.length, wx: tabAccounts.wx.length,
+    media: tabAccounts.media.length, other: tabAccounts.other.length,
+  };
+  const riskCount = accounts.filter(a => riskOf(a.status) !== "normal").length;
+  const activeAccounts = tabAccounts[activeTab] ?? scoped;
+  const tabProps: TabProps = { search, accounts: activeAccounts, employees, onReload: reload, notify };
 
   return (
     <div className="p-6 h-full flex flex-col gap-4">
+      {toast && (
+        <div className="fixed top-16 left-1/2 z-[80] -translate-x-1/2 px-4 py-2.5 rounded-lg shadow-2xl flex items-center gap-2"
+          style={{ background: "#131f35", border: "1px solid rgba(99,102,241,0.25)", color: toast.kind === "success" ? "#34d399" : "#f87171", fontSize: 12 }}>
+          {toast.kind === "success" ? <Check size={14} /> : <AlertTriangle size={14} />}{toast.text}
+        </div>
+      )}
       {/* 页头 */}
       <div className="flex items-center justify-between">
         <div>
@@ -1041,7 +1206,7 @@ export default function AccountAssets() {
               <AlertTriangle size={12} /> {riskCount} 个账号存在风险
             </div>
           )}
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
+          <button disabled title="M2 接线：新增账号请到「手机号」Tab 内使用「新增手机号」" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
             <Plus size={13} /> 新增账号
           </button>
         </div>
@@ -1050,10 +1215,10 @@ export default function AccountAssets() {
       {/* 统计卡片 */}
       <div className="grid grid-cols-5 gap-3">
         {[
-          { label: "账号总数", value: allAccounts.length, color: "#6366f1" },
-          { label: "手机号", value: phones.length, color: "#60a5fa" },
-          { label: "微信号", value: wechats.length, color: "#10b981" },
-          { label: "媒体账号", value: mediaAccounts.length, color: "#a78bfa" },
+          { label: "账号总数", value: accounts.length, color: "#6366f1" },
+          { label: "手机号", value: tabAccounts.phone.length, color: "#60a5fa" },
+          { label: "微信号", value: tabAccounts.wx.length, color: "#10b981" },
+          { label: "媒体账号", value: tabAccounts.media.length, color: "#a78bfa" },
           { label: "⚠ 风险账号", value: riskCount, color: "#ef4444" },
         ].map(s => (
           <div key={s.label} className="rounded-xl px-3 py-2.5" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
@@ -1075,7 +1240,7 @@ export default function AccountAssets() {
             >
               {t.label}
               <span className="px-1.5 py-0.5 rounded-full" style={{ background: activeTab === t.id ? "rgba(255,255,255,0.2)" : "rgba(99,102,241,0.12)", color: activeTab === t.id ? "white" : "#a5b4fc", fontSize: "10px" }}>
-                {t.count}
+                {counts[t.id]}
               </span>
             </button>
           ))}
@@ -1107,17 +1272,30 @@ export default function AccountAssets() {
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: S.muted }} />
         </div>
 
-        <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs flex-shrink-0" style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}>
+        <button disabled title="M2 接线" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs flex-shrink-0 opacity-50 cursor-not-allowed" style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}>
           <Filter size={12} /> 导出
         </button>
       </div>
 
       {/* Tab 内容 */}
-      {activeTab === "all"   && <OverviewTab search={search} />}
-      {activeTab === "phone" && <PhoneTab search={search} />}
-      {activeTab === "wx"    && <WechatTab search={search} />}
-      {activeTab === "media" && <MediaTab search={search} />}
-      {activeTab === "other" && <EmailOtherTab search={search} />}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: S.muted }}>
+          <Loader2 size={16} className="animate-spin mr-2" /> 加载账号资产…
+        </div>
+      ) : error ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-sm" style={{ color: "#ef4444" }}>
+          <div className="flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>
+          <button onClick={reload} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}>重试</button>
+        </div>
+      ) : (
+        <>
+          {activeTab === "all"   && <OverviewTab {...tabProps} />}
+          {activeTab === "phone" && <PhoneTab {...tabProps} />}
+          {activeTab === "wx"    && <WechatTab {...tabProps} />}
+          {activeTab === "media" && <MediaTab {...tabProps} />}
+          {activeTab === "other" && <EmailOtherTab {...tabProps} />}
+        </>
+      )}
     </div>
   );
 }

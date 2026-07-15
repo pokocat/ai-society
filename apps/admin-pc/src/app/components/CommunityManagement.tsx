@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { Search, Plus, X, ChevronLeft, ChevronRight, QrCode, Users, LayoutGrid, List, ArrowLeft, AlertTriangle, Filter, Columns3, PanelRight, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Plus, X, ChevronLeft, ChevronRight, QrCode, Users, LayoutGrid, List, ArrowLeft, AlertTriangle, Filter, Columns3, PanelRight, CheckCircle2, Loader2, RefreshCw, Check } from "lucide-react";
 import { useProject } from "../contexts/ProjectContext";
 import { useResources } from "../contexts/ResourceContext";
+import { groupsApi, assignmentApi, ApiError } from "../../api";
+import type { GroupRow, GroupDetail } from "../../api/groups";
+import type { AssignmentRow } from "../../api/assignment";
 
 const L = {
   bg: "#0d1629",
@@ -17,34 +20,30 @@ const L = {
   surface2: "#1a2640",
 };
 
-// ─── 模拟数据 ─────────────────────────────────────────────────
-const mockGroups = [
-  { no: "00001", name: "蜂乐玛体验官1群", city: "北京/吉林", wechat: "FLM001", groupNo: "000001", type: "体验官群", ownerStatus: "正常", pushCount: 100, scanCount: 100, memberCount: 100, max: 200 },
-  { no: "00002", name: "蜂乐玛体验官2群", city: "北京/吉林", wechat: "FLM001", groupNo: "000002", type: "体验官群", ownerStatus: "正常", pushCount: 786, scanCount: 864, memberCount: 786, max: 1000 },
-  { no: "00003", name: "蜂乐玛体验官3群", city: "北京/吉林", wechat: "FLM001", groupNo: "000003", type: "体验官群", ownerStatus: "正常", pushCount: 491, scanCount: 765, memberCount: 491, max: 500 },
-  { no: "00004", name: "蜂乐玛尊享群1", city: "上海", wechat: "FLM002", groupNo: "000004", type: "尊享群", ownerStatus: "正常", pushCount: 774, scanCount: 220, memberCount: 200, max: 200 },
-  { no: "00005", name: "蜂乐玛游客群1", city: "广州", wechat: "FLM003", groupNo: "000005", type: "游客群", ownerStatus: "正常", pushCount: 204, scanCount: 164, memberCount: 204, max: 500 },
-  { no: "00006", name: "蜂乐玛家族群1", city: "深圳", wechat: "FLM004", groupNo: "000006", type: "家族群", ownerStatus: "正常", pushCount: 589, scanCount: 538, memberCount: 500, max: 500 },
-  { no: "00007", name: "蜂乐玛体验官4群", city: "成都", wechat: "FLM005", groupNo: "000007", type: "体验官群", ownerStatus: "正常", pushCount: 780, scanCount: 967, memberCount: 380, max: 500 },
-  { no: "00008", name: "蜂乐玛游客群2", city: "杭州", wechat: "FLM006", groupNo: "000008", type: "游客群", ownerStatus: "正常", pushCount: 401, scanCount: 805, memberCount: 401, max: 500 },
-  { no: "00009", name: "蜂乐玛游客群3", city: "武汉", wechat: "FLM007", groupNo: "000009", type: "游客群", ownerStatus: "正常", pushCount: 308, scanCount: 453, memberCount: 308, max: 500 },
-  { no: "00010", name: "蜂乐玛分站管理群", city: "南京", wechat: "FLM008", groupNo: "000010", type: "分站管理群", ownerStatus: "待交接", pushCount: 308, scanCount: 453, memberCount: 88, max: 200 },
-  { no: "00011", name: "蜂乐玛PRO会员群1", city: "北京", wechat: "FLM001", groupNo: "000011", type: "PRO会员群", ownerStatus: "正常", pushCount: 0, scanCount: 0, memberCount: 312, max: 500 },
-  { no: "00012", name: "蜂乐玛PRO会员群2", city: "上海", wechat: "FLM002", groupNo: "000012", type: "PRO会员群", ownerStatus: "正常", pushCount: 0, scanCount: 0, memberCount: 278, max: 500 },
-];
+// ─── 群展示模型（后端 GroupRow → UI 行；字段照抄 snake_case 值，不臆造）──────
+export interface UiGroup {
+  no: string;            // = 后端 id
+  name: string;
+  city: string;
+  wechat: string;        // 建群企微账号名（builder_name）
+  groupNo: string;       // = 后端 id
+  type: string;          // group_type
+  ownerStatus: string;   // 后端群状态 status（服务中/容量预警/…）
+  pushCount: number;     // 无后端来源，占位 0
+  scanCount: number;     // 无后端来源，占位 0
+  memberCount: number;
+  max: number;
+  region: string;
+  fillRate: number;
+  wecomCsName: string | null;
+  personalCsName: string | null;
+  activeReservations: number;
+  qrcodeVersion: number;
+  builderAccountId: string | null;
+}
 
-// ─── 群成员数据（每个群共享同一份模拟数据，实际应按群ID区分）───
-const mockMembers = [
-  { no: "00001", avatar: "盛", wechatName: "盛光年", name: "程涛", wechatId: "THEv424", city: "北京-北...", level: "体验官", scanHistory: 3, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 2721, revenue: 9815, inGroup: true },
-  { no: "00002", avatar: "皮", wechatName: "皮卡丘", name: "钱军", wechatId: "imp11", city: "北京-北...", level: "体验官", scanHistory: 4, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 177, revenue: 6305, inGroup: true },
-  { no: "00003", avatar: "D", wechatName: "Deborah Rodriguez", name: "文泽", wechatId: "FLM001", city: "北京-北...", level: "体验官", scanHistory: 6, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 972, revenue: 9320, inGroup: true },
-  { no: "00004", avatar: "梓", wechatName: "梓几", name: "许明", wechatId: "afs612", city: "北京-北...", level: "体验官", scanHistory: 1, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 173, revenue: 9658, inGroup: true },
-  { no: "00005", avatar: "海", wechatName: "海槽", name: "彭丽", wechatId: "125gfs", city: "北京-北...", level: "体验官", scanHistory: 2, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 908, revenue: 5166, inGroup: true },
-  { no: "00006", avatar: "D", wechatName: "Deborah Martinez", name: "罗平", wechatId: "DG1245", city: "北京-北...", level: "体验官", scanHistory: 5, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 496, revenue: 1807, inGroup: true },
-  { no: "00007", avatar: "小", wechatName: "小鸡猪", name: "魏静", wechatId: "?qiuzi512", city: "北京-北...", level: "体验官", scanHistory: 2, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 508, revenue: 3956, inGroup: false },
-  { no: "00008", avatar: "J", wechatName: "Jessica Anderson", name: "夏雨", wechatId: "dashu25", city: "北京-北...", level: "体验官", scanHistory: 3, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 685, revenue: 6459, inGroup: true },
-  { no: "00009", avatar: "漠", wechatName: "漠萝君", name: "唐芳", wechatId: "blgd321", city: "北京-北...", level: "体验官", scanHistory: 7, phone: "13732112621", referrer: "皮卡丘", family: "暂无", influence: 831, revenue: 2817, inGroup: true },
-];
+/** 群健康态：仅「服务中」视为正常（绿），其余（容量预警/满员/暂停…）标记需关注 */
+const isHealthyStatus = (s: string) => s === "服务中";
 
 const typeCfg: Record<string, { bg: string; color: string }> = {
   "体验官群":  { bg: "rgba(16,185,129,0.15)",  color: "#34d399" },
@@ -77,13 +76,71 @@ const getRegion = (city: string) => {
 const getWechatRole = (type: string) => type.includes("游客") || type.includes("分站") ? "招商号" : "客服号";
 const getCapacityUnit = (type: string) => type.includes("游客") ? "人次" : "人数";
 
+function mapGroupRow(row: GroupRow): UiGroup {
+  return {
+    no: row.id,
+    name: row.name,
+    city: row.city ?? "—",
+    wechat: row.builder_name ?? row.builder_account_id ?? "—",
+    groupNo: row.id,
+    type: row.group_type,
+    ownerStatus: row.status,
+    pushCount: 0,
+    scanCount: 0,
+    memberCount: row.member_count,
+    max: row.target_capacity,
+    region: row.region ?? getRegion(row.city ?? ""),
+    fillRate: row.fill_rate,
+    wecomCsName: row.wecom_cs_name,
+    personalCsName: row.personal_cs_name,
+    activeReservations: row.active_reservations,
+    qrcodeVersion: row.qrcode_version,
+    builderAccountId: row.builder_account_id,
+  };
+}
+
 // ─── 新建微信群弹窗 ────────────────────────────────────────────
-function NewGroupModal({ onClose }: { onClose: () => void }) {
+function NewGroupModal({ onClose, builderAccounts, projectId, onCreated }: {
+  onClose: () => void;
+  builderAccounts: { id: string; name: string }[];
+  projectId: string;
+  onCreated: (msg: string) => void;
+}) {
   const [form, setForm] = useState({ project: "", type: "", city: "", wechat: "", groupNo: "", name: "", note: "", manager: "", service: "", pushCount: "100", scanCount: "100", assignedCount: "0", capacityLimit: "90" });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
 
   const groupTypes = ["体验官群", "PRO会员群", "游客群", "尊享群", "家族群", "分站管理群"];
-  const wechatOptions = mockGroups.map(g => g.wechat).filter((v, i, a) => a.indexOf(v) === i);
+
+  const submit = async () => {
+    setErr("");
+    if (!form.name.trim()) { setErr("请填写群名"); return; }
+    if (!form.type) { setErr("请选择群类型"); return; }
+    const id = `G-${(form.groupNo || Date.now().toString().slice(-8)).trim()}`;
+    setSubmitting(true);
+    try {
+      await groupsApi.createGroup({
+        id,
+        name: form.name.trim(),
+        groupType: form.type,
+        city: form.city || undefined,
+        region: form.city ? getRegion(form.city) : undefined,
+        builderAccountId: form.wechat || undefined,
+        targetCapacity: form.capacityLimit ? Number(form.capacityLimit) : undefined,
+      });
+      // 后端 create 不接 projectId（群先入资源池）；随即挂到当前项目，便于在本项目列表可见
+      if (projectId) {
+        try { await groupsApi.patchGroup(id, { projectId }); } catch { /* 挂接失败不阻断，群仍在池中 */ }
+      }
+      onCreated(`已创建微信群「${form.name.trim()}」`);
+      onClose();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "创建失败，请重试");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}>
@@ -123,10 +180,10 @@ function NewGroupModal({ onClose }: { onClose: () => void }) {
 
           {/* 所属微信 */}
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>所属微信</label>
+            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>建群企微账号</label>
             <select className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} value={form.wechat} onChange={e => set("wechat", e.target.value)}>
               <option value="">请选择</option>
-              {wechatOptions.map(w => <option key={w} value={w}>{w}</option>)}
+              {builderAccounts.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
 
@@ -188,9 +245,12 @@ function NewGroupModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {err && <div className="px-6 pt-3 text-xs" style={{ color: "#f87171" }}>{err}</div>}
         <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${L.border}` }}>
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>取消</button>
-          <button className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存</button>
+          <button onClick={onClose} disabled={submitting} className="flex-1 py-2.5 rounded-xl text-sm disabled:opacity-50" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>取消</button>
+          <button onClick={submit} disabled={submitting} className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium flex items-center justify-center gap-1.5 disabled:opacity-60" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
+            {submitting && <Loader2 size={14} className="animate-spin" />}保存
+          </button>
         </div>
       </div>
     </div>
@@ -198,12 +258,43 @@ function NewGroupModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── 入群人名单 ────────────────────────────────────────────────
-function MemberList({ group, onBack }: { group: typeof mockGroups[0]; onBack: () => void }) {
+function MemberList({ group, onBack }: { group: UiGroup; onBack: () => void }) {
   const [search, setSearch] = useState("");
   const [joinFilter, setJoinFilter] = useState<"全部" | "已入群" | "未入群">("全部");
   const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<AssignmentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = mockMembers.filter(m =>
+  useEffect(() => {
+    let alive = true;
+    setLoading(true); setError("");
+    assignmentApi.listAssignments({ groupId: group.no })
+      .then(r => { if (alive) setRows(r); })
+      .catch(e => { if (alive) setError(e instanceof ApiError ? e.message : "加载入群名单失败"); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [group.no]);
+
+  // 后端入群漏斗记录 → 名单行；无来源列（历史扫码/家族/影响力/收益/地址/手机）如实占位 "—"
+  const members = rows.map(r => ({
+    no: r.member_no ?? String(r.id),
+    avatar: (r.member_name ?? r.member_no ?? "?").slice(0, 1),
+    wechatName: r.member_name ?? r.member_no ?? "—",
+    name: r.member_name ?? "—",
+    wechatId: r.personal_wechat_id ?? "—",
+    city: "—",
+    level: r.status,            // 入群漏斗状态（待加好友/待邀请/已入群…）
+    scanHistory: "—" as string,
+    phone: "—",
+    referrer: "—",
+    family: "—",
+    influence: "—" as string,
+    revenue: "—" as string,
+    inGroup: r.status === "已入群",
+  }));
+
+  const filtered = members.filter(m =>
     (joinFilter === "全部" || (joinFilter === "已入群" ? m.inGroup : !m.inGroup)) &&
     (m.wechatName.includes(search) || m.name.includes(search) || m.wechatId.includes(search) || m.phone.includes(search))
   );
@@ -257,7 +348,16 @@ function MemberList({ group, onBack }: { group: typeof mockGroups[0]; onBack: ()
         </div>
 
         <div className="flex-1 overflow-auto">
-          {paged.map((m, idx) => (
+          {loading && (
+            <div className="flex items-center justify-center py-16 text-xs" style={{ color: L.muted }}><Loader2 size={14} className="animate-spin mr-2" /> 加载入群名单…</div>
+          )}
+          {!loading && error && (
+            <div className="flex items-center justify-center py-16 text-xs" style={{ color: "#f87171" }}><AlertTriangle size={14} className="mr-2" /> {error}</div>
+          )}
+          {!loading && !error && filtered.length === 0 && (
+            <div className="flex items-center justify-center py-16 text-xs" style={{ color: L.muted }}>暂无入群记录</div>
+          )}
+          {!loading && !error && paged.map((m, idx) => (
             <div key={m.no} className="flex items-center px-4 py-2.5 transition-all" style={{ background: "transparent", borderBottom: `1px solid ${L.borderLight}`, minWidth: "fit-content" }}>
               <div className="flex-shrink-0 text-xs" style={{ width: 60, color: L.muted }}>{m.no}</div>
               <div className="flex-shrink-0" style={{ width: 48 }}>
@@ -280,7 +380,7 @@ function MemberList({ group, onBack }: { group: typeof mockGroups[0]; onBack: ()
                 <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: m.inGroup ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", color: m.inGroup ? "#34d399" : "#f87171" }}>{m.inGroup ? "是" : "否"}</span>
               </div>
               <div className="flex-shrink-0" style={{ width: 60 }}>
-                <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }}>修改</button>
+                <button disabled title="M2 接线" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>修改</button>
               </div>
             </div>
           ))}
@@ -306,50 +406,98 @@ function MemberList({ group, onBack }: { group: typeof mockGroups[0]; onBack: ()
 // ─── 主组件 ───────────────────────────────────────────────────
 export default function CommunityManagement() {
   const { currentProject } = useProject();
-  const { accounts: resourceAccounts, groups: resourceGroups } = useResources();
+  const { accounts: resourceAccounts } = useResources();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("全部");
   const [regionFilter, setRegionFilter] = useState("全部大区");
   const [wechatFilter, setWechatFilter] = useState("全部微信");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [displayMode, setDisplayMode] = useState<"operations" | "status" | "detail">("operations");
-  const [selectedGroupNo, setSelectedGroupNo] = useState(mockGroups[0].no);
+  const [selectedGroupNo, setSelectedGroupNo] = useState<string>("");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [memberGroup, setMemberGroup] = useState<typeof mockGroups[0] | null>(null);
+  const [memberGroup, setMemberGroup] = useState<UiGroup | null>(null);
+
+  const [groups, setGroups] = useState<UiGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState<{ text: string; kind: "success" | "error" } | null>(null);
+  const [detailData, setDetailData] = useState<GroupDetail | null>(null);
+  const [rotating, setRotating] = useState(false);
+
+  const notify = (text: string, kind: "success" | "error" = "success") => setToast({ text, kind });
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+
+  const reload = useCallback(async () => {
+    if (!currentProject.id) return;
+    setLoading(true); setError("");
+    try {
+      const rows = await groupsApi.listGroups({ projectId: currentProject.id });
+      const mapped = rows.map(mapGroupRow);
+      setGroups(mapped);
+      setSelectedGroupNo(prev => (prev && mapped.some(g => g.no === prev) ? prev : mapped[0]?.no ?? ""));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "加载群列表失败");
+      setGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentProject.id]);
+  useEffect(() => { reload(); }, [reload]);
+
+  // 主从详情下钻：拉编组/二维码/事件
+  useEffect(() => {
+    if (displayMode !== "detail" || !selectedGroupNo) { setDetailData(null); return; }
+    let alive = true;
+    groupsApi.getGroup(selectedGroupNo)
+      .then(d => { if (alive) setDetailData(d); })
+      .catch(() => { if (alive) setDetailData(null); });
+    return () => { alive = false; };
+  }, [displayMode, selectedGroupNo]);
+
+  const rotateQr = async (groupNo: string) => {
+    setRotating(true);
+    try {
+      const d = await groupsApi.rotateQrcode(groupNo);
+      setDetailData(d);
+      setGroups(gs => gs.map(g => (g.no === d.id ? { ...g, qrcodeVersion: d.qrcode_version } : g)));
+      notify(`已更新群二维码（v${d.qrcode_version}）`);
+    } catch (e) {
+      notify(e instanceof ApiError ? e.message : "更新二维码失败", "error");
+    } finally {
+      setRotating(false);
+    }
+  };
 
   if (memberGroup) return <MemberList group={memberGroup} onBack={() => setMemberGroup(null)} />;
 
-  const activeGroups = resourceGroups.filter(group => group.projectId === currentProject.id).map(group => {
-    const builder = resourceAccounts.find(account => account.id === group.builder);
-    return {
-      no: group.id,
-      name: group.name,
-      city: group.city,
-      wechat: builder?.account ?? group.builder,
-      groupNo: group.id,
-      type: group.type,
-      ownerStatus: group.enterpriseService ? "正常" : "待配置",
-      pushCount: 0,
-      scanCount: 0,
-      memberCount: group.memberCount,
-      max: group.targetCapacity,
-    };
-  });
+  const builderAccounts = resourceAccounts
+    .filter(a => a.type === "企业微信")
+    .map(a => ({ id: a.id, name: a.name }));
+
+  const activeGroups = groups;
 
   const types = ["全部", "体验官群", "PRO会员群", "游客群", "尊享群", "家族群", "分站管理群"];
-  const regions = ["全部大区", ...Array.from(new Set(activeGroups.map(group => getRegion(group.city))))];
+  const regions = ["全部大区", ...Array.from(new Set(activeGroups.map(group => group.region)))];
   const wechats = ["全部微信", ...Array.from(new Set(activeGroups.map(group => group.wechat)))];
 
   const filtered = activeGroups.filter(g =>
     (typeFilter === "全部" || g.type === typeFilter) &&
-    (regionFilter === "全部大区" || getRegion(g.city) === regionFilter) &&
+    (regionFilter === "全部大区" || g.region === regionFilter) &&
     (wechatFilter === "全部微信" || g.wechat === wechatFilter) &&
     (g.name.includes(search) || g.city.includes(search) || g.wechat.includes(search))
   );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const selectedGroup = filtered.find(group => group.no === selectedGroupNo) || filtered[0] || mockGroups[0];
+  const selectedGroup = filtered.find(group => group.no === selectedGroupNo) || filtered[0];
+  // getGroup 下钻返回的二维码（取最新版本），仅当与当前选中群一致时采用
+  const latestQr = detailData && selectedGroup && detailData.id === selectedGroup.no
+    ? [...detailData.qrcodes].sort((a, b) => b.version - a.version)[0] ?? null
+    : null;
 
   const tableCols = [
     { label: "编号", w: 60 }, { label: "群名", w: 200 }, { label: "地区", w: 100 },
@@ -359,7 +507,21 @@ export default function CommunityManagement() {
 
   return (
     <div className="p-6 h-full flex flex-col gap-4" style={{ background: L.bg }}>
-      {showModal && <NewGroupModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <NewGroupModal
+          onClose={() => setShowModal(false)}
+          builderAccounts={builderAccounts}
+          projectId={currentProject.id}
+          onCreated={(msg) => { notify(msg); reload(); }}
+        />
+      )}
+
+      {toast && (
+        <div className="fixed top-16 left-1/2 z-[80] -translate-x-1/2 px-4 py-2.5 rounded-lg shadow-2xl flex items-center gap-2"
+          style={{ background: L.surface, border: `1px solid ${L.border}`, color: toast.kind === "success" ? "#34d399" : "#f87171", fontSize: 12 }}>
+          {toast.kind === "success" ? <Check size={14} /> : <AlertTriangle size={14} />}{toast.text}
+        </div>
+      )}
 
       {/* 页头 */}
       <div className="flex items-center justify-between flex-shrink-0">
@@ -442,7 +604,7 @@ export default function CommunityManagement() {
           ["群容量预警", activeGroups.filter(group => group.memberCount / group.max >= 0.9).length, "超过 90% 需要新建承接群", "#f87171"],
           ["招商号承接", activeGroups.filter(group => getWechatRole(group.type) === "招商号").length, "主要对应全国游客群", "#fbbf24"],
           ["客服号承接", activeGroups.filter(group => getWechatRole(group.type) === "客服号").length, "主要对应体验官/会员群", "#34d399"],
-          ["大区覆盖", new Set(activeGroups.map(group => getRegion(group.city))).size, "支持全国/大区筛选", "#818cf8"],
+          ["大区覆盖", new Set(activeGroups.map(group => group.region)).size, "支持全国/大区筛选", "#818cf8"],
         ].map(([label, value, sub, color]) => (
           <div key={label as string} className="p-3 rounded-xl flex items-center gap-3" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${color}18` }}><AlertTriangle size={15} style={{ color: color as string }} /></div>
@@ -451,8 +613,26 @@ export default function CommunityManagement() {
         ))}
       </div>
 
+      {/* 加载 / 错误 / 空态 */}
+      {loading && (
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: L.muted }}>
+          <Loader2 size={16} className="animate-spin mr-2" /> 加载群列表…
+        </div>
+      )}
+      {!loading && error && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-sm" style={{ color: "#f87171" }}>
+          <div className="flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>
+          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: L.surface, border: `1px solid ${L.border}`, color: L.textSec }}>
+            <RefreshCw size={12} /> 重试
+          </button>
+        </div>
+      )}
+      {!loading && !error && activeGroups.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: L.muted }}>该项目下暂无微信群</div>
+      )}
+
       {/* ── 表格视图 ── */}
-      {displayMode === "operations" && viewMode === "table" && (
+      {!loading && !error && activeGroups.length > 0 && displayMode === "operations" && viewMode === "table" && (
         <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ background: L.surface, border: `1px solid ${L.border}`, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
           <div className="flex items-center px-4 py-2.5 flex-shrink-0" style={{ background: "#1a2640", borderBottom: `1px solid ${L.border}`, minWidth: "fit-content" }}>
             {tableCols.map(c => (
@@ -486,7 +666,7 @@ export default function CommunityManagement() {
                     <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ background: tc.bg, color: tc.color }}>{g.type}</span>
                   </div>
                   <div className="flex-shrink-0" style={{ width: 80 }}>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: g.ownerStatus === "正常" ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)", color: g.ownerStatus === "正常" ? "#34d399" : "#fbbf24" }}>{g.ownerStatus}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: isHealthyStatus(g.ownerStatus) ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)", color: isHealthyStatus(g.ownerStatus) ? "#34d399" : "#fbbf24" }}>{g.ownerStatus}</span>
                   </div>
                   <div className="flex-shrink-0 text-xs font-medium" style={{ width: 80, color: "#34d399" }}>{g.pushCount}</div>
                   <div className="flex-shrink-0 text-xs" style={{ width: 80, color: "#818cf8" }}>{g.scanCount}</div>
@@ -495,7 +675,7 @@ export default function CommunityManagement() {
                     <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }} onClick={() => setMemberGroup(g)}>
                       <Users size={11} className="inline mr-0.5" />查看名单
                     </button>
-                    <button className="px-2 py-1 rounded text-xs" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>修改</button>
+                    <button disabled title="M2 接线" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>修改</button>
                   </div>
                 </div>
               );
@@ -518,7 +698,7 @@ export default function CommunityManagement() {
       )}
 
       {/* ── 卡片视图 ── */}
-      {displayMode === "operations" && viewMode === "card" && (
+      {!loading && !error && activeGroups.length > 0 && displayMode === "operations" && viewMode === "card" && (
         <div className="flex-1 overflow-auto">
           <div className="grid grid-cols-3 gap-3 pb-4">
             {paged.map(g => {
@@ -557,20 +737,20 @@ export default function CommunityManagement() {
         </div>
       )}
 
-      {displayMode === "status" && (
+      {!loading && !error && activeGroups.length > 0 && displayMode === "status" && (
         <div className="flex-1 min-h-0 grid grid-cols-[1fr_280px] gap-3">
           <div className="overflow-auto grid grid-cols-2 gap-3 pr-1">
             {filtered.map(group => {
               const percent = Math.round(group.memberCount / group.max * 100);
-              const warning = percent >= 90 || group.ownerStatus !== "正常";
+              const warning = percent >= 90 || !isHealthyStatus(group.ownerStatus);
               return (
                 <button key={group.no} onClick={() => setMemberGroup(group)} className="p-4 rounded-lg text-left" style={{ background: L.surface, border: `1px solid ${warning ? "rgba(248,113,113,.5)" : L.border}` }}>
                   <div className="flex items-start justify-between gap-3">
-                    <div><div className="text-sm font-medium" style={{ color: L.text }}>{group.name}</div><div className="text-xs mt-1" style={{ color: L.muted }}>{getRegion(group.city)} · {group.wechat} · {getWechatRole(group.type)}</div></div>
+                    <div><div className="text-sm font-medium" style={{ color: L.text }}>{group.name}</div><div className="text-xs mt-1" style={{ color: L.muted }}>{group.region} · {group.wechat} · {getWechatRole(group.type)}</div></div>
                     {warning ? <AlertTriangle size={16} color="#f87171" /> : <CheckCircle2 size={16} color="#34d399" />}
                   </div>
                   <div className="grid grid-cols-3 gap-2 my-4">
-                    {[["推送", group.pushCount], ["扫码", group.scanCount], [getCapacityUnit(group.type), group.memberCount]].map(([label, value]) => <div key={label as string} className="rounded-md py-2 text-center" style={{ background: L.bg }}><div className="text-xs font-semibold" style={{ color: L.text }}>{value}</div><div style={{ color: L.muted, fontSize: 10 }}>{label}</div></div>)}
+                    {[["预占", group.activeReservations], ["容量", `${group.memberCount}/${group.max}`], [getCapacityUnit(group.type), group.memberCount]].map(([label, value]) => <div key={label as string} className="rounded-md py-2 text-center" style={{ background: L.bg }}><div className="text-xs font-semibold" style={{ color: L.text }}>{value}</div><div style={{ color: L.muted, fontSize: 10 }}>{label}</div></div>)}
                   </div>
                   <div className="flex justify-between text-xs mb-1" style={{ color: L.muted }}><span>容量占用</span><span style={{ color: warning ? "#f87171" : L.text }}>{percent}%</span></div>
                   <div className="h-1.5 rounded-full overflow-hidden" style={{ background: L.bg }}><div className="h-full rounded-full" style={{ width: `${Math.min(100, percent)}%`, background: warning ? "#f87171" : L.primary }} /></div>
@@ -580,21 +760,25 @@ export default function CommunityManagement() {
           </div>
           <aside className="p-4 rounded-lg overflow-auto" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
             <div className="text-sm font-medium" style={{ color: L.text }}>运营风险</div>
-            <div className="text-xs mt-1 mb-4" style={{ color: L.muted }}>优先处理满员与待交接群</div>
-            {filtered.filter(group => group.memberCount / group.max >= .9 || group.ownerStatus !== "正常").map(group => <button key={group.no} onClick={() => setMemberGroup(group)} className="w-full p-3 mb-2 rounded-md text-left" style={{ background: L.bg, border: `1px solid ${L.border}` }}><div className="text-xs font-medium" style={{ color: L.text }}>{group.name}</div><div className="text-xs mt-1" style={{ color: "#f87171" }}>{group.ownerStatus !== "正常" ? "群主待交接" : `容量 ${group.memberCount}/${group.max}`}</div></button>)}
+            <div className="text-xs mt-1 mb-4" style={{ color: L.muted }}>优先处理满员与非正常状态群</div>
+            {filtered.filter(group => group.memberCount / group.max >= .9 || !isHealthyStatus(group.ownerStatus)).map(group => <button key={group.no} onClick={() => setMemberGroup(group)} className="w-full p-3 mb-2 rounded-md text-left" style={{ background: L.bg, border: `1px solid ${L.border}` }}><div className="text-xs font-medium" style={{ color: L.text }}>{group.name}</div><div className="text-xs mt-1" style={{ color: "#f87171" }}>{!isHealthyStatus(group.ownerStatus) ? group.ownerStatus : `容量 ${group.memberCount}/${group.max}`}</div></button>)}
           </aside>
         </div>
       )}
 
-      {displayMode === "detail" && (
+      {!loading && !error && activeGroups.length > 0 && displayMode === "detail" && selectedGroup && (
         <div className="flex-1 min-h-0 grid grid-cols-[320px_1fr] gap-3">
           <div className="overflow-auto rounded-lg" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
             {filtered.map(group => <button key={group.no} onClick={() => setSelectedGroupNo(group.no)} className="w-full p-3 text-left" style={{ background: selectedGroup.no === group.no ? L.primaryBg : "transparent", borderBottom: `1px solid ${L.border}` }}><div className="text-xs font-medium" style={{ color: selectedGroup.no === group.no ? "#818cf8" : L.text }}>{group.name}</div><div className="text-xs mt-1" style={{ color: L.muted }}>{group.city} · {group.wechat} · {group.memberCount}/{group.max}</div></button>)}
           </div>
           <div className="overflow-auto rounded-lg p-5" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
             <div className="flex items-start justify-between"><div><div className="text-xs" style={{ color: L.muted }}>群编号 {selectedGroup.groupNo}</div><h3 className="text-xl font-semibold mt-1" style={{ color: L.text }}>{selectedGroup.name}</h3><div className="text-xs mt-2" style={{ color: L.textSec }}>{selectedGroup.city} · {selectedGroup.wechat} · {selectedGroup.type}</div></div><button onClick={() => setMemberGroup(selectedGroup)} className="px-3 py-2 rounded-md text-xs text-white" style={{ background: L.primary }}><Users size={12} className="inline mr-1" />入群名单</button></div>
-            <div className="grid grid-cols-4 gap-3 mt-5">{[["推送", selectedGroup.pushCount], ["扫码", selectedGroup.scanCount], [`已分配${getCapacityUnit(selectedGroup.type)}`, selectedGroup.memberCount], [`${getCapacityUnit(selectedGroup.type)}上限`, selectedGroup.max]].map(([label, value]) => <div key={label as string} className="p-3 rounded-md" style={{ background: L.bg }}><div className="text-xs" style={{ color: L.muted }}>{label}</div><div className="text-xl font-semibold mt-1" style={{ color: L.text }}>{value}</div></div>)}</div>
-            <div className="grid grid-cols-2 gap-3 mt-4"><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>群运营信息</div>{[["服务大区", getRegion(selectedGroup.city)], ["账号用途", getWechatRole(selectedGroup.type)], ["群主状态", selectedGroup.ownerStatus]].map(([label, value]) => <div key={label as string} className="flex justify-between py-2 text-xs" style={{ borderBottom: `1px solid ${L.border}`, color: L.muted }}><span>{label}</span><span style={{ color: L.text }}>{value}</span></div>)}</div><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>快捷操作</div>{["更新群二维码", "调整群主状态", "同步成员名单"].map(action => <button key={action} className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>{action}</button>)}</div></div>
+            <div className="grid grid-cols-4 gap-3 mt-5">{[[`已分配${getCapacityUnit(selectedGroup.type)}`, selectedGroup.memberCount], [`${getCapacityUnit(selectedGroup.type)}上限`, selectedGroup.max], ["填充率", `${Math.round(selectedGroup.fillRate * 100)}%`], ["生效预占", selectedGroup.activeReservations]].map(([label, value]) => <div key={label as string} className="p-3 rounded-md" style={{ background: L.bg }}><div className="text-xs" style={{ color: L.muted }}>{label}</div><div className="text-xl font-semibold mt-1" style={{ color: L.text }}>{value}</div></div>)}</div>
+            <div className="grid grid-cols-2 gap-3 mt-4"><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>群运营信息</div>{[["服务大区", selectedGroup.region], ["账号用途", getWechatRole(selectedGroup.type)], ["群状态", selectedGroup.ownerStatus], ["企微客服", selectedGroup.wecomCsName ?? "待配置"], ["个微客服", selectedGroup.personalCsName ?? "待配置"], ["二维码版本", `v${selectedGroup.qrcodeVersion}`]].map(([label, value]) => <div key={label as string} className="flex justify-between py-2 text-xs" style={{ borderBottom: `1px solid ${L.border}`, color: L.muted }}><span>{label}</span><span style={{ color: L.text }}>{value}</span></div>)}{latestQr?.valid_until && <div className="flex justify-between py-2 text-xs" style={{ color: L.muted }}><span>二维码有效期</span><span style={{ color: L.text }}>{new Date(latestQr.valid_until).toLocaleDateString("zh-CN")}</span></div>}</div><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>快捷操作</div>
+              <button onClick={() => rotateQr(selectedGroup.no)} disabled={rotating} className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs flex items-center gap-1.5 disabled:opacity-60" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>{rotating ? <Loader2 size={12} className="animate-spin" /> : <QrCode size={12} />} 更新群二维码</button>
+              <button disabled title="M2 接线" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>调整群主状态</button>
+              <button disabled title="M2 接线" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>同步成员名单</button>
+            </div></div>
           </div>
         </div>
       )}

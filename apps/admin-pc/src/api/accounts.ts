@@ -40,7 +40,8 @@ export function listAccounts(params: ListAccountsParams = {}): Promise<AccountRo
   return request<AccountRow[]>("/accounts", {
     query: {
       projectId: params.projectId,
-      accountType: params.accountType,
+      // 后端/OpenAPI 契约参数名为 type（非 accountType），否则过滤被静默忽略
+      type: params.accountType,
       status: params.status,
     },
   });
