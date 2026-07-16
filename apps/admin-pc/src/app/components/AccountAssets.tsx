@@ -221,6 +221,10 @@ const statusStyle: Record<string, { bg: string; color: string }> = {
   "库存":   { bg: "rgba(5,8,5,0.08)", color: "#2f3a29" },
 };
 
+// 账号状态筛选可选值：对齐后端真实状态机（displayStatus 把「风险」显示为「异常」），不含「空闲」等后端不存在的词；
+// 下拉再按当前数据实际出现的状态收敛，确保每个选项都能筛出结果。
+const STATUS_FILTER_ORDER = ["可用", "使用中", "异常", "待交接", "冻结", "待激活", "库存", "已停用", "已归档"];
+
 const platformIcon: Record<string, string> = {
   "公众号": "📢", "视频号": "🎬", "抖音": "🎵", "小红书": "📕", "微博": "🐦", "B站": "📺",
 };
@@ -725,7 +729,7 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
                 <Col width="120px">{w.project}</Col>
                 <div style={{ width: "80px" }}><StatusBadge status={w.status} /></div>
                 <Col width="80px">
-                  <span style={{ color: loginRisk ? "#ef4444" : "#94a3b8" }}>
+                  <span style={{ color: loginRisk ? "#ef4444" : S.textSec }}>
                     {daysAgo !== null ? `${daysAgo}天前` : "—"}
                   </span>
                 </Col>
@@ -858,7 +862,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs" style={{ color: S.muted }}>最近发布</span>
-            <span className="text-xs" style={{ color: m.status === "空闲" ? "#ef4444" : "#94a3b8" }}>{m.lastPost}</span>
+            <span className="text-xs" style={{ color: m.status === "空闲" ? "#ef4444" : S.textSec }}>{m.lastPost}</span>
           </div>
         </div>
       </div>
@@ -871,7 +875,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <div className="w-1 h-4 rounded-full" style={{ background: accentColor }} />
-          <span className="text-sm font-medium text-white">{title}</span>
+          <span className="text-sm font-medium" style={{ color: S.text }}>{title}</span>
           <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(99,102,241,0.08)", color: S.muted }}>{accounts.length} 个账号</span>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -924,7 +928,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
           {/* 平台头 */}
           <div className="py-4 rounded-xl text-center" style={{ background: detail.colorBg, border: `1px solid ${detail.color}30` }}>
             <div className="text-4xl mb-2">{detail.emoji}</div>
-            <div className="text-sm font-semibold text-white">{detail.name}</div>
+            <div className="text-sm font-semibold" style={{ color: S.text }}>{detail.name}</div>
             <div className="text-xs mt-0.5" style={{ color: S.muted }}>{detail.platform}</div>
             <div className="flex items-center justify-center gap-2 mt-2">
               <StatusBadge status={detail.status} />
@@ -938,7 +942,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: "粉丝", value: detail.followers, color: detail.color },
-              { label: "内容", value: detail.contentCount, color: "#e2e8f0" },
+              { label: "内容", value: detail.contentCount, color: S.text },
               { label: "互动率", value: detail.engagement, color: "#10b981" },
             ].map(s => (
               <div key={s.label} className="rounded-lg px-2 py-2 text-center" style={{ background: "rgba(99,102,241,0.06)" }}>
@@ -960,11 +964,11 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
             <div className="text-xs font-medium mb-1" style={{ color: "#4361ee" }}>登录凭证</div>
             <div className="flex justify-between">
               <span className="text-xs" style={{ color: S.muted }}>登录方式</span>
-              <span className="text-xs" style={{ color: "#e2e8f0" }}>{detail.loginType}</span>
+              <span className="text-xs" style={{ color: S.text }}>{detail.loginType}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-xs" style={{ color: S.muted }}>登录 ID</span>
-              <span className="text-xs text-right max-w-[160px]" style={{ color: "#e2e8f0" }}>{detail.loginId}</span>
+              <span className="text-xs text-right max-w-[160px]" style={{ color: S.text }}>{detail.loginId}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-xs" style={{ color: S.muted }}>密码保管</span>
@@ -979,7 +983,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${S.border}` }}>
               <span className="text-xs" style={{ color: S.muted }}>{k}</span>
-              <span className="text-xs" style={{ color: "#e2e8f0" }}>{v}</span>
+              <span className="text-xs" style={{ color: S.text }}>{v}</span>
             </div>
           ))}
 
@@ -1096,6 +1100,8 @@ export default function AccountAssets() {
   const riskCount = accounts.filter(a => riskOf(a.status) !== "normal").length;
   const activeAccounts = tabAccounts[activeTab] ?? scoped;
   const tabProps: TabProps = { search, accounts: activeAccounts, employees, onReload: reload, notify };
+  // 筛选下拉只列出当前数据实际存在的状态（经 displayStatus 展示词），避免出现筛不出结果的死选项（如原「空闲」）
+  const statusOptions = ["全部状态", ...STATUS_FILTER_ORDER.filter(s => accounts.some(a => displayStatus(a.status) === s))];
 
   return (
     <div className="p-6 h-full flex flex-col gap-4">
@@ -1108,7 +1114,7 @@ export default function AccountAssets() {
       {/* 页头 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-white font-semibold">账号资产中心</h2>
+          <h2 className="font-semibold" style={{ color: S.text }}>账号资产中心</h2>
           <p className="text-xs mt-0.5" style={{ color: S.muted }}>统一管理手机号、微信号、媒体账号和其他凭证，支持跨平台关联查看</p>
         </div>
         <div className="flex gap-2">
@@ -1176,7 +1182,7 @@ export default function AccountAssets() {
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
-            {["全部状态", "使用中", "空闲", "异常", "待交接", "库存"].map(o => (
+            {statusOptions.map(o => (
               <option key={o} value={o} style={{ background: "#111228" }}>{o}</option>
             ))}
           </select>
