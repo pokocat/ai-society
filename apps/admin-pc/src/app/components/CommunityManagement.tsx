@@ -29,8 +29,8 @@ export interface UiGroup {
   groupNo: string;       // = 后端 id
   type: string;          // group_type
   ownerStatus: string;   // 后端群状态 status（服务中/容量预警/…）
-  pushCount: number;     // 无后端来源，占位 0
-  scanCount: number;     // 无后端来源，占位 0
+  pushCount: number | null;  // 无后端来源 → null（渲染为 "—"，不臆造 0）
+  scanCount: number | null;  // 无后端来源 → null（渲染为 "—"，不臆造 0）
   memberCount: number;
   max: number;
   region: string;
@@ -85,8 +85,8 @@ function mapGroupRow(row: GroupRow): UiGroup {
     groupNo: row.id,
     type: row.group_type,
     ownerStatus: row.status,
-    pushCount: 0,
-    scanCount: 0,
+    pushCount: null,   // GroupRow 无推送次数字段
+    scanCount: null,   // GroupRow 无扫码次数字段
     memberCount: row.member_count,
     max: row.target_capacity,
     region: row.region ?? getRegion(row.city ?? ""),
@@ -106,7 +106,9 @@ function NewGroupModal({ onClose, builderAccounts, projectId, onCreated }: {
   projectId: string;
   onCreated: (msg: string) => void;
 }) {
-  const [form, setForm] = useState({ project: "", type: "", city: "", wechat: "", groupNo: "", name: "", note: "", manager: "", service: "", pushCount: "100", scanCount: "100", assignedCount: "0", capacityLimit: "90" });
+  // 只收集后端 createGroup 真正接收的字段（id/name/groupType/city/region/builderAccountId/targetCapacity）；
+  // 项目分类/群管理/所属客服/推送次数/扫码次数/已分配/二维码/备注等后端不接收，已从弹窗移除，不再收集后静默丢弃。
+  const [form, setForm] = useState({ type: "", city: "", wechat: "", groupNo: "", name: "", capacityLimit: "90" });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState("");
@@ -151,15 +153,6 @@ function NewGroupModal({ onClose, builderAccounts, projectId, onCreated }: {
         </div>
 
         <div className="p-6 grid grid-cols-2 gap-4" style={{ maxHeight: "68vh", overflowY: "auto" }}>
-          {/* 项目分类 */}
-          <div>
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>项目分类</label>
-            <select className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} value={form.project} onChange={e => set("project", e.target.value)}>
-              <option value="">请选择</option>
-              {["蜂乐码", "蜂乐玛PRO", "体验营", "代理"].map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
           {/* 群类型 */}
           <div>
             <label className="block text-xs mb-1.5" style={{ color: L.muted }}>群类型</label>
@@ -199,49 +192,10 @@ function NewGroupModal({ onClose, builderAccounts, projectId, onCreated }: {
             <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="如 吉林蜂乐玛游客群1" value={form.name} onChange={e => set("name", e.target.value)} />
           </div>
 
-          {/* 群管理 */}
+          {/* 可分配容量上限（→ targetCapacity） */}
           <div>
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>群管理</label>
-            <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="负责人姓名" value={form.manager} onChange={e => set("manager", e.target.value)} />
-          </div>
-
-          {/* 所属客服 */}
-          <div>
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>所属客服</label>
-            <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="客服姓名" value={form.service} onChange={e => set("service", e.target.value)} />
-          </div>
-
-          {/* 推送次数 / 扫码次数 / 分配容量 */}
-          {[
-            { label: "推送次数", key: "pushCount" },
-            { label: "扫码次数", key: "scanCount" },
-            { label: `已分配${getCapacityUnit(form.type)}`, key: "assignedCount" },
-            { label: `可分配${getCapacityUnit(form.type)}上限`, key: "capacityLimit" },
-          ].map(f => (
-            <div key={f.key}>
-              <label className="block text-xs mb-1.5" style={{ color: L.muted }}>{f.label}</label>
-              <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="100" value={(form as any)[f.key]} onChange={e => set(f.key, e.target.value)} />
-            </div>
-          ))}
-
-          {/* 群二维码 */}
-          <div className="col-span-2">
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>群二维码</label>
-            <div className="flex items-center gap-3 px-4 py-4 rounded-xl border-dashed cursor-pointer" style={{ border: `1px dashed ${L.border}`, background: L.bg }}>
-              <QrCode size={18} style={{ color: L.primary }} />
-              <div>
-                <div className="text-xs" style={{ color: L.primary }}>点击上传群二维码图片</div>
-                <div className="text-xs mt-0.5" style={{ color: L.muted }}>支持 PNG / JPG，建议 500×500px</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 群备注 */}
-          <div className="col-span-2">
-            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>群备注</label>
-            <textarea className="w-full px-3 py-2 rounded-lg text-xs outline-none resize-none" rows={2}
-              style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }}
-              placeholder="其他说明..." value={form.note} onChange={e => set("note", e.target.value)} />
+            <label className="block text-xs mb-1.5" style={{ color: L.muted }}>可分配{getCapacityUnit(form.type)}上限</label>
+            <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="100" value={form.capacityLimit} onChange={e => set("capacityLimit", e.target.value)} />
           </div>
         </div>
 
@@ -325,8 +279,8 @@ function MemberList({ group, onBack }: { group: UiGroup; onBack: () => void }) {
         <div className="text-xs" style={{ color: L.muted }}>群编号 <span className="ml-1 font-medium" style={{ color: L.text }}>{group.groupNo}</span></div>
         <div className="text-xs" style={{ color: L.muted }}>所属微信 <span className="ml-1 font-medium" style={{ color: L.text }}>{group.wechat}</span></div>
         <div className="text-xs" style={{ color: L.muted }}>城市 <span className="ml-1 font-medium" style={{ color: L.text }}>{group.city}</span></div>
-        <div className="text-xs" style={{ color: L.muted }}>推送次数 <span style={{ color: "#34d399" }} className="ml-1 font-medium">{group.pushCount}</span></div>
-        <div className="text-xs" style={{ color: L.muted }}>扫码次数 <span style={{ color: "#818cf8" }} className="ml-1 font-medium">{group.scanCount}</span></div>
+        <div className="text-xs" style={{ color: L.muted }}>推送次数 <span style={{ color: group.pushCount == null ? L.muted : "#34d399" }} className="ml-1 font-medium">{group.pushCount ?? "—"}</span></div>
+        <div className="text-xs" style={{ color: L.muted }}>扫码次数 <span style={{ color: group.scanCount == null ? L.muted : "#818cf8" }} className="ml-1 font-medium">{group.scanCount ?? "—"}</span></div>
         <div className="text-xs" style={{ color: L.muted }}>已分配{getCapacityUnit(group.type)} <span style={{ color: L.primary }} className="ml-1 font-medium">{group.memberCount}/{group.max}</span></div>
         <div className="ml-auto flex items-center gap-1 p-1 rounded-lg" style={{ background: "#1a2640", border: `1px solid ${L.border}` }}>
           {(["全部", "已入群", "未入群"] as const).map(item => (
@@ -668,8 +622,8 @@ export default function CommunityManagement() {
                   <div className="flex-shrink-0" style={{ width: 80 }}>
                     <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: isHealthyStatus(g.ownerStatus) ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)", color: isHealthyStatus(g.ownerStatus) ? "#34d399" : "#fbbf24" }}>{g.ownerStatus}</span>
                   </div>
-                  <div className="flex-shrink-0 text-xs font-medium" style={{ width: 80, color: "#34d399" }}>{g.pushCount}</div>
-                  <div className="flex-shrink-0 text-xs" style={{ width: 80, color: "#818cf8" }}>{g.scanCount}</div>
+                  <div className="flex-shrink-0 text-xs font-medium" style={{ width: 80, color: g.pushCount == null ? L.muted : "#34d399" }}>{g.pushCount ?? "—"}</div>
+                  <div className="flex-shrink-0 text-xs" style={{ width: 80, color: g.scanCount == null ? L.muted : "#818cf8" }}>{g.scanCount ?? "—"}</div>
                   <div className="flex-shrink-0 text-xs font-medium" style={{ width: 110, color: L.primary }}>{g.memberCount}/{g.max} {getCapacityUnit(g.type)}</div>
                   <div className="flex-shrink-0 flex items-center gap-1.5" style={{ width: 140 }}>
                     <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }} onClick={() => setMemberGroup(g)}>
@@ -722,7 +676,7 @@ export default function CommunityManagement() {
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[["推送", g.pushCount, "#34d399"], ["扫码", g.scanCount, "#818cf8"], [getCapacityUnit(g.type), g.memberCount, L.primary]].map(([l, v, c]) => (
                       <div key={l as string} className="text-center rounded-lg py-1.5" style={{ background: L.bg }}>
-                        <div className="text-xs font-semibold" style={{ color: c as string }}>{v}</div>
+                        <div className="text-xs font-semibold" style={{ color: v == null ? L.muted : (c as string) }}>{v ?? "—"}</div>
                         <div className="text-xs" style={{ color: L.muted, fontSize: "10px" }}>{l}</div>
                       </div>
                     ))}

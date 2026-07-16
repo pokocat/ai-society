@@ -93,7 +93,8 @@ interface ProjectContextValue {
   currentProject: ProjectItem;
   currentProjectId: string;
   setCurrentProjectId: (id: string) => void;
-  syncProject: (id: string) => void;
+  /** 同步当前项目；成功 resolve、失败 rethrow（调用方据此提示真实结果，不弹假成功） */
+  syncProject: (id: string) => Promise<void>;
   addProject: (project: Omit<ProjectItem, "id">) => void;
 }
 
@@ -125,15 +126,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const currentProject = projects.find(p => p.id === currentProjectId) ?? projects[0] ?? SENTINEL_PROJECT;
 
-  const syncProject = useCallback((id: string) => {
+  const syncProject = useCallback(async (id: string): Promise<void> => {
     if (!id) return;
-    projectsApi
-      .syncProject(id)
-      .then(() => reload())
-      .catch(err => {
-        const msg = err instanceof ApiError ? `${err.code} ${err.message}` : String(err);
-        console.error("[ProjectContext] 同步项目失败：", msg);
-      });
+    try {
+      await projectsApi.syncProject(id);
+      await reload();
+    } catch (err) {
+      const msg = err instanceof ApiError ? `${err.code} ${err.message}` : String(err);
+      console.error("[ProjectContext] 同步项目失败：", msg);
+      throw err; // 让调用方（PCLayout.runSync）能 try/catch 真实失败，避免假成功
+    }
   }, [reload]);
 
   // 接入向导（M2）尚未接线：仅保留本地占位行为，不落库

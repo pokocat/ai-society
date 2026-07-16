@@ -120,7 +120,8 @@ const isoDay = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(
 
 interface PhoneRow {
   id: string; number: string; carrier: string; region: string; idOwner: string; idNumber: string;
-  idFront: boolean; idBack: boolean; assignedTo: string; assignedProject: string; registrations: string[];
+  // 证件上传状态无后端字段：null=未登记（不臆造成确定的「未上传」红态）
+  idFront: boolean | null; idBack: boolean | null; assignedTo: string; assignedProject: string; registrations: string[];
   manager: string; status: string; risk: string; note: string;
 }
 function toPhoneRow(a: AccountRow): PhoneRow {
@@ -131,7 +132,7 @@ function toPhoneRow(a: AccountRow): PhoneRow {
     region: a.region ?? a.city ?? "—",
     idOwner: "—",                                   // 身份证信息：无后端来源
     idNumber: "—",
-    idFront: false, idBack: false,
+    idFront: null, idBack: null,                    // 证件：无后端来源 → 未登记
     assignedTo: a.user_name ?? "—",
     assignedProject: a.project_ids?.[0] ?? "—",
     registrations: [],                              // 关联注册账号：无后端来源
@@ -330,19 +331,19 @@ function OverviewTab({ search, accounts, employees, onReload, notify }: TabProps
       {detail && (
         <div className="w-64 flex-shrink-0 rounded-xl p-4 flex flex-col gap-3" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-white">账号详情</span>
+            <span className="text-sm font-medium" style={{ color: S.text }}>账号详情</span>
             <button onClick={() => setSelected(null)}><X size={13} style={{ color: S.muted }} /></button>
           </div>
           <div className="py-3 rounded-xl text-center" style={{ background: "rgba(99,102,241,0.06)" }}>
             <div className="text-2xl mb-1">{platformIcon[detail.type] || "📱"}</div>
-            <div className="text-sm font-semibold text-white">{detail.identifier}</div>
+            <div className="text-sm font-semibold" style={{ color: S.text }}>{detail.identifier}</div>
             <div className="text-xs mt-1" style={{ color: S.muted }}>{detail.type}</div>
             <div className="mt-2"><StatusBadge status={detail.status} /></div>
           </div>
           {[["保管人", detail.manager], ["详情", detail.detail]].map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${S.border}` }}>
               <span className="text-xs" style={{ color: S.muted }}>{k}</span>
-              <span className="text-xs text-right max-w-[140px]" style={{ color: "#e2e8f0" }}>{v}</span>
+              <span className="text-xs text-right max-w-[140px]" style={{ color: S.text }}>{v}</span>
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-2">
@@ -357,7 +358,9 @@ function OverviewTab({ search, accounts, employees, onReload, notify }: TabProps
 
 // ─── 新增手机号弹窗 ──────────────────────────────────────────
 function NewPhoneModal({ onClose, onCreated }: { onClose: () => void; onCreated: (msg: string) => void }) {
-  const [form, setForm] = useState({ number: "", carrier: "中国移动", region: "", idOwner: "", idNumber: "", assignedTo: "", assignedProject: "", note: "" });
+  // 只收集后端 createAccount 真正接收的字段（id/accountType/name/identifier/phone/region）；
+  // 运营商/身份证所有人/身份证号/证件正反面/分配给谁/归属项目/备注等后端不接收，已从弹窗移除，不再假装保存。
+  const [form, setForm] = useState({ number: "", region: "" });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
   const inp = { background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", color: "#e2e8f0" };
   const [submitting, setSubmitting] = useState(false);
@@ -394,98 +397,24 @@ function NewPhoneModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </div>
 
         <div className="p-6 space-y-5" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          {/* 基本信息 */}
+          {/* 基本信息（仅后端接收字段） */}
           <div>
             <div className="text-xs font-medium mb-3 flex items-center gap-2" style={{ color: "#4361ee" }}>
               <Phone size={13} /> 号码基本信息
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
+              <div className="col-span-2">
                 <label className="block text-xs mb-1.5" style={{ color: S.muted }}>手机号码 *</label>
                 <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="138-xxxx-xxxx" value={form.number} onChange={e => set("number", e.target.value)} />
               </div>
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>运营商 *</label>
-                <select className="w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer" style={inp} value={form.carrier} onChange={e => set("carrier", e.target.value)}>
-                  {["中国移动","中国联通","中国电信","中国广电"].map(c => <option key={c} value={c} style={{ background: "#131f35" }}>{c}</option>)}
-                </select>
-              </div>
               <div className="col-span-2">
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>号码归属区域 *</label>
+                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>号码归属区域</label>
                 <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="如 北京市朝阳区" value={form.region} onChange={e => set("region", e.target.value)} />
               </div>
             </div>
-          </div>
-
-          {/* 身份证信息 */}
-          <div>
-            <div className="text-xs font-medium mb-3 flex items-center gap-2" style={{ color: "#4361ee" }}>
-              <CreditCard size={13} /> 注册身份证信息
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>身份证所有人 *</label>
-                <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="真实姓名" value={form.idOwner} onChange={e => set("idOwner", e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>身份证号码 *</label>
-                <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="18位身份证号" value={form.idNumber} onChange={e => set("idNumber", e.target.value)} />
-              </div>
-
-              {/* 身份证正面 */}
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>身份证正面（人像面）</label>
-                <div className="rounded-xl border-dashed cursor-pointer flex flex-col items-center justify-center gap-2 py-5" style={{ border: "1px dashed rgba(99,102,241,0.3)", background: "#1a2640" }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(99,102,241,0.1)" }}>
-                    <CreditCard size={18} style={{ color: "#6366f1" }} />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs" style={{ color: "#4361ee" }}>点击上传正面</div>
-                    <div className="text-xs mt-0.5" style={{ color: S.muted }}>JPG/PNG，≤5MB</div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: S.muted }}>
-                    <Upload size={10} /> 上传图片
-                  </div>
-                </div>
-              </div>
-
-              {/* 身份证反面 */}
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>身份证反面（国徽面）</label>
-                <div className="rounded-xl border-dashed cursor-pointer flex flex-col items-center justify-center gap-2 py-5" style={{ border: "1px dashed rgba(99,102,241,0.3)", background: "#1a2640" }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(99,102,241,0.1)" }}>
-                    <CreditCard size={18} style={{ color: "#6366f1" }} />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs" style={{ color: "#4361ee" }}>点击上传反面</div>
-                    <div className="text-xs mt-0.5" style={{ color: S.muted }}>JPG/PNG，≤5MB</div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs" style={{ color: S.muted }}>
-                    <Upload size={10} /> 上传图片
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 分配信息 */}
-          <div>
-            <div className="text-xs font-medium mb-3 flex items-center gap-2" style={{ color: "#4361ee" }}>
-              <Globe size={13} /> 分配与使用
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>分配给谁</label>
-                <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="保管人姓名" value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>归属项目</label>
-                <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="如 北京PRO服务" value={form.assignedProject} onChange={e => set("assignedProject", e.target.value)} />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>备注</label>
-                <textarea className="w-full px-3 py-2 rounded-lg text-xs outline-none resize-none" rows={2} style={inp} placeholder="其他说明..." value={form.note} onChange={e => set("note", e.target.value)} />
-              </div>
+            <div className="mt-3 text-xs flex items-start gap-1.5" style={{ color: S.muted }}>
+              <AlertTriangle size={12} style={{ marginTop: 1, flexShrink: 0 }} />
+              运营商 / 身份证 / 证件上传 / 分配归属等尚未接入后端（M2），暂不在此录入，避免收集后无法保存。
             </div>
           </div>
         </div>
@@ -528,7 +457,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
         {/* 操作栏 */}
         <div className="flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3 text-xs" style={{ color: S.muted }}>
-            <span>共 <b style={{ color: "#e2e8f0" }}>{filtered.length}</b> 个手机号</span>
+            <span>共 <b style={{ color: S.text }}>{filtered.length}</b> 个手机号</span>
             <span style={{ color: "#ef4444" }}>● 风险：{rows.filter(p => p.risk === "high").length} 个</span>
             <span style={{ color: "#f59e0b" }}>● 待分配：{rows.filter(p => p.assignedTo === "—").length} 个</span>
           </div>
@@ -550,7 +479,6 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
           <div className="overflow-auto flex-1">
             {filtered.map((p, idx) => {
               const isSelected = selected === p.id;
-              const idComplete = p.idFront && p.idBack;
               return (
                 <div
                   key={p.id}
@@ -562,14 +490,14 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
                   <div className="flex-shrink-0 flex items-center gap-1.5 text-xs" style={{ width: 140 }}>
                     <RiskIcon risk={p.risk} />
                     <Phone size={11} style={{ color: "#60a5fa" }} />
-                    <span style={{ color: isSelected ? "#a5b4fc" : "#e2e8f0" }}>{p.number}</span>
+                    <span style={{ color: S.text }}>{p.number}</span>
                   </div>
                   {/* 运营商 */}
-                  <div className="flex-shrink-0 text-xs" style={{ width: 80, color: "#64748b" }}>{p.carrier}</div>
+                  <div className="flex-shrink-0 text-xs" style={{ width: 80, color: S.textSec }}>{p.carrier}</div>
                   {/* 归属区域 */}
-                  <div className="flex-shrink-0 text-xs" style={{ width: 120, color: "#64748b" }}>{p.region}</div>
+                  <div className="flex-shrink-0 text-xs" style={{ width: 120, color: S.textSec }}>{p.region}</div>
                   {/* 身份证人 */}
-                  <div className="flex-shrink-0 text-xs font-medium" style={{ width: 90, color: "#e2e8f0" }}>{p.idOwner}</div>
+                  <div className="flex-shrink-0 text-xs font-medium" style={{ width: 90, color: S.text }}>{p.idOwner}</div>
                   {/* 身份证号 */}
                   <div className="flex-shrink-0 flex items-center gap-1.5 text-xs" style={{ width: 150 }}>
                     <span style={{ color: "#64748b", fontFamily: "monospace" }}>
@@ -581,15 +509,12 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
                       </button>
                     )}
                   </div>
-                  {/* 证件状态 */}
-                  <div className="flex-shrink-0 flex items-center gap-1" style={{ width: 64 }}>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs" style={{ color: p.idFront ? "#10b981" : "#ef4444", fontSize: "10px" }}>{p.idFront ? "✓正" : "✗正"}</span>
-                      <span className="text-xs" style={{ color: p.idBack ? "#10b981" : "#ef4444", fontSize: "10px" }}>{p.idBack ? "✓反" : "✗反"}</span>
-                    </div>
+                  {/* 证件状态：无后端来源 → 中性「未登记」，不臆造为确定负态 */}
+                  <div className="flex-shrink-0 text-xs" style={{ width: 64, color: S.muted, fontSize: "10px" }}>
+                    {p.idFront == null && p.idBack == null ? "未登记" : `${p.idFront ? "✓" : "✗"}正 ${p.idBack ? "✓" : "✗"}反`}
                   </div>
                   {/* 分配给 */}
-                  <div className="flex-shrink-0 text-xs" style={{ width: 90, color: p.assignedTo === "—" ? "#f59e0b" : "#94a3b8" }}>{p.assignedTo}</div>
+                  <div className="flex-shrink-0 text-xs" style={{ width: 90, color: p.assignedTo === "—" ? "#f59e0b" : S.textSec }}>{p.assignedTo}</div>
                   {/* 归属项目 */}
                   <div className="flex-shrink-0 text-xs" style={{ width: 130, color: p.assignedProject === "—" ? S.muted : "#a5b4fc" }}>{p.assignedProject}</div>
                   {/* 已注册账号 */}
@@ -616,7 +541,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
         <div className="w-[300px] flex-shrink-0 rounded-xl flex flex-col overflow-hidden" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           {/* 面板头 */}
           <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: `1px solid ${S.border}` }}>
-            <span className="text-sm font-medium text-white">手机号详情</span>
+            <span className="text-sm font-medium" style={{ color: S.text }}>手机号详情</span>
             <button onClick={() => setSelected(null)}><X size={13} style={{ color: S.muted }} /></button>
           </div>
 
@@ -624,7 +549,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
             {/* 号码卡 */}
             <div className="py-4 rounded-xl text-center" style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}>
               <Phone size={20} className="mx-auto mb-2" style={{ color: "#60a5fa" }} />
-              <div className="text-lg font-semibold text-white">{detail.number}</div>
+              <div className="text-lg font-semibold" style={{ color: S.text }}>{detail.number}</div>
               <div className="text-xs mt-0.5" style={{ color: S.muted }}>{detail.carrier} · {detail.region}</div>
               <div className="mt-2"><StatusBadge status={detail.status} /></div>
             </div>
@@ -634,20 +559,22 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
               <div className="px-3 py-2 flex items-center gap-2" style={{ background: "rgba(99,102,241,0.08)", borderBottom: `1px solid ${S.border}` }}>
                 <CreditCard size={13} style={{ color: "#4361ee" }} />
                 <span className="text-xs font-medium" style={{ color: "#4361ee" }}>注册身份证</span>
-                {detail.idFront && detail.idBack
-                  ? <span className="ml-auto text-xs flex items-center gap-1" style={{ color: "#10b981" }}><CheckCircle size={11} /> 已完整上传</span>
-                  : <span className="ml-auto text-xs flex items-center gap-1" style={{ color: "#ef4444" }}><AlertTriangle size={11} /> 资料不完整</span>
+                {detail.idFront == null && detail.idBack == null
+                  ? <span className="ml-auto text-xs" style={{ color: S.muted }}>未登记</span>
+                  : detail.idFront && detail.idBack
+                    ? <span className="ml-auto text-xs flex items-center gap-1" style={{ color: "#10b981" }}><CheckCircle size={11} /> 已完整上传</span>
+                    : <span className="ml-auto text-xs flex items-center gap-1" style={{ color: "#ef4444" }}><AlertTriangle size={11} /> 资料不完整</span>
                 }
               </div>
               <div className="p-3 space-y-2">
                 <div className="flex justify-between text-xs">
                   <span style={{ color: S.muted }}>身份证所有人</span>
-                  <span style={{ color: "#e2e8f0" }}>{detail.idOwner}</span>
+                  <span style={{ color: S.text }}>{detail.idOwner}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span style={{ color: S.muted }}>身份证号码</span>
                   <div className="flex items-center gap-1.5">
-                    <span style={{ color: "#e2e8f0", fontFamily: "monospace" }}>
+                    <span style={{ color: S.text, fontFamily: "monospace" }}>
                       {showIdNum[detail.id] ? detail.idNumber : (detail.idNumber !== "—" ? `${detail.idNumber.slice(0,6)}****${detail.idNumber.slice(-4)}` : "—")}
                     </span>
                     {detail.idNumber !== "—" && (
@@ -658,48 +585,32 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
                   </div>
                 </div>
 
-                {/* 证件正反面 */}
+                {/* 证件正反面：无后端来源 → 中性「未登记」占位；true/false 分支保留供 M2 接线后使用 */}
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  {/* 正面 */}
-                  <div>
-                    <div className="text-xs mb-1.5 flex items-center gap-1" style={{ color: S.muted }}>
-                      正面（人像面）
-                      {detail.idFront && <CheckCircle size={10} style={{ color: "#10b981" }} />}
+                  {([["正面（人像面）", detail.idFront], ["反面（国徽面）", detail.idBack]] as [string, boolean | null][]).map(([label, state]) => (
+                    <div key={label}>
+                      <div className="text-xs mb-1.5 flex items-center gap-1" style={{ color: S.muted }}>
+                        {label}
+                        {state === true && <CheckCircle size={10} style={{ color: "#10b981" }} />}
+                      </div>
+                      {state === true ? (
+                        <div className="h-20 rounded-lg flex flex-col items-center justify-center gap-1" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                          <CreditCard size={20} style={{ color: "#10b981" }} />
+                          <span className="text-xs" style={{ color: "#10b981" }}>已上传</span>
+                        </div>
+                      ) : state === false ? (
+                        <div className="h-20 rounded-lg border-dashed flex flex-col items-center justify-center gap-1" style={{ border: "1px dashed rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.04)" }}>
+                          <Upload size={16} style={{ color: "#ef4444" }} />
+                          <span className="text-xs" style={{ color: "#ef4444" }}>未上传</span>
+                        </div>
+                      ) : (
+                        <div className="h-20 rounded-lg border-dashed flex flex-col items-center justify-center gap-1" style={{ border: `1px dashed ${S.border}`, background: S.surface2 }}>
+                          <CreditCard size={18} style={{ color: S.muted }} />
+                          <span className="text-xs" style={{ color: S.muted }}>未登记</span>
+                        </div>
+                      )}
                     </div>
-                    {detail.idFront ? (
-                      <div className="h-20 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                        <CreditCard size={20} style={{ color: "#10b981" }} />
-                        <span className="text-xs" style={{ color: "#10b981" }}>已上传</span>
-                        <span className="text-xs" style={{ color: S.muted, fontSize: "10px" }}>点击查看</span>
-                      </div>
-                    ) : (
-                      <div className="h-20 rounded-lg border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer" style={{ border: "1px dashed rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.04)" }}>
-                        <Upload size={16} style={{ color: "#ef4444" }} />
-                        <span className="text-xs" style={{ color: "#fca5a5" }}>未上传</span>
-                        <span className="text-xs" style={{ color: S.muted, fontSize: "10px" }}>点击上传</span>
-                      </div>
-                    )}
-                  </div>
-                  {/* 反面 */}
-                  <div>
-                    <div className="text-xs mb-1.5 flex items-center gap-1" style={{ color: S.muted }}>
-                      反面（国徽面）
-                      {detail.idBack && <CheckCircle size={10} style={{ color: "#10b981" }} />}
-                    </div>
-                    {detail.idBack ? (
-                      <div className="h-20 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                        <CreditCard size={20} style={{ color: "#10b981" }} />
-                        <span className="text-xs" style={{ color: "#10b981" }}>已上传</span>
-                        <span className="text-xs" style={{ color: S.muted, fontSize: "10px" }}>点击查看</span>
-                      </div>
-                    ) : (
-                      <div className="h-20 rounded-lg border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer" style={{ border: "1px dashed rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.04)" }}>
-                        <Upload size={16} style={{ color: "#ef4444" }} />
-                        <span className="text-xs" style={{ color: "#fca5a5" }}>未上传</span>
-                        <span className="text-xs" style={{ color: S.muted, fontSize: "10px" }}>点击上传</span>
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -717,7 +628,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between text-xs py-1" style={{ borderBottom: `1px solid rgba(99,102,241,0.08)` }}>
                     <span style={{ color: S.muted }}>{k}</span>
-                    <span style={{ color: v === "—" ? "#f59e0b" : "#e2e8f0" }}>{v}</span>
+                    <span style={{ color: v === "—" ? "#f59e0b" : S.text }}>{v}</span>
                   </div>
                 ))}
               </div>
@@ -791,7 +702,7 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
         </div>
         <div className="overflow-auto flex-1">
           {filtered.map(w => {
-            const daysAgo = w.lastLogin !== "—" ? Math.floor((new Date("2026-07-05").getTime() - new Date(w.lastLogin).getTime()) / 86400000) : null;
+            const daysAgo = w.lastLogin !== "—" ? Math.floor((Date.now() - new Date(w.lastLogin).getTime()) / 86400000) : null;
             const loginRisk = daysAgo !== null && daysAgo > 7;
             return (
               <Row key={w.id} selected={selected === w.id} onClick={() => setSelected(selected === w.id ? null : w.id)}>
@@ -827,12 +738,12 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
       {detail && (
         <div className="w-64 flex-shrink-0 rounded-xl p-4 flex flex-col gap-3" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-white">微信号详情</span>
+            <span className="text-sm font-medium" style={{ color: S.text }}>微信号详情</span>
             <button onClick={() => setSelected(null)}><X size={13} style={{ color: S.muted }} /></button>
           </div>
           <div className="py-3 rounded-xl text-center" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
             <MessageCircle size={20} className="mx-auto mb-1" style={{ color: "#10b981" }} />
-            <div className="text-sm font-semibold text-white">{detail.wechatId}</div>
+            <div className="text-sm font-semibold" style={{ color: S.text }}>{detail.wechatId}</div>
             {detail.boundPhone === "—（未绑定手机）" ? (
               <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>未绑定手机号</span>
             ) : <div className="text-xs mt-1" style={{ color: S.muted }}>{detail.boundPhone}</div>}
@@ -846,7 +757,7 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
           {[["账号类型", detail.accountType], ["保管人", detail.manager], ["归属项目", detail.project], ["好友数", `${detail.friendCount} 人`], ["最近登录", detail.lastLogin]].map(([k, v]) => (
             <div key={k} className="flex justify-between py-1.5" style={{ borderBottom: `1px solid ${S.border}` }}>
               <span className="text-xs" style={{ color: S.muted }}>{k}</span>
-              <span className="text-xs" style={{ color: "#e2e8f0" }}>{v}</span>
+              <span className="text-xs" style={{ color: S.text }}>{v}</span>
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-auto">
@@ -906,7 +817,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
                   <span className="px-1 py-0.5 rounded text-xs" style={{ background: `${m.color}20`, color: m.color, fontSize: "9px" }}>✓ 认证</span>
                 )}
               </div>
-              <div className="text-sm font-medium text-white mt-0.5">{m.name}</div>
+              <div className="text-sm font-medium mt-0.5" style={{ color: S.text }}>{m.name}</div>
             </div>
           </div>
           <StatusBadge status={m.status} />
@@ -919,7 +830,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
             <div className="text-xs mt-0.5" style={{ color: S.muted, fontSize: "10px" }}>粉丝</div>
           </div>
           <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: "rgba(99,102,241,0.06)" }}>
-            <div className="font-semibold text-white" style={{ fontSize: "13px" }}>{m.contentCount}</div>
+            <div className="font-semibold" style={{ fontSize: "13px", color: S.text }}>{m.contentCount}</div>
             <div className="text-xs mt-0.5" style={{ color: S.muted, fontSize: "10px" }}>内容</div>
           </div>
           <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: "rgba(99,102,241,0.06)" }}>
@@ -978,7 +889,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
         <div className="grid grid-cols-4 gap-3 flex-shrink-0">
           {[
             { label: "媒体账号总数", value: items.length, color: "#6366f1" },
-            { label: "全平台粉丝合计", value: `${(totalFollowers / 10000).toFixed(1)}万`, color: "#10b981" },
+            { label: "全平台粉丝合计", value: "—", color: "#10b981" },
             { label: "正常运营", value: activeCount, color: "#3b82f6" },
             { label: "暂停/空闲", value: idleCount, color: "#f59e0b" },
           ].map(s => (
@@ -1006,7 +917,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
       {detail && (
         <div className="w-72 flex-shrink-0 rounded-xl p-4 flex flex-col gap-3 overflow-auto" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-white">账号详情</span>
+            <span className="text-sm font-medium" style={{ color: S.text }}>账号详情</span>
             <button onClick={() => setSelected(null)}><X size={13} style={{ color: S.muted }} /></button>
           </div>
 

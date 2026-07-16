@@ -132,6 +132,8 @@ export function ResourceProvider({ children }: { children: ReactNode }) {
   const rulesTimerRef = useRef<number | null>(null);
   const groupTimersRef = useRef<Map<string, number>>(new Map());
   const groupPendingRef = useRef<Map<string, groupsApi.PatchGroupParams>>(new Map());
+  // 每个群当前挂起 Promise 的 resolve：被后续编辑合并时先 resolve，避免 Promise 永久 pending
+  const groupResolversRef = useRef<Map<string, () => void>>(new Map());
 
   const reloadResources = useCallback(async () => {
     try {
@@ -210,13 +212,23 @@ export function ResourceProvider({ children }: { children: ReactNode }) {
     groupPendingRef.current.set(groupId, pending);
     const timers = groupTimersRef.current;
     const existing = timers.get(groupId);
-    if (existing) window.clearTimeout(existing);
+    if (existing) {
+      window.clearTimeout(existing);
+      timers.delete(groupId);
+      // 上一个挂起 Promise：其 PATCH 已并入本次批次，视为「已被后续合并提交」→ 先 resolve 释放，
+      // 否则它的 setTimeout 被清掉后 resolve/reject 永不调用，await 会永久 pending。
+      const prevResolve = groupResolversRef.current.get(groupId);
+      groupResolversRef.current.delete(groupId);
+      if (prevResolve) prevResolve();
+    }
 
     await new Promise<void>((resolve, reject) => {
+      groupResolversRef.current.set(groupId, resolve);
       timers.set(groupId, window.setTimeout(() => {
         const body = groupPendingRef.current.get(groupId);
         groupPendingRef.current.delete(groupId);
         timers.delete(groupId);
+        groupResolversRef.current.delete(groupId);
         if (!body) { resolve(); return; }
         groupsApi
           .patchGroup(groupId, body)

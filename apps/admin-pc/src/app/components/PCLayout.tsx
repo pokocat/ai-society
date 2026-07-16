@@ -118,7 +118,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
   const [syncing, setSyncing] = useState(false);
   const [topSearch, setTopSearch] = useState("");
   const [openPanel, setOpenPanel] = useState<"notifications" | "settings" | "profile" | null>(null);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<{ text: string; kind: "success" | "error" } | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(
     navGroups.map((group, index) => [group.label, index < 4])
   ));
@@ -131,27 +131,31 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 2400);
+    const timer = window.setTimeout(() => setToast(null), 2400);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const pushToast = (message: string) => setToast(message);
+  const pushToast = (message: string, kind: "success" | "error" = "success") => setToast({ text: message, kind });
 
-  const runSync = () => {
+  const runSync = async () => {
+    if (syncing || !currentProject.id) return;
     setSyncing(true);
-    window.setTimeout(() => {
-      syncProject(currentProject.id);
-      setSyncing(false);
+    try {
+      await syncProject(currentProject.id); // 真正 await 同步结果
       pushToast(`${currentProject.shortName} 已完成同步`);
-    }, 800);
+    } catch {
+      pushToast(`${currentProject.shortName} 同步失败，请重试`, "error");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
     <div className="flex h-full" style={{ background: D.bg, fontFamily: "'Inter', sans-serif" }}>
       {toast && (
         <div className="fixed top-16 left-1/2 z-[80] -translate-x-1/2 px-4 py-2.5 rounded-md shadow-2xl flex items-center gap-2"
-          style={{ color: D.ink, background: D.primary, border: `1px solid ${D.border}`, fontSize: "10px" }}>
-          <CheckCircle2 size={13} />{toast}
+          style={{ color: toast.kind === "error" ? "#ffffff" : D.ink, background: toast.kind === "error" ? D.danger : D.primary, border: `1px solid ${D.border}`, fontSize: "10px" }}>
+          {toast.kind === "error" ? <AlertTriangle size={13} /> : <CheckCircle2 size={13} />}{toast.text}
         </div>
       )}
       {/* ── Sidebar ──────────────────────────────────────────── */}
@@ -335,17 +339,18 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
                 <div className="absolute right-0 top-10 z-50 w-[300px] rounded-md shadow-2xl overflow-hidden" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
                   <div className="px-3 py-2.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${D.border}` }}>
                     <span style={{ color: D.text, fontSize: "11px", fontWeight: 600 }}>通知中心</span>
-                    <button onClick={() => pushToast("已标记全部通知为已读")} style={{ color: D.ink, fontSize: "9px" }}>全部已读</button>
+                    <button disabled title="M2 接线" className="disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: D.muted, fontSize: "9px" }}>全部已读</button>
                   </div>
+                  {/* 通知项为只读展示（定位/跳转尚未接线，M2）：不再弹假「已定位」toast */}
                   {[
                     ["高风险", "2 个社群容量接近上限，需要分流", D.danger],
                     ["待审批", "18 个权限与退款审批等待处理", D.warning],
                     ["同步完成", `${currentProject.shortName} 数据刚刚同步`, D.success],
                   ].map(([tag, text, color]) => (
-                    <button key={tag} onClick={() => { setOpenPanel(null); pushToast(`已定位：${tag}`); }} className="w-full px-3 py-2.5 text-left" style={{ borderBottom: `1px solid ${D.border}` }}>
+                    <div key={tag} className="w-full px-3 py-2.5 text-left" style={{ borderBottom: `1px solid ${D.border}` }}>
                       <span className="px-1.5 py-0.5 rounded" style={{ color, background: `${color}18`, fontSize: "8px" }}>{tag}</span>
                       <span className="block mt-1.5" style={{ color: D.textSec, fontSize: "10px" }}>{text}</span>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -364,7 +369,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
                   ].map(([title, desc, Icon]) => {
                     const ItemIcon = Icon as typeof Palette;
                     return (
-                      <button key={title as string} onClick={() => pushToast(`${title} 已打开`)} className="w-full px-3 py-2.5 flex items-center gap-2 text-left" style={{ borderBottom: `1px solid ${D.border}` }}>
+                      <button key={title as string} disabled title="M2 接线" className="w-full px-3 py-2.5 flex items-center gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed" style={{ borderBottom: `1px solid ${D.border}` }}>
                         <ItemIcon size={14} style={{ color: D.ink }} />
                         <span className="min-w-0 flex-1"><span className="block" style={{ color: D.textSec, fontSize: "10px" }}>{title as string}</span><span className="block mt-0.5" style={{ color: D.muted, fontSize: "8px" }}>{desc as string}</span></span>
                         <ChevronRight size={11} style={{ color: D.muted }} />
