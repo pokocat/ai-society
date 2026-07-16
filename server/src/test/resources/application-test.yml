@@ -1,5 +1,10 @@
 spring:
+  # 测试同样以 scp_app 连接（验证 DML 降权不破坏功能）；迁移用属主 scp
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/scp_test
-    username: scp
+    username: scp_app
+    password: scp_app_pw
+  flyway:
+    url: jdbc:postgresql://127.0.0.1:5432/scp_test
+    user: scp
     password: scp_dev_pw

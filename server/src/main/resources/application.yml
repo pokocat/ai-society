@@ -1,15 +1,20 @@
 spring:
   application:
     name: fenglema-scp-server
+  # 运行时以 scp_app 连接（仅 DML，无法 DROP 审计触发器，CLAUDE.md §6）
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/scp_dev
-    username: scp
-    password: scp_dev_pw
+    username: scp_app
+    password: scp_app_pw
     hikari:
       maximum-pool-size: 20
+  # 迁移（DDL）单独用属主 scp 连接
   flyway:
     enabled: true
     locations: classpath:db/migration
+    url: jdbc:postgresql://127.0.0.1:5432/scp_dev
+    user: scp
+    password: scp_dev_pw
 
 server:
   port: 8080

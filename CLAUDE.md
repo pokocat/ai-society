@@ -112,9 +112,11 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 - [x] **横向越权（IDOR）兜底**：`UserContext.assertMemberAccess` 已挡 SELF 范围用户越权访问他人
       memberNo（会员档案/时间线/收益/提现/会员任务）。**但**数据范围第②层（PROJECT/REGION）仍靠各
       service 手工过滤，`@DataScope` 注解式注入尚未做——新增按项目/区域隔离的端点需自行加过滤。
-- [ ] **补建第 5 条的 SQL 拼接守卫测试**（当前无 SQL 值拼接存量，测试建立后应直接全绿）。
-- [ ] **运行时连库账号降权**（第 6 条）：新建仅 DML 的 `scp_app` 角色供应用连接，`scp` 仅用于迁移。
-      当前应用账号是库 owner，可 `DROP TRIGGER` 绕过 audit_log append-only——审计不可篡改暂靠"应用不删"。
+- [x] **SQL 拼接守卫测试**（第 5 条）：`SqlConcatGuardTest` 扫描 `src/main/java`，`.sql(...)` 内出现
+      `" +`/`+ "` 拼接即 CI 失败。当前全绿。新增持久层代码若拼 SQL 值会被它拦下。
+- [x] **运行时连库账号降权**（第 6 条）：应用以 `scp_app`（仅 DML）连接，`scp` 仅迁移用（Flyway 单独连接）。
+      `scp_app` 非属主，无法 `DROP/DISABLE` audit_log 触发器、无 DDL、对 audit_log 仅 INSERT/SELECT——
+      审计不可篡改由权限隔离兜底。角色见 `scripts/db-init.sh`，授权见 `V3__grant_scp_app.sql`。
 - [ ] **上线前收口**：webhook 无签名校验（`WebhookController` 注释自承 Mock 阶段）、`mock/**` 无鉴权
       （`push-earnings` 可无认证设余额，务必绝不随生产暴露）、JWT 密钥为仓库固定值、CORS `*`。
 - [ ] **前端诚实度收口（M2）**：见下批次任务——未接线 chrome 的假成功 toast、无后端来源字段的
