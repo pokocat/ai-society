@@ -1,0 +1,14 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "member-app",
+  "description": "主理人公社 · 会员小程序（M3b）",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "enhance": false,
+    "postcss": false,
+    "minified": false
+  },
+  "compileType": "miniprogram"
+}

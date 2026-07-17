@@ -1,0 +1,44 @@
+/* 主理人公社 · 全局样式（纯白黄绿黑主题，对齐 PC 端 cyber 主题） */
+page {
+  background: #f7f8f5;
+  color: #050805;
+  font-size: 28px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px;
+  margin: 20px 24px;
+  border: 1px solid rgba(5, 8, 5, 0.08);
+}
+
+.btn-primary {
+  background: #b6ff00;
+  color: #050805;
+  font-weight: 600;
+  border-radius: 16px;
+  border: none;
+  font-size: 30px;
+  padding: 6px 0;
+}
+
+.btn-ghost {
+  background: #ffffff;
+  color: #2f3a29;
+  border: 1px solid rgba(5, 8, 5, 0.16);
+  border-radius: 16px;
+  font-size: 28px;
+  padding: 6px 0;
+}
+
+.muted { color: #68705a; font-size: 24px; }
+.title { font-size: 34px; font-weight: 700; }
+.tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 10px;
+  font-size: 22px;
+  background: #f0ffd0;
+  color: #3a4d00;
+}

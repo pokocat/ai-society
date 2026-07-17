@@ -20,6 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         "/api/v1/auth/login",
+                        "/api/v1/mp/login",     // 小程序 wx.login 静默登录（登录后同走 JWT）
                         "/api/v1/webhook/**",   // 外部事件入口走签名校验（Mock 阶段放行）
                         "/api/v1/mock/**");     // mock-project-system 注入口
     }

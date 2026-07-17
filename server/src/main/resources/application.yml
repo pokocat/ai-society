@@ -40,6 +40,9 @@ scp:
     # 在企微内部运营群添加群机器人 → 复制 webhook 地址填到这里（或设 env）。
     # 留空=跳过通知（开发/CI）。注意：官方限制机器人仅内部群可用，客户群不可加。
     ops-robot-webhook: ${SCP_WECOM_OPS_ROBOT_WEBHOOK:}
+  mp:
+    # 会员小程序默认权益落地项目（M3b 单项目；多项目切换 M4）
+    default-project: flm-membership
 
 logging:
   level:

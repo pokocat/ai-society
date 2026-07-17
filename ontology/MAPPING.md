@@ -38,7 +38,8 @@
 | :CourseSession | course_session | GET/POST /courses, POST /courses/{id}/start-live, /finish | 企微群直播；回放 url 回填 |
 | —（收益镜像，OrderReference 同域） | earnings_snapshot / withdrawal_request | GET /earnings/summary, POST /withdrawals | 提现=审批协同，打款在外部系统 |
 | :MemberTask/:PointsLedgerEntry/:GrowthLedgerEntry | member_task / points_ledger / growth_ledger | GET /member-tasks, POST /member-tasks/{id}/complete | 邀请成长值 +288 默认，读 resource_rules |
-| :InviteCode | invite_code / attribution_log | GET /invite-codes/mine, POST /invite-codes/rotate | 短码≤32 字符，7 天轮换 |
+| :InviteCode | invite_code / attribution_log | GET /invite-codes/mine, POST /invite-codes/rotate；小程序端 GET /mp/invite | 短码≤32 字符，7 天轮换；逻辑在 InviteCodeService（两端共用） |
+| —（会员小程序端，M3b：复用上表概念，无新概念） | member_identifier 增「小程序openid」类型 | POST /mp/login（免鉴权，scene 归因）, GET /mp/me /invite /my-group /courses /faq, POST /mp/orders + /{no}/pay | member 角色仅开 mp 模块；memberNo 一律取自 JWT（SELF） |
 | :Approval | approval / approval_history | GET /approvals, POST /approvals/{id}/decision | 回调执行器：WITHDRAWAL/OVERRIDE_ASSIGN/HANDOVER/RESOURCE_PUBLISH |
 | :RiskEvent | risk_event | GET /risk-events, POST /risk-events/{id}/convert, /resolve | 八类异常，可转任务/审批（SPEC §12） |
 | :AuditLog | audit_log（触发器禁 UPDATE/DELETE） | GET /audit-logs（M2 暴露） | append-only（SPEC §11.3） |

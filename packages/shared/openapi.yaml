@@ -614,6 +614,84 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/orders:
+    post:
+      tags:
+      - mp-controller
+      operationId: createOrder
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpOrder"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/orders/{orderNo}/pay:
+    post:
+      tags:
+      - mp-controller
+      operationId: pay
+      parameters:
+      - name: orderNo
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/login:
+    post:
+      tags:
+      - mp-controller
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/mock/push-pending-member:
     post:
       tags:
@@ -708,7 +786,7 @@ paths:
     get:
       tags:
       - membership-controller
-      operationId: plans
+      operationId: plans_1
       parameters:
       - name: onSaleOnly
         in: query
@@ -784,7 +862,7 @@ paths:
     post:
       tags:
       - membership-controller
-      operationId: createOrder
+      operationId: createOrder_1
       parameters:
       - name: Idempotency-Key
         in: header
@@ -1294,7 +1372,7 @@ paths:
     get:
       tags:
       - content-controller
-      operationId: courses
+      operationId: courses_1
       parameters:
       - name: status
         in: query
@@ -1519,7 +1597,7 @@ paths:
     post:
       tags:
       - auth-controller
-      operationId: login
+      operationId: login_1
       requestBody:
         content:
           application/json:
@@ -2267,6 +2345,126 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/plans:
+    get:
+      tags:
+      - mp-controller
+      operationId: plans
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/my-group:
+    get:
+      tags:
+      - mp-controller
+      operationId: myGroup
+      parameters:
+      - name: projectId
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/me:
+    get:
+      tags:
+      - mp-controller
+      operationId: me
+      parameters:
+      - name: projectId
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/invite:
+    get:
+      tags:
+      - mp-controller
+      operationId: invite
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/faq:
+    get:
+      tags:
+      - mp-controller
+      operationId: faq
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/courses:
+    get:
+      tags:
+      - mp-controller
+      operationId: courses
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
   /api/v1/membership/entitlements/{memberNo}:
     get:
       tags:
@@ -2493,7 +2691,7 @@ paths:
     get:
       tags:
       - auth-controller
-      operationId: me
+      operationId: me_1
       responses:
         "500":
           description: Internal Server Error
@@ -2857,6 +3055,28 @@ components:
           type: string
         endpoint:
           type: string
+    MpOrder:
+      required:
+      - planCode
+      type: object
+      properties:
+        planCode:
+          type: string
+        channel:
+          type: string
+        projectId:
+          type: string
+    LoginRequest:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: string
+        inviteCode:
+          type: string
+        nickname:
+          type: string
     PushMember:
       required:
       - name
@@ -3115,16 +3335,6 @@ components:
       type: object
       properties:
         reason:
-          type: string
-    LoginRequest:
-      required:
-      - password
-      - username
-      type: object
-      properties:
-        username:
-          type: string
-        password:
           type: string
     RecommendRequest:
       required:

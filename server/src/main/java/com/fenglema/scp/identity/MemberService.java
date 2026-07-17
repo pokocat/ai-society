@@ -14,9 +14,10 @@ import java.util.Map;
 @Service
 public class MemberService {
 
-    /** 并档优先级（§5.5）：数值越小越强。 */
+    /** 并档优先级（§5.5）：数值越小越强。小程序openid 最低——仅同端稳定，跨端合一靠 unionid/手机号（M4）。 */
     static final Map<String, Integer> MERGE_PRIORITY = Map.of(
-            "unionid", 1, "手机号", 2, "企微external_userid", 3, "个微号", 4, "订单用户ID", 5, "报名ID", 6);
+            "unionid", 1, "手机号", 2, "企微external_userid", 3, "个微号", 4, "订单用户ID", 5, "报名ID", 6,
+            "小程序openid", 7);
 
     private final JdbcClient db;
     private final AuditService audit;
