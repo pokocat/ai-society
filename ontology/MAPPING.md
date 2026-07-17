@@ -15,7 +15,7 @@
 | :Employee | employee | GET/POST /employees | 人员与账号解耦 |
 | :AccountAssignment（authorizedForProject 具体化） | account_assignment | POST /accounts/{id}/assignments, /assignments/revoke | 多对多共享池 |
 | :AccountHandover | account_handover | POST /accounts/{id}/handovers | 自动建「账号交接」审批 |
-| :CommunityGroup | community_group | GET/POST /groups, PATCH /groups/{id} | 状态机 SPEC §8.3，八态；builtByWecom=builder_account_id |
+| :CommunityGroup（ownedByMember/wecomChatId） | community_group（M3 增 owner_member_id/wecom_chat_id/join_way_id） | GET/POST /groups, PATCH /groups/{id} | 状态机 SPEC §8.3，八态；builtByWecom=builder_account_id；归属代理=推荐引擎第 0 级候选集限定 |
 | :GroupStaffing（servedByWecomStaff/servedByPersonalWechat 具体化） | group_staffing | POST /groups/{id}/staffing（含负载预测） | 一群双客服 |
 | :GroupQrCode | group_qrcode | POST /groups/{id}/qrcode/rotate | 7 天轮换 |
 | :GroupLifecycleEvent | group_lifecycle_event | GET /groups/{id}（detail 内） | 事件流水 |
@@ -30,7 +30,12 @@
 | :TaskBatch/:TaskItem/:TaskAttempt/:TaskEvidence | task_batch / task_item / task_attempt / task_evidence | GET /tasks, POST /tasks/{id}/claim, /attempts（幂等）, /evidence | 状态机 SPEC §8.5；加好友成功自动派邀请任务 |
 | :FollowUp | follow_up | GET/POST /followups, POST /followups/{id}/complete | 完成必写时间线（SPEC §16-6） |
 | :Ticket | ticket | GET/POST /tickets, /assign /resolve /escalate | SLA 按类型 2/4/12/24h |
-| :OrderReference | order_reference | GET /order-references | 只读镜像：外部订单系统负责交易（SPEC §2.2） |
+| :OrderReference | order_reference | GET /order-references | 只读镜像：外部**项目方**订单系统负责交易（SPEC §2.2；会员费一方订单除外，见 :MembershipOrder） |
+| :MembershipPlan（grantsIdentity） | membership_plan | GET/POST /membership/plans, PATCH /membership/plans/{id}/status | M3 权益域：授予身份+时长+双端定价；上架/下架 |
+| :MembershipOrder（orderOfPlan） | membership_order | POST /membership/orders, POST /membership/orders/callback, GET /membership/orders | 一方交易事实源；状态机 待支付→已支付→退款中→已退款/已关闭；callback_id 幂等 |
+| :WelcomeTemplate | welcome_template | GET/POST /welcome-templates, PATCH .../{id} | 企微素材库映射；唯一全自动出站通道 |
+| :BroadcastPlan | broadcast_plan | GET/POST /broadcasts, POST /broadcasts/{id}/dispatch | 派发→task_item(群发确认)→群主确认回填；每群每天≤1 条 |
+| :CourseSession | course_session | GET/POST /courses, POST /courses/{id}/start-live, /finish | 企微群直播；回放 url 回填 |
 | —（收益镜像，OrderReference 同域） | earnings_snapshot / withdrawal_request | GET /earnings/summary, POST /withdrawals | 提现=审批协同，打款在外部系统 |
 | :MemberTask/:PointsLedgerEntry/:GrowthLedgerEntry | member_task / points_ledger / growth_ledger | GET /member-tasks, POST /member-tasks/{id}/complete | 邀请成长值 +288 默认，读 resource_rules |
 | :InviteCode | invite_code / attribution_log | GET /invite-codes/mine, POST /invite-codes/rotate | 短码≤32 字符，7 天轮换 |
@@ -38,7 +43,7 @@
 | :RiskEvent | risk_event | GET /risk-events, POST /risk-events/{id}/convert, /resolve | 八类异常，可转任务/审批（SPEC §12） |
 | :AuditLog | audit_log（触发器禁 UPDATE/DELETE） | GET /audit-logs（M2 暴露） | append-only（SPEC §11.3） |
 | :SyncJob/:SyncError | sync_job / sync_error | GET /sync/jobs, /errors, /reconcile, POST /sync/import/pending-member | 游标/幂等/失败队列/对账（SPEC §13.2） |
-| 阈值数据属性（targetGroupSize 等 6 项） | resource_rules（单行 + 推荐权重列） | GET/PUT /rules | 全部可配，业务代码只读表 |
+| 阈值数据属性（targetGroupSize 等 6 项 + wecomGroupCap） | resource_rules（单行 + 推荐权重列；M3 增 paid_gate_enabled/affinity_first/wecom_group_cap） | GET/PUT /rules | 全部可配，业务代码只读表 |
 
 ## 未映射为独立表的本体元素
 

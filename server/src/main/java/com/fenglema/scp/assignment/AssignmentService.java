@@ -8,6 +8,7 @@ import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.identity.MemberService;
+import com.fenglema.scp.membership.EntitlementService;
 import com.fenglema.scp.resource.GroupService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -43,10 +44,12 @@ public class AssignmentService {
     private final GroupService groupService;
     private final AuditService audit;
     private final ObjectMapper mapper;
+    private final EntitlementService entitlement;
     private final int reservationTtlMinutes;
 
     public AssignmentService(JdbcClient db, RecommendEngine engine, MemberService memberService,
                              GroupService groupService, AuditService audit, ObjectMapper mapper,
+                             EntitlementService entitlement,
                              @Value("${scp.reservation.ttl-minutes:30}") int reservationTtlMinutes) {
         this.db = db;
         this.engine = engine;
@@ -54,6 +57,7 @@ public class AssignmentService {
         this.groupService = groupService;
         this.audit = audit;
         this.mapper = mapper;
+        this.entitlement = entitlement;
         this.reservationTtlMinutes = reservationTtlMinutes;
     }
 
@@ -155,6 +159,8 @@ public class AssignmentService {
                 .param("id", groupId)
                 .query(Rows.MAP).optional()
                 .orElseThrow(() -> BusinessException.notFound("微信群"));
+        // 付费门控注入点②（M3 §4.1）：防绕过推荐引擎直接 confirm 进付费档群
+        entitlement.assertCanPlace(memberId, projectId, (String) group.get("group_type"));
         String personalWechatId = db.sql("""
                         SELECT account_id FROM group_staffing WHERE group_id = :g AND role = '个微客服' AND is_primary
                         """)

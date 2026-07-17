@@ -48,6 +48,14 @@ const navGroups = [
     ]
   },
   {
+    label: "会员权益与内容",
+    items: [
+      { id: "membership", label: "会员权益中心", icon: ShieldCheck,   badge: null },
+      { id: "content",    label: "内容运营中心", icon: Radio,         badge: null },
+      { id: "agents",     label: "代理商总览",   icon: Network,       badge: null },
+    ],
+  },
+  {
     label: "会员运营",
     items: [
       { id: "users",      label: "会员运营工作台", icon: User, badge: "3" },

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# 端到端冒烟（SPEC §16-2/§16-4）：
-# 登录 → mock 外部系统进线待分配会员（带推荐人）→ 推荐 → 确认 → 加好友回填 → 自动邀请任务
-# → 邀请回填 → webhook 入群事件 → 断言：状态/群人数/预占消耗/档案时间线/影响力/成长值 → 超载阻断。
+# 端到端冒烟（SPEC §16-2/§16-4 + M3 付费闭环）：
+# 登录 → mock 外部系统进线待分配会员（带推荐人）→ 会员购买（虚拟支付 Mock，权益生效=付费门控放行）
+# → 推荐 → 确认 → 加好友回填 → 自动邀请任务 → 邀请回填 → webhook 入群事件
+# → 断言：状态/群人数/预占消耗/档案时间线/影响力/成长值 → 超载阻断。
 set -uo pipefail
 BASE="${BASE:-http://127.0.0.1:8080/api/v1}"
 PASS=0; FAIL=0
@@ -35,6 +36,17 @@ assert_eq "$GROWTH" "288" "邀请成长值"
 say "4. 待分配池应包含新会员"
 PENDING=$(curl -s "$BASE/assignment/pending?projectId=flm-membership" -H "$AUTH")
 echo "$PENDING" | grep -q "$MEMBER_NO" && ok "待分配池含 $MEMBER_NO" || bad "待分配池缺失"
+
+say "4b. M3 付费闭环：下单（MPLAN-PRO-M）→ Mock 虚拟支付回调 → 权益生效"
+ORDER=$(curl -s "$BASE/membership/orders" -H "$AUTH" -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: smoke-order-$SUFFIX" \
+  -d "{\"memberNo\":\"$MEMBER_NO\",\"planCode\":\"MPLAN-PRO-M\",\"channel\":\"android\",\"projectId\":\"flm-membership\"}")
+ORDER_NO=$(echo "$ORDER" | jqv "['data']['order_no']")
+[ -n "$ORDER_NO" ] && ok "会员费订单 $ORDER_NO（待支付）" || bad "下单失败: $ORDER"
+PAID=$(curl -s -X POST "$BASE/membership/orders/$ORDER_NO/mock-pay" -H "$AUTH")
+assert_eq "$(echo "$PAID" | jqv "['data']['status']")" "已支付" "支付回调后订单状态"
+ENT=$(curl -s "$BASE/membership/entitlements/$MEMBER_NO?projectId=flm-membership" -H "$AUTH")
+assert_eq "$(echo "$ENT" | jqv "['data']['hasPaidEntitlement']")" "True" "付费权益生效（门控放行）"
 
 say "5. 推荐引擎"
 REC=$(curl -s "$BASE/assignment/recommend" -H "$AUTH" -H 'Content-Type: application/json' \
@@ -121,6 +133,12 @@ RESP2=$(curl -s "$BASE/mock/push-pending-member" -H 'Content-Type: application/j
   \"name\":\"烟测阻断$SUFFIX\",\"phone\":\"138$SUFFIX\",\"city\":\"北京\",
   \"projectId\":\"flm-membership\",\"identity\":\"PRO会员\"}")
 M2=$(echo "$RESP2" | jqv "['data']['memberNo']")
+# M2 也先完成付费（否则 confirm 在容量校验前先被付费门控拦截，测不到超载阻断）
+O2=$(curl -s "$BASE/membership/orders" -H "$AUTH" -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: smoke-order2-$SUFFIX" \
+  -d "{\"memberNo\":\"$M2\",\"planCode\":\"MPLAN-PRO-M\",\"channel\":\"android\",\"projectId\":\"flm-membership\"}")
+O2_NO=$(echo "$O2" | jqv "['data']['order_no']")
+curl -s -X POST "$BASE/membership/orders/$O2_NO/mock-pay" -H "$AUTH" > /dev/null
 REC2=$(curl -s "$BASE/assignment/recommend" -H "$AUTH" -H 'Content-Type: application/json' \
   -d "{\"memberNo\":\"$M2\",\"projectId\":\"flm-membership\"}")
 AID2=$(echo "$REC2" | jqv "['data']['assignmentId']")

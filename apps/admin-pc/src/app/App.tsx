@@ -31,6 +31,9 @@ const ProjectIntegrations = lazy(() => import("./components/ProjectIntegrations"
 const ProjectResourceConfig = lazy(() => import("./components/ProjectResourceConfig"));
 const StaffManagement = lazy(() => import("./components/StaffManagement"));
 const RiskCenter = lazy(() => import("./components/RiskCenter"));
+const MembershipCenter = lazy(() => import("./components/MembershipCenter"));
+const ContentCenter = lazy(() => import("./components/ContentCenter"));
+const AgentOverview = lazy(() => import("./components/AgentOverview"));
 
 const moduleMap = {
   workspace:   ProjectWorkspace,
@@ -59,6 +62,9 @@ const moduleMap = {
   reports:     ReportCenter,
   ecosystem:   EcosystemManagement,
   risk:        RiskCenter,
+  membership:  MembershipCenter,
+  content:     ContentCenter,
+  agents:      AgentOverview,
 };
 
 type UITheme = "dark" | "light" | "cyber";

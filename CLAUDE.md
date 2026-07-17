@@ -11,7 +11,7 @@ ontology/     # OWL 本体（设计期概念权威）+ 概念→表→API 映射
 server/       # Spring Boot 3.3 / Java 21 / PostgreSQL 16 / Flyway / JdbcClient 后端
 apps/         # 前端子应用（admin-pc 迁入中；member-app / jinfu-app 延后）
 packages/shared/openapi.yaml   # API 契约（springdoc 导出，前端据此生成 client）
-scripts/      # db-init.sh（起库，幂等）/ smoke.sh（端到端冒烟，14 步 22 断言）
+scripts/      # db-init.sh（起库，幂等）/ smoke.sh（端到端冒烟，15 步，含 M3 付费→安置→入群闭环）
 docs/         # 技术方案评审稿；docs/prototype/ 为早期原型归档
 ```
 
@@ -69,9 +69,12 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 
 ## 四、业务边界铁律（源自 SPEC，违反=方向性错误）
 
-15. **中台不建交易域**（SPEC §2.2）：订单/佣金/收益只有 `order_reference`/`earnings_snapshot`
-    **只读镜像**（经 sync 层进入）；提现只做**审批协同**，打款归外部系统。任何"在中台算佣金/记账"
-    的需求先在方案层面对齐边界，不要直接写代码。
+15. **中台不建交易域——会员费一方订单除外**（SPEC §2.2，M3 方案 §3 边界变更）：
+    **项目方**订单/佣金/收益只有 `order_reference`/`earnings_snapshot` **只读镜像**（经 sync 层进入）；
+    提现只做**审批协同**，打款归外部系统；**返佣永不进中台**（用户决策「只记录不返佣」）。
+    唯一例外：**会员费**（小程序虚拟支付收款）为一方交易，`membership_plan`/`membership_order`
+    以中台为事实源——状态机管控、回调幂等、审计留痕，规格与其余护栏一致。任何其他"在中台算佣金/记账"
+    的需求仍须先在方案层面对齐边界，不要直接写代码。
 16. **入群是一等对象**（SPEC §4.7）：任何入群/退群必须经 `member_group_assignment` 八态漏斗。
     **禁止只改群人数**。只有 webhook 入群事件或人工确认两条路径可置「已入群」（SPEC §6.7）。
 17. **不做个微客户端自动化**（SPEC §2.3）：加好友/邀请一律是「任务派发→人工执行→回填结果」。
@@ -122,3 +125,9 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 - [ ] **前端诚实度收口（M2）**：见下批次任务——未接线 chrome 的假成功 toast、无后端来源字段的
       占位（证件/写死基准日/推送次数=0 应显示"—"）、AccountAssets 深色遗留文字对比度。
 - [ ] admin-pc 剩余模块接线（工单/权限矩阵/城市分站/报表等，见 docs/技术方案-工程评审稿.md §8.1）。
+- [x] **M3a 微信生态·后端+管理台**（docs/技术方案-M3微信生态社群.md §7）：权益域
+      （membership_plan/order 一方交易、门控三注入点、到期作业）、代理归属优先（引擎第 0 级）、
+      企微网关 Mock 扩展（活码/欢迎语/群发/直播）、webhook create/dismiss 事件、内容域
+      （欢迎语/群发派发器/排课）、管理台三页（会员权益/内容运营/代理商总览）。V5 迁移 + 5 新测试。
+- [ ] **M3b 小程序**（apps/member-app，Taro）与 **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；
+      M3c 前置的办证清单（ICP/增值电信/企微认证/开放平台）须业务侧并行启动。

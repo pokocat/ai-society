@@ -3,7 +3,7 @@ info:
   title: OpenAPI definition
   version: v0
 servers:
-- url: http://127.0.0.1:8080
+- url: http://127.0.0.1:8082
   description: Generated server url
 paths:
   /api/v1/rules:
@@ -331,6 +331,12 @@ paths:
       tags:
       - sync-controller
       operationId: importPendingMember
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -680,6 +686,159 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/run-expiry:
+    post:
+      tags:
+      - membership-controller
+      operationId: runExpiry
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/plans:
+    get:
+      tags:
+      - membership-controller
+      operationId: plans
+      parameters:
+      - name: onSaleOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+    post:
+      tags:
+      - membership-controller
+      operationId: createPlan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlan"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/orders:
+    get:
+      tags:
+      - membership-controller
+      operationId: orders_1
+      parameters:
+      - name: memberNo
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+    post:
+      tags:
+      - membership-controller
+      operationId: createOrder
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrder"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/orders/{orderNo}/mock-pay:
+    post:
+      tags:
+      - membership-controller
+      operationId: mockPay
+      parameters:
+      - name: orderNo
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: callbackId
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/members/{memberNo}/identifiers:
     post:
       tags:
@@ -881,6 +1040,36 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/groups/{id}/join-way:
+    post:
+      tags:
+      - group-controller
+      operationId: createJoinWay
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinWayRequest"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/followups:
     get:
       tags:
@@ -1011,6 +1200,303 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/welcome-templates:
+    get:
+      tags:
+      - content-controller
+      operationId: welcomeTemplates
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+    post:
+      tags:
+      - content-controller
+      operationId: createWelcome
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWelcome"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/welcome-templates/{id}/sync:
+    post:
+      tags:
+      - content-controller
+      operationId: syncWelcome
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/courses:
+    get:
+      tags:
+      - content-controller
+      operationId: courses
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+    post:
+      tags:
+      - content-controller
+      operationId: createCourse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourse"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/courses/{id}/start-live:
+    post:
+      tags:
+      - content-controller
+      operationId: startLive
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/courses/{id}/finish:
+    post:
+      tags:
+      - content-controller
+      operationId: finish
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/broadcasts:
+    get:
+      tags:
+      - content-controller
+      operationId: broadcasts
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+    post:
+      tags:
+      - content-controller
+      operationId: createBroadcast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBroadcast"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/broadcasts/{id}/refresh:
+    post:
+      tags:
+      - content-controller
+      operationId: refresh
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/broadcasts/{id}/dispatch:
+    post:
+      tags:
+      - content-controller
+      operationId: dispatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/broadcasts/{id}/cancel:
+    post:
+      tags:
+      - content-controller
+      operationId: cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelBroadcast"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/auth/login:
     post:
       tags:
@@ -1112,7 +1598,7 @@ paths:
     post:
       tags:
       - assignment-controller
-      operationId: cancel
+      operationId: cancel_1
       requestBody:
         content:
           application/json:
@@ -1345,6 +1831,67 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/plans/{id}/status:
+    patch:
+      tags:
+      - membership-controller
+      operationId: planStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanStatus"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/membership/orders/{orderNo}/status:
+    patch:
+      tags:
+      - membership-controller
+      operationId: orderStatus
+      parameters:
+      - name: orderNo
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatus"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/groups/{id}:
     get:
       tags:
@@ -1384,6 +1931,37 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PatchGroup"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/welcome-templates/{id}:
+    patch:
+      tags:
+      - content-controller
+      operationId: patchWelcome
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchWelcome"
         required: true
       responses:
         "500":
@@ -1671,6 +2249,35 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/membership/entitlements/{memberNo}:
+    get:
+      tags:
+      - membership-controller
+      operationId: entitlement
+      parameters:
+      - name: memberNo
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: projectId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/members:
     get:
       tags:
@@ -2109,8 +2716,6 @@ components:
     GroupEvent:
       required:
       - eventType
-      - groupId
-      - memberNo
       type: object
       properties:
         eventType:
@@ -2118,6 +2723,10 @@ components:
         groupId:
           type: string
         memberNo:
+          type: string
+        chatId:
+          type: string
+        state:
           type: string
     CreateTicket:
       required:
@@ -2296,6 +2905,47 @@ components:
           type: number
         frozen:
           type: number
+    CreatePlan:
+      required:
+      - durationDays
+      - grantIdentity
+      - name
+      - planCode
+      - priceCents
+      type: object
+      properties:
+        planCode:
+          type: string
+        name:
+          type: string
+        grantIdentity:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        priceCents:
+          type: integer
+          format: int32
+        iosPriceCents:
+          type: integer
+          format: int32
+        projectScope:
+          type: string
+    CreateOrder:
+      required:
+      - channel
+      - memberNo
+      - planCode
+      type: object
+      properties:
+        memberNo:
+          type: string
+        planCode:
+          type: string
+        channel:
+          type: string
+        projectId:
+          type: string
     AddIdentifier:
       required:
       - idType
@@ -2339,6 +2989,11 @@ components:
         wecomAccountId:
           type: string
         personalWechatId:
+          type: string
+    JoinWayRequest:
+      type: object
+      properties:
+        state:
           type: string
     CreateFollowUp:
       required:
@@ -2388,6 +3043,60 @@ components:
         jobRole:
           type: string
         serviceRegion:
+          type: string
+    CreateWelcome:
+      required:
+      - content
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        scopeGroupType:
+          type: string
+        projectId:
+          type: string
+        content:
+          type: object
+          additionalProperties:
+            type: object
+    CreateCourse:
+      required:
+      - scheduledAt
+      - title
+      type: object
+      properties:
+        title:
+          type: string
+        speaker:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        groupScope:
+          type: object
+          additionalProperties:
+            type: object
+    CreateBroadcast:
+      required:
+      - content
+      - title
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: object
+          additionalProperties:
+            type: object
+        targetScope:
+          type: object
+          additionalProperties:
+            type: object
+    CancelBroadcast:
+      type: object
+      properties:
+        reason:
           type: string
     LoginRequest:
       required:
@@ -2490,6 +3199,22 @@ components:
       properties:
         status:
           type: string
+    PlanStatus:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+    OrderStatus:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+        reason:
+          type: string
     PatchGroup:
       type: object
       properties:
@@ -2502,6 +3227,15 @@ components:
           format: int32
         status:
           type: string
+    PatchWelcome:
+      type: object
+      properties:
+        status:
+          type: string
+        content:
+          type: object
+          additionalProperties:
+            type: object
     ApiResponseListMapStringObject:
       type: object
       properties:
