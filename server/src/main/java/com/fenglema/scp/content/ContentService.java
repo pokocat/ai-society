@@ -5,6 +5,7 @@ import com.fenglema.scp.common.BusinessException;
 import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.gateway.CommunityGateway;
+import com.fenglema.scp.gateway.OpsRobotNotifier;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +29,16 @@ public class ContentService {
     private final JdbcClient db;
     private final AuditService audit;
     private final CommunityGateway gateway;
+    private final OpsRobotNotifier opsRobot;
     private final com.fasterxml.jackson.databind.ObjectMapper mapper;
 
     public ContentService(JdbcClient db, AuditService audit, CommunityGateway gateway,
+                          OpsRobotNotifier opsRobot,
                           com.fasterxml.jackson.databind.ObjectMapper mapper) {
         this.db = db;
         this.audit = audit;
         this.gateway = gateway;
+        this.opsRobot = opsRobot;
         this.mapper = mapper;
     }
 
@@ -180,17 +184,20 @@ public class ContentService {
         if (groups.isEmpty()) {
             throw BusinessException.conflict("圈选范围内无可派发的群（需状态为 服务中/容量预警/已满）");
         }
+        // 额度读规则表（护栏 23）：与企业在企微管理端「群发规则」设置保持一致，默认 1 条/群/天（最严档）；
+        // 官方频控为每群每月≤当月天数，可调每周7/每天1（企微文档 92135）
+        int dailyQuota = db.sql("SELECT broadcast_daily_quota FROM resource_rules WHERE id = 1")
+                .query(Integer.class).single();
         int created = 0;
         int skipped = 0;
         List<String> chatIds = new java.util.ArrayList<>();
         for (Map<String, Object> g : groups) {
-            // 额度：该群今天已有群发确认任务 → 跳过并留痕（企微每群每天≤1 条）
             int today = db.sql("""
                             SELECT count(*) FROM task_item
                             WHERE group_id = :g AND task_type = '群发确认' AND created_at::date = now()::date
                             """)
                     .param("g", g.get("id")).query(Integer.class).single();
-            if (today > 0) {
+            if (today >= dailyQuota) {
                 skipped++;
                 continue;
             }
@@ -215,11 +222,20 @@ public class ContentService {
                 Map.of("status", status),
                 Map.of("status", "派发中", "taskCreated", created, "skippedByQuota", skipped),
                 (String) scope.get("projectId"), null, null);
+        // 内部群机器人提醒群主去客户端确认（官方 webhook，真实通道；未配置则跳过）。
+        // best-effort：通知失败不影响派发结果。
+        boolean robotNotified = opsRobot.sendMarkdown(
+                "**【群发确认】**《" + plan.get("title") + "》已派发\n"
+                        + "> 覆盖群数：<font color=\"info\">" + created + "</font>"
+                        + (skipped > 0 ? "（" + skipped + " 群因当日额度跳过）" : "") + "\n"
+                        + "> 请相关群主在企微客户端「客户群群发」中**确认发送**，完成后在中台任务回填。");
+
         Map<String, Object> out = new HashMap<>();
         out.put("planId", planId);
         out.put("status", "派发中");
         out.put("taskCreated", created);
         out.put("skippedByQuota", skipped);   // 无静默截断：跳过数如实返回
+        out.put("opsRobotNotified", robotNotified);
         out.put("gateway", gwResult);
         return out;
     }
@@ -336,6 +352,17 @@ public class ContentService {
                 Map.of("status", "直播中"), Map.of("status", "已结束", "replayUrl", info.get("replayUrl")),
                 null, null, null);
         return db.sql("SELECT * FROM course_session WHERE id = :id").param("id", id).query(Rows.MAP).single();
+    }
+
+    /** 测试企微内部群机器人连通性（真实发送一条测试消息）。 */
+    public Map<String, Object> opsRobotTest() {
+        if (!opsRobot.enabled()) {
+            return Map.of("enabled", false, "sent", false,
+                    "hint", "未配置 scp.wecom.ops-robot-webhook（env SCP_WECOM_OPS_ROBOT_WEBHOOK）。"
+                            + "在企微内部群添加群机器人后，把 webhook 地址填入该配置即可启用真实推送。");
+        }
+        boolean sent = opsRobot.sendMarkdown("**【中台连通测试】** 运营机器人通道正常 ✅\n> 来自主理人社群运营中台");
+        return Map.of("enabled", true, "sent", sent);
     }
 
     @SuppressWarnings("unchecked")

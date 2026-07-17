@@ -132,4 +132,13 @@ public class ContentController {
     public ApiResponse<Map<String, Object>> finish(@PathVariable long id) {
         return ApiResponse.ok(service.finishLive(id));
     }
+
+    // ── 运营机器人（企微内部群 webhook，真实通道） ──
+
+    /** 测试推送：验证 scp.wecom.ops-robot-webhook 配置是否连通（真实发到企微内部群）。 */
+    @PostMapping("/ops-robot/test")
+    @Perm(module = "content", action = Perm.Action.EDIT)
+    public ApiResponse<Map<String, Object>> opsRobotTest() {
+        return ApiResponse.ok(service.opsRobotTest());
+    }
 }

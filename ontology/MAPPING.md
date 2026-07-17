@@ -43,7 +43,7 @@
 | :RiskEvent | risk_event | GET /risk-events, POST /risk-events/{id}/convert, /resolve | 八类异常，可转任务/审批（SPEC §12） |
 | :AuditLog | audit_log（触发器禁 UPDATE/DELETE） | GET /audit-logs（M2 暴露） | append-only（SPEC §11.3） |
 | :SyncJob/:SyncError | sync_job / sync_error | GET /sync/jobs, /errors, /reconcile, POST /sync/import/pending-member | 游标/幂等/失败队列/对账（SPEC §13.2） |
-| 阈值数据属性（targetGroupSize 等 6 项 + wecomGroupCap） | resource_rules（单行 + 推荐权重列；M3 增 paid_gate_enabled/affinity_first/wecom_group_cap） | GET/PUT /rules | 全部可配，业务代码只读表 |
+| 阈值数据属性（targetGroupSize 等 6 项 + wecomGroupCap/broadcastDailyQuota） | resource_rules（单行 + 推荐权重列；M3 增 paid_gate_enabled/affinity_first/wecom_group_cap/broadcast_daily_quota） | GET/PUT /rules | 全部可配，业务代码只读表 |
 
 ## 未映射为独立表的本体元素
 

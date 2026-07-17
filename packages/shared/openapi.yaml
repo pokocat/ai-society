@@ -1272,6 +1272,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/content/ops-robot/test:
+    post:
+      tags:
+      - content-controller
+      operationId: opsRobotTest
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/content/courses:
     get:
       tags:
