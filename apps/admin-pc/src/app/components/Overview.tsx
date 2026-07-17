@@ -175,7 +175,7 @@ export default function Overview() {
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #4361ee, #7c3aed)" }}>
                   <Bot size={13} className="text-white" />
                 </div>
-                <span style={{ color: "#818cf8", fontSize: "12px", fontWeight: 500 }}>蜂乐玛 AI 智能运营</span>
+                <span style={{ color: "#818cf8", fontSize: "12px", fontWeight: 500 }}>主理人 AI 智能运营</span>
                 <span className="px-1.5 py-0.5 rounded text-white" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)", fontSize: "9px" }}>BETA</span>
               </div>
               <h2 className="font-bold mb-2" style={{ color: "#ffffff", fontSize: "26px", lineHeight: 1.2 }}>内容驱动增长</h2>

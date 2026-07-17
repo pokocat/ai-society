@@ -172,19 +172,19 @@ function NewWechatModal({ onClose }: { onClose: () => void }) {
 
 // ─── 企业微信数据 ─────────────────────────────────────────────
 const wecomAccounts = [
-  { id: 1, wecomId: "蜂乐玛企微-吴思远", corpId: "ww_fenglema_bj", linkedPersonal: "fengle_bj_01",
+  { id: 1, wecomId: "主理人企微-吴思远", corpId: "ww_fenglema_bj", linkedPersonal: "fengle_bj_01",
     admin: "吴思远", dept: "北京服务中心", members: 487, groups: ["北京PRO企微群", "北京体验官企微群", "内部协作群"],
     status: "正常", syncStatus: "已同步", lastSync: "2026-07-05", city: "北京", note: "负责北京所有PRO用户的企微添加和群管理" },
-  { id: 2, wecomId: "蜂乐玛企微-林小燕", corpId: "ww_fenglema_sh", linkedPersonal: "fengle_sh_01",
+  { id: 2, wecomId: "主理人企微-林小燕", corpId: "ww_fenglema_sh", linkedPersonal: "fengle_sh_01",
     admin: "林小燕", dept: "上海服务中心", members: 356, groups: ["上海PRO企微群", "上海体验官企微群"],
     status: "正常", syncStatus: "已同步", lastSync: "2026-07-05", city: "上海", note: "负责上海用户的企微双微信管理" },
-  { id: 3, wecomId: "蜂乐玛企微-刘刚", corpId: "ww_fenglema_gz", linkedPersonal: "fengle_gz_01",
+  { id: 3, wecomId: "主理人企微-刘刚", corpId: "ww_fenglema_gz", linkedPersonal: "fengle_gz_01",
     admin: "刘刚", dept: "广州服务中心", members: 234, groups: ["广州代理企微群"],
     status: "异常", syncStatus: "同步失败", lastSync: "2026-06-05", city: "广州", note: "企微30天未登录，与个人微信同步失败" },
-  { id: 4, wecomId: "蜂乐玛企微-李梦华", corpId: "ww_fenglema_sz", linkedPersonal: "fengle_sz_01",
+  { id: 4, wecomId: "主理人企微-李梦华", corpId: "ww_fenglema_sz", linkedPersonal: "fengle_sz_01",
     admin: "李梦华", dept: "深圳服务中心", members: 310, groups: ["深圳代理企微群", "深圳游客企微群"],
     status: "正常", syncStatus: "已同步", lastSync: "2026-07-04", city: "深圳", note: "" },
-  { id: 5, wecomId: "蜂乐玛企微-陈明", corpId: "ww_fenglema_hz", linkedPersonal: "fengle_hz_01",
+  { id: 5, wecomId: "主理人企微-陈明", corpId: "ww_fenglema_hz", linkedPersonal: "fengle_hz_01",
     admin: "陈明", dept: "杭州服务中心", members: 140, groups: ["杭州会员企微群"],
     status: "正常", syncStatus: "已同步", lastSync: "2026-07-05", city: "杭州", note: "" },
 ];

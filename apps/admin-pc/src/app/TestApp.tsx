@@ -15,7 +15,7 @@ export default function TestApp() {
       fontFamily: "system-ui, sans-serif"
     }}>
       <div style={{ textAlign: "center" }}>
-        <h1 style={{ fontSize: "48px", marginBottom: "20px" }}>蜂乐玛系统测试</h1>
+        <h1 style={{ fontSize: "48px", marginBottom: "20px" }}>主理人系统测试</h1>
         <p style={{ fontSize: "24px", color: "#94a3b8", marginBottom: "40px" }}>
           系统正在运行
         </p>

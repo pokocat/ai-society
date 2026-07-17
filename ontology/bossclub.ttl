@@ -5,12 +5,12 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <https://fenglema.com/ontology/scp> a owl:Ontology ;
-    rdfs:label "蜂乐玛社群运营中台本体"@zh ;
+    rdfs:label "主理人社群运营中台本体"@zh ;
     rdfs:comment """设计期概念权威（design-time authority）。
 本体定义中台全部核心业务概念、对象属性与公理，是数据库 schema 与 API DTO 的映射源头
 （对照关系见同目录 MAPPING.md）。运行时存储为 PostgreSQL，不做运行时推理——
 本文件服务于建模评审、术语统一与未来的语义校验（Jena/RDF4J 可直接加载）。
-概念与状态机对齐《蜂乐玛社群运营中台-业务逻辑与项目说明》V1.0（SPEC §4/§5/§8/§13.3）。"""@zh ;
+概念与状态机对齐《主理人社群运营中台-业务逻辑与项目说明》V1.0（SPEC §4/§5/§8/§13.3）。"""@zh ;
     owl:versionInfo "0.1.0" .
 
 #################################################################

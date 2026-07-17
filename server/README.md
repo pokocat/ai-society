@@ -1,4 +1,4 @@
-# 蜂乐玛社群运营中台 · 后端（server）
+# 主理人社群运营中台 · 后端（server）
 
 Spring Boot 3.3 / Java 21 / PostgreSQL 16 / Flyway / JdbcClient（显式 SQL，DDL 为唯一事实源）。
 领域模型与状态机对齐设计仓库 `ai-bossclub-design` 的业务文档 SPEC V1.0；概念权威见 `../ontology/bossclub.ttl` 与 `../ontology/MAPPING.md`。

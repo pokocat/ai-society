@@ -105,30 +105,30 @@ const tiers = [
 
 // ─── 生态列表数据 ─────────────────────────────────────────────
 const ecosystems = [
-  { id: 1, name: "蜂乐玛健康生态", desc: "以大健康为核心，整合营养、运动、身心灵多个赛道", platforms: 3, projects: 10, members: 4820, revenue: "¥42万/月", status: "主力生态", color: "#4361ee" },
-  { id: 2, name: "蜂乐玛教育生态", desc: "在线教育与实体培训融合的知识生态体系",              platforms: 2, projects: 8,  members: 2310, revenue: "¥28万/月", status: "成长中",   color: "#0ea5e9" },
-  { id: 3, name: "蜂乐玛商业生态", desc: "面向B端的代理、分销与城市合伙人体系",              platforms: 2, projects: 6,  members: 1190, revenue: "¥14万/月", status: "孵化中",   color: "#10b981" },
+  { id: 1, name: "主理人健康生态", desc: "以大健康为核心，整合营养、运动、身心灵多个赛道", platforms: 3, projects: 10, members: 4820, revenue: "¥42万/月", status: "主力生态", color: "#4361ee" },
+  { id: 2, name: "主理人教育生态", desc: "在线教育与实体培训融合的知识生态体系",              platforms: 2, projects: 8,  members: 2310, revenue: "¥28万/月", status: "成长中",   color: "#0ea5e9" },
+  { id: 3, name: "主理人商业生态", desc: "面向B端的代理、分销与城市合伙人体系",              platforms: 2, projects: 6,  members: 1190, revenue: "¥14万/月", status: "孵化中",   color: "#10b981" },
 ];
 
 // ─── SaaS 平台列表 ───────────────────────────────────────────
 const saasPlatforms = [
-  { id: 1, name: "蜂乐玛私域工具",    eco: "蜂乐玛健康生态", desc: "私域账号资产 + 微信社群 + 用户服务 + 订单工单一体化系统", projects: 4, users: 1623, groups: 34,  status: "生产中", isCurrent: true  },
-  { id: 2, name: "蜂乐玛课程平台",    eco: "蜂乐玛健康生态", desc: "在线课程管理、学员互动与结业认证",                         projects: 3, users: 2100, groups: 18,  status: "生产中", isCurrent: false },
-  { id: 3, name: "蜂乐玛代理系统",    eco: "蜂乐玛健康生态", desc: "代理商招募、培训、分销与佣金结算",                         projects: 3, users: 890,  groups: 12,  status: "生产中", isCurrent: false },
-  { id: 4, name: "蜂乐玛学习平台",    eco: "蜂乐玛教育生态", desc: "自主学习路径、积分激励与学习报告",                         projects: 4, users: 1560, groups: 22,  status: "测试中", isCurrent: false },
-  { id: 5, name: "蜂乐玛直播工具",    eco: "蜂乐玛教育生态", desc: "在线直播、回放管理与观看数据分析",                         projects: 4, users: 750,  groups: 8,   status: "开发中", isCurrent: false },
-  { id: 6, name: "蜂乐玛城市合伙人",  eco: "蜂乐玛商业生态", desc: "城市站长招募、资源分配与业绩追踪",                         projects: 3, users: 430,  groups: 15,  status: "测试中", isCurrent: false },
-  { id: 7, name: "蜂乐玛分销系统",    eco: "蜂乐玛商业生态", desc: "多级分销、佣金计算与实时结算",                             projects: 3, users: 760,  groups: 10,  status: "生产中", isCurrent: false },
+  { id: 1, name: "主理人私域工具",    eco: "主理人健康生态", desc: "私域账号资产 + 微信社群 + 用户服务 + 订单工单一体化系统", projects: 4, users: 1623, groups: 34,  status: "生产中", isCurrent: true  },
+  { id: 2, name: "主理人课程平台",    eco: "主理人健康生态", desc: "在线课程管理、学员互动与结业认证",                         projects: 3, users: 2100, groups: 18,  status: "生产中", isCurrent: false },
+  { id: 3, name: "主理人代理系统",    eco: "主理人健康生态", desc: "代理商招募、培训、分销与佣金结算",                         projects: 3, users: 890,  groups: 12,  status: "生产中", isCurrent: false },
+  { id: 4, name: "主理人学习平台",    eco: "主理人教育生态", desc: "自主学习路径、积分激励与学习报告",                         projects: 4, users: 1560, groups: 22,  status: "测试中", isCurrent: false },
+  { id: 5, name: "主理人直播工具",    eco: "主理人教育生态", desc: "在线直播、回放管理与观看数据分析",                         projects: 4, users: 750,  groups: 8,   status: "开发中", isCurrent: false },
+  { id: 6, name: "主理人城市合伙人",  eco: "主理人商业生态", desc: "城市站长招募、资源分配与业绩追踪",                         projects: 3, users: 430,  groups: 15,  status: "测试中", isCurrent: false },
+  { id: 7, name: "主理人分销系统",    eco: "主理人商业生态", desc: "多级分销、佣金计算与实时结算",                             projects: 3, users: 760,  groups: 10,  status: "生产中", isCurrent: false },
 ];
 
 // ─── 项目/平台列表 ───────────────────────────────────────────
 const projects = [
-  { id: 1, name: "蜂乐玛PRO会员",   saas: "蜂乐玛私域工具", eco: "健康生态", users: 1023, groups: 12, teacher: "吴思远/林小燕", cities: ["北京","上海","深圳"], revenue: "¥28万/月", status: "主力项目" },
-  { id: 2, name: "蜂乐玛体验官",   saas: "蜂乐玛私域工具", eco: "健康生态", users: 387,  groups: 8,  teacher: "刘刚/李梦华",    cities: ["广州","成都","杭州"], revenue: "¥12万/月", status: "增长中" },
-  { id: 3, name: "蜂乐玛代理商",   saas: "蜂乐玛私域工具", eco: "健康生态", users: 134,  groups: 6,  teacher: "赵志远",          cities: ["全国"],               revenue: "¥7万/月",  status: "稳定运营" },
-  { id: 4, name: "蜂乐玛城市分站", saas: "蜂乐玛私域工具", eco: "健康生态", users: 79,   groups: 8,  teacher: "陈明/王芳",       cities: ["武汉","南京","西安"],  revenue: "¥4.6万/月",status: "孵化中" },
-  { id: 5, name: "蜂乐玛7日训练营",saas: "蜂乐玛课程平台", eco: "健康生态", users: 450,  groups: 5,  teacher: "课程组",          cities: ["线上"],               revenue: "¥6万/月",  status: "季节性" },
-  { id: 6, name: "蜂乐玛健康学院", saas: "蜂乐玛学习平台", eco: "教育生态", users: 820,  groups: 10, teacher: "教研团队",        cities: ["线上"],               revenue: "¥15万/月", status: "主力项目" },
+  { id: 1, name: "主理人PRO会员",   saas: "主理人私域工具", eco: "健康生态", users: 1023, groups: 12, teacher: "吴思远/林小燕", cities: ["北京","上海","深圳"], revenue: "¥28万/月", status: "主力项目" },
+  { id: 2, name: "主理人体验官",   saas: "主理人私域工具", eco: "健康生态", users: 387,  groups: 8,  teacher: "刘刚/李梦华",    cities: ["广州","成都","杭州"], revenue: "¥12万/月", status: "增长中" },
+  { id: 3, name: "主理人代理商",   saas: "主理人私域工具", eco: "健康生态", users: 134,  groups: 6,  teacher: "赵志远",          cities: ["全国"],               revenue: "¥7万/月",  status: "稳定运营" },
+  { id: 4, name: "主理人城市分站", saas: "主理人私域工具", eco: "健康生态", users: 79,   groups: 8,  teacher: "陈明/王芳",       cities: ["武汉","南京","西安"],  revenue: "¥4.6万/月",status: "孵化中" },
+  { id: 5, name: "主理人7日训练营",saas: "主理人课程平台", eco: "健康生态", users: 450,  groups: 5,  teacher: "课程组",          cities: ["线上"],               revenue: "¥6万/月",  status: "季节性" },
+  { id: 6, name: "主理人健康学院", saas: "主理人学习平台", eco: "教育生态", users: 820,  groups: 10, teacher: "教研团队",        cities: ["线上"],               revenue: "¥15万/月", status: "主力项目" },
 ];
 
 const statusCfg: Record<string, { bg: string; color: string }> = {
@@ -222,11 +222,11 @@ function SuperView() {
       <div className="rounded-xl p-5" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
         <div className="flex items-center gap-2 mb-4">
           <Zap size={16} style={{ color: "#f59e0b" }} />
-          <span className="text-sm font-semibold" style={{ color: L.text }}>超级生态 · 蜂乐玛</span>
+          <span className="text-sm font-semibold" style={{ color: L.text }}>超级生态 · 主理人</span>
           <span className="px-2 py-0.5 rounded-full text-xs ml-2" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>最高层级</span>
         </div>
         <p className="text-xs leading-relaxed mb-4" style={{ color: L.textSec }}>
-          蜂乐玛超级生态是整个体系的最顶层。统一管理旗下所有生态、SaaS 平台和具体项目。拥有全局数据视角、最高级权限、多租户管控和生态资源调配能力。
+          主理人超级生态是整个体系的最顶层。统一管理旗下所有生态、SaaS 平台和具体项目。拥有全局数据视角、最高级权限、多租户管控和生态资源调配能力。
           每个下属生态都是一个独立的业务闭环，通过 SaaS 平台层共享私域社群管理工具。
         </p>
         <div className="flex gap-2 flex-wrap">
@@ -446,7 +446,7 @@ export default function EcosystemManagement() {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
           <div className="w-2 h-2 rounded-full" style={{ background: "#10b981" }} />
           <span className="text-xs" style={{ color: L.muted }}>当前：</span>
-          <span className="text-xs font-medium" style={{ color: L.text }}>SaaS 平台 · 蜂乐玛私域工具</span>
+          <span className="text-xs font-medium" style={{ color: L.text }}>SaaS 平台 · 主理人私域工具</span>
         </div>
       </div>
 

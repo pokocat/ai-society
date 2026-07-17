@@ -1,4 +1,4 @@
-# CLAUDE.md — 蜂乐玛社群运营中台 · Agent 工作守则
+# CLAUDE.md — 主理人社群运营中台 · Agent 工作守则
 
 本仓库由 AI agent 持续开发维护。以下护栏是**硬性要求**，任何后续改动（无论 AI 还是人）都必须遵守。
 业务权威基线：设计仓库 `pokocat/ai-bossclub-design` 的《业务逻辑与项目说明》V1.0（下称 SPEC）；

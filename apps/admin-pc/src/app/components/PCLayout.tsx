@@ -167,7 +167,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
             <Zap size={14} style={{ color: D.ink }} />
           </div>
           <div className="min-w-0">
-            <div className="font-bold leading-tight" style={{ fontSize: "13px", color: D.sideText }}>蜂乐玛</div>
+            <div className="font-bold leading-tight" style={{ fontSize: "13px", color: D.sideText }}>主理人</div>
             <div className="truncate" style={{ color: D.sideMuted, fontSize: "10px" }}>私域社群运营中台</div>
           </div>
           <div className="ml-auto">

@@ -51,7 +51,7 @@ const members = {
     avatar: "/reference-assets/member-lin.png", identity: "尊享官", score: 86,
     tags: ["高活跃", "美妆偏好", "复购潜力"], joined: "2025-09-18",
     projects: [
-      { id: "flm-membership", name: "蜂乐玛会员项目", role: "尊享官", status: "有效", color: "#7c3aed" },
+      { id: "flm-membership", name: "主理人会员项目", role: "尊享官", status: "有效", color: "#7c3aed" },
       { id: "experience-camp", name: "百日体验营", role: "体验官", status: "第 36 天", color: "#06b6d4" },
     ],
   },
@@ -60,7 +60,7 @@ const members = {
     avatar: "/reference-assets/member-qiu.png", identity: "体验官", score: 74,
     tags: ["敏感肌", "内容活跃", "待升级"], joined: "2026-02-11",
     projects: [
-      { id: "flm-membership", name: "蜂乐玛会员项目", role: "体验官", status: "有效", color: "#7c3aed" },
+      { id: "flm-membership", name: "主理人会员项目", role: "体验官", status: "有效", color: "#7c3aed" },
       { id: "brand-live", name: "品牌直播项目", role: "社群用户", status: "已授权", color: "#ec4899" },
     ],
   },
@@ -70,7 +70,7 @@ const members = {
     tags: ["高净值", "渠道负责人", "季度回访"], joined: "2024-06-20",
     projects: [
       { id: "city-partner", name: "城市合伙人项目", role: "合伙人", status: "有效", color: "#f59e0b" },
-      { id: "flm-membership", name: "蜂乐玛会员项目", role: "黑金会员", status: "有效", color: "#7c3aed" },
+      { id: "flm-membership", name: "主理人会员项目", role: "黑金会员", status: "有效", color: "#7c3aed" },
     ],
   },
   chen: {
@@ -84,11 +84,11 @@ const members = {
 } as const;
 
 const initialTasks: QueueItem[] = [
-  { id: 1, member: "lin", type: "待处理", title: "使用后出现轻微敏感，需要跟进反馈", category: "售后问题", priority: "非常重要", due: "今天 12:30", projectId: "flm-membership", project: "蜂乐玛会员项目" },
+  { id: 1, member: "lin", type: "待处理", title: "使用后出现轻微敏感，需要跟进反馈", category: "售后问题", priority: "非常重要", due: "今天 12:30", projectId: "flm-membership", project: "主理人会员项目" },
   { id: 2, member: "qiu", type: "待处理", title: "体验营第 36 天，确认使用感受", category: "阶段回访", priority: "重要", due: "今天 15:00", projectId: "experience-camp", project: "百日体验营" },
   { id: 3, member: "zhao", type: "我发布的", title: "城市合伙人季度经营复盘", category: "经营回访", priority: "重要", due: "明天 10:00", projectId: "city-partner", project: "城市合伙人项目" },
   { id: 4, member: "chen", type: "我发布的", title: "新学员入营信息补全", category: "资料完善", priority: "一般", due: "7 月 13 日", projectId: "experience-camp", project: "百日体验营" },
-  { id: 5, member: "lin", type: "我回访的", title: "订单到货后的产品使用回访", category: "订单回访", priority: "重要", due: "已回访 1 次", projectId: "flm-membership", project: "蜂乐玛会员项目", done: true },
+  { id: 5, member: "lin", type: "我回访的", title: "订单到货后的产品使用回访", category: "订单回访", priority: "重要", due: "已回访 1 次", projectId: "flm-membership", project: "主理人会员项目", done: true },
   { id: 6, member: "zhao", type: "我回访的", title: "合伙人权益续费提醒", category: "续费提醒", priority: "一般", due: "已回访 2 次", projectId: "city-partner", project: "城市合伙人项目", done: true },
 ];
 
@@ -515,7 +515,7 @@ export default function ProjectWorkspace() {
               {profileTab === "订单记录" && (
                 <div className="space-y-2">
                   {[
-                    ["ORD-20260708023", "焕活修护套装", "¥1,680", "已完成", "蜂乐玛会员项目"],
+                    ["ORD-20260708023", "焕活修护套装", "¥1,680", "已完成", "主理人会员项目"],
                     ["ORD-20260519018", "百日体验营进阶包", "¥980", "已完成", "百日体验营"],
                   ].map(order => (
                     <div key={order[0]} className="p-2.5 rounded-md" style={{ background: C.bg, border: `1px solid ${C.border2}` }}>

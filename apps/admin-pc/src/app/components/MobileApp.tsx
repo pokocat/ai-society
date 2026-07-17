@@ -62,7 +62,7 @@ function HomeTab({ onNavigate, onOpenService, onOpenNotifications }: { onNavigat
                 <Star size={13} style={{ color: "#fbbf24" }} />
                 <span className="text-xs font-semibold text-white">PRO 会员</span>
               </div>
-              <div className="font-bold text-white" style={{ fontSize: "20px" }}>蜂乐玛私域会员</div>
+              <div className="font-bold text-white" style={{ fontSize: "20px" }}>主理人私域会员</div>
             </div>
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-lg font-bold text-white" style={{ background: "rgba(255,255,255,0.2)" }}>李</div>
           </div>

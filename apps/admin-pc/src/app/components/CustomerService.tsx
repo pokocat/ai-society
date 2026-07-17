@@ -35,7 +35,7 @@ const csStaff = [
 // 客服详情页内的微信群数据（按Tab区分）
 const wechatTabs = ["FLA001","FLA002","FLA003","FLA004","FLA005","FLA006","FLA007"];
 const groupDetail = Array.from({ length: 8 }, (_, i) => ({
-  groupNo: `0000${i + 1}`, name: `蜂乐玛体验官${i + 1}群`, city: "北京", maskType: "棉花", maskCount: 5,
+  groupNo: `0000${i + 1}`, name: `主理人体验官${i + 1}群`, city: "北京", maskType: "棉花", maskCount: 5,
   status: ["配置完成","待配置","配置完成","配置完成","待配置","配置完成","配置完成","配置完成"][i],
   wechat: "FLA001", type: ["体验官群","游客群","PRO会员群","尊享群","体验官群","家族群","游客群","分站群"][i],
   pushCount: [100, 786, 491, 774, 204, 589, 780, 308][i],

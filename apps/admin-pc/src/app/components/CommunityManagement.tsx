@@ -189,7 +189,7 @@ function NewGroupModal({ onClose, builderAccounts, projectId, onCreated }: {
           {/* 群名 */}
           <div>
             <label className="block text-xs mb-1.5" style={{ color: L.muted }}>群名</label>
-            <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="如 吉林蜂乐玛游客群1" value={form.name} onChange={e => set("name", e.target.value)} />
+            <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.text }} placeholder="如 吉林主理人游客群1" value={form.name} onChange={e => set("name", e.target.value)} />
           </div>
 
           {/* 可分配容量上限（→ targetCapacity） */}
