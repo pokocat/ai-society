@@ -2,15 +2,19 @@ import { useCallback, useState } from "react";
 import { View, Text, Button, Input, Picker } from "@tarojs/components";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { applyWithdrawal, getEarnings, EarningsData } from "../../api/mp";
+import { useTabSync } from "../../utils/tab";
+import { M } from "../../theme";
+import Icon from "../../components/Icon";
+import Sheet from "../../components/Sheet";
 
 const METHODS = ["微信", "支付宝", "银行卡"];
 
 const statusTag: Record<string, string> = {
-  待审核: "tag", 已批准: "tag tag-amber", 已打款: "tag tag-green", 已拒绝: "tag tag-red",
+  待审核: "tag", 已批准: "tag tag--amber", 已打款: "tag tag--green", 已拒绝: "tag tag--red",
 };
 
 /**
- * 收益页（对齐设计稿 EarningsTab）：收益镜像（SPEC §2.2 只读）+ 提现申请（审批协同）。
+ * 收益页（对齐设计稿 EarningsTab）：收益镜像（SPEC §2.2 只读）+ 提现申请（审批协同，底部弹层）。
  * 提现流程：申请 → PC 审批中心 → 外部系统打款；中台不执行打款。
  */
 export default function Earnings() {
@@ -21,6 +25,8 @@ export default function Earnings() {
   const [account, setAccount] = useState("");
   const [idemKey, setIdemKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useTabSync(3);
 
   const load = useCallback(async () => {
     try {
@@ -67,67 +73,74 @@ export default function Earnings() {
   ];
 
   return (
-    <View style={{ paddingBottom: "32px" }}>
-      <View style={{ padding: "32px 24px 0" }}>
-        <Text style={{ fontSize: "38px", fontWeight: 700, color: "#e2e8f0" }}>我的收益</Text>
-      </View>
+    <View className="page">
+      <View className="hd" style={{ paddingBottom: "10rpx" }}>
+        <Text className="hd-title" style={{ display: "block", marginBottom: "30rpx" }}>我的收益</Text>
 
-      {/* 可提现主卡 */}
-      <View className="card-hero">
-        <Text style={{ fontSize: "22px", color: "rgba(255,255,255,0.65)" }}>可提现余额</Text>
-        <View style={{ margin: "12px 0 16px" }}>
-          <Text style={{ fontSize: "64px", fontWeight: 700, color: "#ffffff" }}>
-            ¥{withdrawable.toLocaleString()}
-          </Text>
+        {/* 可提现主卡 */}
+        <View className="card-hero" style={{ margin: "0" }}>
+          <View>
+            <Text style={{ fontSize: "22rpx", color: "rgba(255,255,255,0.65)" }}>可提现余额</Text>
+            <View style={{ margin: "10rpx 0 14rpx" }}>
+              <Text style={{ fontSize: "64rpx", fontWeight: 700, color: "#ffffff" }}>
+                ¥{withdrawable.toLocaleString()}
+              </Text>
+            </View>
+            <Text style={{ fontSize: "22rpx", color: "rgba(255,255,255,0.6)" }}>
+              收益由项目方系统结算同步（只读镜像）
+              {data?.summary.synced_at ? ` · 同步于 ${String(data.summary.synced_at).slice(0, 16).replace("T", " ")}` : ""}
+            </Text>
+          </View>
         </View>
-        <Text style={{ fontSize: "22px", color: "rgba(255,255,255,0.6)" }}>
-          收益由项目方系统结算同步（只读镜像）
-          {data?.summary.synced_at ? ` · 同步于 ${String(data.summary.synced_at).slice(0, 16).replace("T", " ")}` : ""}
-        </Text>
       </View>
 
       {/* 统计四宫格 */}
-      <View style={{ display: "flex", flexWrap: "wrap", gap: "16px", margin: "0 24px" }}>
+      <View className="stat-grid stat-grid--wrap" style={{ marginTop: "30rpx" }}>
         {stats.map(s => (
-          <View key={s.label} style={{
-            width: "calc(50% - 8px)", boxSizing: "border-box",
-            background: "#1a2640", borderRadius: "24px", padding: "26px 24px",
-          }}>
-            <Text className="muted">{s.label}</Text>
-            <View style={{ marginTop: "8px" }}>
-              <Text style={{ fontSize: "32px", fontWeight: 700, color: s.color }}>{s.value}</Text>
+          <View key={s.label} className="stat-card stat-card--half">
+            <Text className="stat-label">{s.label}</Text>
+            <View>
+              <Text className="stat-value stat-value--lg" style={{ color: s.color }}>{s.value}</Text>
             </View>
           </View>
         ))}
       </View>
 
       {/* 提现按钮 */}
-      <View style={{ margin: "24px" }}>
-        <Button className="btn-gradient" style={{ width: "100%" }}
-          disabled={withdrawable < 100} onClick={openForm}>
+      <View style={{ margin: "0 40rpx 30rpx" }}>
+        <Button className="btn btn--gradient" disabled={withdrawable < 100} onClick={openForm}>
+          <Icon name="wallet" size={30} color="#ffffff" />
           申请提现
         </Button>
         {withdrawable < 100 && (
-          <View style={{ marginTop: "10px", textAlign: "center" }}>
-            <Text className="muted">可提现余额满 ¥100 才可申请</Text>
+          <View style={{ marginTop: "12rpx", textAlign: "center" }}>
+            <Text className="t-muted">可提现余额满 ¥100 才可申请</Text>
           </View>
         )}
       </View>
 
       {/* 提现记录 */}
-      <Text className="section-title">提现记录</Text>
-      <View className="card" style={{ paddingTop: "8px", paddingBottom: "8px" }}>
+      <View className="section-head">
+        <Text className="section-title">提现记录</Text>
+      </View>
+      <View className="card" style={{ paddingTop: "6rpx", paddingBottom: "6rpx" }}>
         {(data?.withdrawals ?? []).length === 0 && (
-          <View style={{ padding: "24px 0" }}><Text className="muted">暂无提现记录</Text></View>
+          <View style={{ padding: "30rpx 0" }}><Text className="t-muted">暂无提现记录</Text></View>
         )}
         {(data?.withdrawals ?? []).map(w => (
           <View key={w.id} className="row">
-            <View>
-              <Text style={{ fontSize: "28px", color: "#e2e8f0" }}>
-                提现至{w.method} ¥{Number(w.amount).toLocaleString()}
-              </Text>
-              <View style={{ marginTop: "6px" }}>
-                <Text className="muted">{String(w.created_at).slice(0, 16).replace("T", " ")}</Text>
+            <View className="f f-1" style={{ gap: "20rpx" }}>
+              <View
+                className="li-icon"
+                style={{ background: w.status === "已打款" ? "rgba(16,185,129,0.15)" : "rgba(67,97,238,0.15)" }}
+              >
+                <Icon name="wallet" size={26} color={w.status === "已打款" ? "#10b981" : "#7c9aff"} />
+              </View>
+              <View className="f-1">
+                <Text className="t-body">提现至{w.method} ¥{Number(w.amount).toLocaleString()}</Text>
+                <View style={{ marginTop: "6rpx" }}>
+                  <Text className="t-muted">{String(w.created_at).slice(0, 16).replace("T", " ")}</Text>
+                </View>
               </View>
             </View>
             <Text className={statusTag[w.status] ?? "tag"}>{w.status}</Text>
@@ -135,87 +148,65 @@ export default function Earnings() {
         ))}
       </View>
 
-      <View className="card" style={{ background: "transparent", border: "none" }}>
-        <Text className="muted">
+      <View style={{ margin: "0 40rpx" }}>
+        <Text className="t-muted">
           提现申请提交后进入审批流程，审批通过后由项目方系统打款，预计 1-3 个工作日到账。
         </Text>
       </View>
 
-      {/* 提现表单（底部弹层） */}
+      {/* 提现表单（底部弹层，对齐设计稿） */}
       {formOpen && (
-        <View onClick={() => setFormOpen(false)} style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 50,
-          background: "rgba(4,8,18,0.76)", display: "flex", alignItems: "flex-end",
-        }}>
-          <View onClick={e => e.stopPropagation()} style={{
-            width: "100%", background: "#131f35", borderRadius: "40px 40px 0 0",
-            padding: "40px 32px 60px", boxSizing: "border-box",
-          }}>
-            <View style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontSize: "30px", fontWeight: 600, color: "#e2e8f0" }}>申请提现</Text>
-              <Text className="muted" onClick={() => setFormOpen(false)}>关闭</Text>
+        <Sheet title="申请提现" onClose={() => setFormOpen(false)}>
+          <View style={{ marginTop: "30rpx", padding: "24rpx", borderRadius: "24rpx", background: M.surface2 }}>
+            <Text className="t-muted" style={{ fontSize: "20rpx" }}>可提现金额</Text>
+            <View style={{ marginTop: "6rpx" }}>
+              <Text style={{ fontSize: "44rpx", fontWeight: 600, color: M.text }}>
+                ¥{withdrawable.toLocaleString()}
+              </Text>
             </View>
-
-            <View style={{ background: "#1a2640", borderRadius: "24px", padding: "24px", marginTop: "28px" }}>
-              <Text className="muted">可提现金额</Text>
-              <View style={{ marginTop: "6px" }}>
-                <Text style={{ fontSize: "40px", fontWeight: 600, color: "#e2e8f0" }}>
-                  ¥{withdrawable.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ marginTop: "24px" }}>
-              <Text className="sec">提现金额（100 起，整数）</Text>
-              <Input type="number" value={amount} placeholder="最低 100 元"
-                onInput={e => setAmount(e.detail.value)}
-                placeholderStyle="color:#64748b"
-                style={{
-                  marginTop: "12px", padding: "22px 24px", borderRadius: "20px",
-                  background: "#1a2640", color: "#e2e8f0", fontSize: "30px",
-                  border: `1px solid ${amount && !valid ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.07)"}`,
-                }} />
-              <View style={{ marginTop: "10px", minHeight: "30px" }}>
-                <Text style={{ fontSize: "22px", color: amount && !valid ? "#f87171" : "#64748b" }}>
-                  {amount && !valid
-                    ? `请输入 100-${withdrawable} 之间的整数金额`
-                    : "审批通过后由项目方系统打款"}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ marginTop: "8px" }}>
-              <Text className="sec">提现渠道</Text>
-              <Picker mode="selector" range={METHODS} value={methodIdx}
-                onChange={e => setMethodIdx(Number(e.detail.value))}>
-                <View style={{
-                  marginTop: "12px", padding: "22px 24px", borderRadius: "20px",
-                  background: "#1a2640", display: "flex", justifyContent: "space-between",
-                }}>
-                  <Text style={{ fontSize: "28px", color: "#e2e8f0" }}>{METHODS[methodIdx]}</Text>
-                  <Text className="muted">切换 ›</Text>
-                </View>
-              </Picker>
-            </View>
-
-            <View style={{ marginTop: "24px" }}>
-              <Text className="sec">收款账户（选填，银行卡请填卡号）</Text>
-              <Input value={account} placeholder="默认使用实名账户"
-                onInput={e => setAccount(e.detail.value)}
-                placeholderStyle="color:#64748b"
-                style={{
-                  marginTop: "12px", padding: "22px 24px", borderRadius: "20px",
-                  background: "#1a2640", color: "#e2e8f0", fontSize: "28px",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                }} />
-            </View>
-
-            <Button className="btn-gradient" style={{ width: "100%", marginTop: "36px" }}
-              disabled={!valid} loading={submitting} onClick={() => void submit()}>
-              确认提交（进入审批）
-            </Button>
           </View>
-        </View>
+
+          <View style={{ marginTop: "26rpx" }}>
+            <Text className="t-sec">提现金额（100 起，整数）</Text>
+            <Input
+              type="number" value={amount} placeholder="最低 100 元"
+              className={amount && !valid ? "field-input field-input--error" : "field-input"}
+              placeholderStyle="color:#64748b"
+              onInput={e => setAmount(e.detail.value)}
+            />
+            <View style={{ marginTop: "10rpx", minHeight: "30rpx" }}>
+              <Text style={{ fontSize: "20rpx", color: amount && !valid ? "#f87171" : M.muted }}>
+                {amount && !valid
+                  ? `请输入 100-${withdrawable} 之间的整数金额`
+                  : "审批通过后由项目方系统打款"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ marginTop: "6rpx" }}>
+            <Text className="t-sec">提现渠道</Text>
+            <Picker mode="selector" range={METHODS} value={methodIdx} onChange={e => setMethodIdx(Number(e.detail.value))}>
+              <View className="f-between" style={{ marginTop: "14rpx", padding: "22rpx 26rpx", borderRadius: "22rpx", background: M.surface2 }}>
+                <Text className="t-body">{METHODS[methodIdx]}</Text>
+                <Icon name="chevron-right" size={28} color={M.muted} />
+              </View>
+            </Picker>
+          </View>
+
+          <View style={{ marginTop: "26rpx" }}>
+            <Text className="t-sec">收款账户（选填，银行卡请填卡号）</Text>
+            <Input
+              value={account} placeholder="默认使用实名账户"
+              className="field-input"
+              placeholderStyle="color:#64748b"
+              onInput={e => setAccount(e.detail.value)}
+            />
+          </View>
+
+          <Button className="btn btn--gradient" style={{ marginTop: "40rpx" }} disabled={!valid} loading={submitting} onClick={() => void submit()}>
+            确认提交（进入审批）
+          </Button>
+        </Sheet>
       )}
     </View>
   );

@@ -11,11 +11,13 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: "dark",
     backgroundColor: "#0d1629",
-    navigationBarBackgroundColor: "#0d1629",
+    navigationBarBackgroundColor: "#131628",
     navigationBarTitleText: "主理人公社",
     navigationBarTextStyle: "white",
   },
+  // 自定义 TabBar（src/custom-tab-bar，对齐设计稿底栏）；list 仍为 switchTab 路由所需
   tabBar: {
+    custom: true,
     color: "#64748b",
     selectedColor: "#4361ee",
     backgroundColor: "#0e1120",
