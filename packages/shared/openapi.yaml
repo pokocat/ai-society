@@ -3,7 +3,7 @@ info:
   title: OpenAPI definition
   version: v0
 servers:
-- url: http://127.0.0.1:8082
+- url: http://127.0.0.1:8080
   description: Generated server url
 paths:
   /api/v1/rules:
@@ -601,6 +601,61 @@ paths:
         required: true
         schema:
           type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/withdrawals:
+    post:
+      tags:
+      - mp-controller
+      operationId: withdraw_1
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpWithdrawal"
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
+  /api/v1/mp/tasks/{id}/complete:
+    post:
+      tags:
+      - mp-controller
+      operationId: completeTask
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         "500":
           description: Internal Server Error
@@ -2345,6 +2400,42 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/tasks:
+    get:
+      tags:
+      - mp-controller
+      operationId: tasks
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/profile:
+    get:
+      tags:
+      - mp-controller
+      operationId: profile
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/mp/plans:
     get:
       tags:
@@ -2447,6 +2538,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListMapStringObject"
+  /api/v1/mp/earnings:
+    get:
+      tags:
+      - mp-controller
+      operationId: earnings
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseMapStringObject"
   /api/v1/mp/courses:
     get:
       tags:
@@ -2556,7 +2665,7 @@ paths:
     get:
       tags:
       - member-controller
-      operationId: profile
+      operationId: profile_1
       parameters:
       - name: memberNo
         in: path
@@ -2662,7 +2771,7 @@ paths:
     get:
       tags:
       - earnings-controller
-      operationId: earnings
+      operationId: earnings_1
       parameters:
       - name: memberNo
         in: query
@@ -3054,6 +3163,18 @@ components:
         dataScope:
           type: string
         endpoint:
+          type: string
+    MpWithdrawal:
+      required:
+      - amount
+      - method
+      type: object
+      properties:
+        amount:
+          type: number
+        method:
+          type: string
+        accountInfo:
           type: string
     MpOrder:
       required:

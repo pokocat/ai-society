@@ -4,7 +4,7 @@ import Taro, { useDidShow } from "@tarojs/taro";
 import { getCourses, Course } from "../../api/mp";
 
 const statusColor: Record<string, string> = {
-  已排期: "#3a4d00", 直播中: "#c2410c", 已结束: "#68705a",
+  已排期: "#7c9aff", 直播中: "#f59e0b", 已结束: "#64748b",
 };
 
 export default function Courses() {
@@ -27,15 +27,15 @@ export default function Courses() {
   };
 
   return (
-    <View>
+    <View style={{ paddingBottom: "32px" }}>
       {courses.length === 0 && (
         <View className="card"><Text className="muted">暂无课程安排</Text></View>
       )}
       {courses.map(c => (
         <View key={c.id} className="card" onClick={() => openReplay(c)}>
           <View style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontWeight: 600 }}>{c.title}</Text>
-            <Text style={{ color: statusColor[c.status] ?? "#68705a", fontSize: "24px" }}>{c.status}</Text>
+            <Text style={{ fontWeight: 600, color: "#e2e8f0", fontSize: "28px" }}>{c.title}</Text>
+            <Text style={{ color: statusColor[c.status] ?? "#64748b", fontSize: "24px" }}>{c.status}</Text>
           </View>
           <View style={{ marginTop: "8px" }}>
             <Text className="muted">
@@ -43,8 +43,8 @@ export default function Courses() {
             </Text>
           </View>
           {c.replay_url && (
-            <View style={{ marginTop: "8px" }}>
-              <Text className="tag">有回放 · 点击复制链接（微信内可看，存 3 年）</Text>
+            <View style={{ marginTop: "12px" }}>
+              <Text className="tag">有回放 · 点击复制链接（微信内可看）</Text>
             </View>
           )}
         </View>

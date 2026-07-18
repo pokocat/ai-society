@@ -31,37 +31,48 @@ export default function Invite() {
   const byLevel = (level: number) => (data?.downline ?? []).filter(d => Number(d.level) === level);
 
   return (
-    <View>
-      <View className="card" style={{ background: "#050805", textAlign: "center" }}>
-        <Text style={{ color: "#8c967d", fontSize: "24px" }}>我的专属邀请码（7 天自动轮换）</Text>
-        <View style={{ margin: "20px 0" }}>
-          <Text style={{ color: "#b6ff00", fontSize: "44px", fontWeight: 700, letterSpacing: "2px" }}>
+    <View style={{ paddingBottom: "32px" }}>
+      <View className="card-hero" style={{ textAlign: "center" }}>
+        <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: "24px" }}>我的专属邀请码（7 天自动轮换）</Text>
+        <View style={{ margin: "24px 0" }}>
+          <Text style={{ color: "#ffffff", fontSize: "56px", fontWeight: 700, letterSpacing: "4px" }}>
             {data?.inviteCode ?? "…"}
           </Text>
         </View>
         <View style={{ display: "flex", gap: "16px" }}>
-          <Button className="btn-primary" style={{ flex: 1 }} openType="share">转发邀请</Button>
-          <Button className="btn-ghost" style={{ flex: 1, background: "transparent", color: "#f7ffe6" }}
-            onClick={copyCode}>复制邀请码</Button>
+          <Button style={{
+            flex: 1, background: "rgba(255,255,255,0.92)", color: "#4361ee",
+            fontWeight: 700, borderRadius: "24px", fontSize: "28px", border: "none",
+          }} openType="share">
+            转发邀请
+          </Button>
+          <Button style={{
+            flex: 1, background: "rgba(255,255,255,0.16)", color: "#ffffff",
+            borderRadius: "24px", fontSize: "28px", border: "1px solid rgba(255,255,255,0.35)",
+          }} onClick={copyCode}>
+            复制邀请码
+          </Button>
         </View>
         {data?.qrcodeMock && (
-          <View style={{ marginTop: "16px" }}>
-            <Text style={{ color: "#68705a", fontSize: "22px" }}>专属小程序码将在正式版提供（当前演示环境）</Text>
+          <View style={{ marginTop: "20px" }}>
+            <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: "22px" }}>
+              专属小程序码将在正式版提供（当前演示环境）
+            </Text>
           </View>
         )}
       </View>
 
       <View className="card" style={{ display: "flex", justifyContent: "space-around", textAlign: "center" }}>
         <View>
-          <Text className="title">{data?.influence ?? 0}</Text>
+          <Text className="title" style={{ color: "#7c9aff" }}>{data?.influence ?? 0}</Text>
           <View><Text className="muted">覆盖人数（≤3级）</Text></View>
         </View>
         <View>
-          <Text className="title">{byLevel(1).length}</Text>
+          <Text className="title" style={{ color: "#34d399" }}>{byLevel(1).length}</Text>
           <View><Text className="muted">直接邀请</Text></View>
         </View>
         <View>
-          <Text className="title">{data?.inviteGrowth ?? 0}</Text>
+          <Text className="title" style={{ color: "#f59e0b" }}>{data?.inviteGrowth ?? 0}</Text>
           <View><Text className="muted">邀请成长值</Text></View>
         </View>
       </View>
@@ -77,10 +88,10 @@ export default function Invite() {
               {rows.map(d => (
                 <View key={d.member_no} style={{
                   display: "flex", justifyContent: "space-between",
-                  padding: "14px 0", paddingLeft: `${(level - 1) * 24}px`,
-                  borderBottom: "1px solid rgba(5,8,5,0.06)",
+                  padding: "16px 0", paddingLeft: `${(level - 1) * 28}px`,
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
                 }}>
-                  <Text>{d.name}</Text>
+                  <Text style={{ color: "#e2e8f0", fontSize: "28px" }}>{d.name}</Text>
                   <Text className="muted">
                     {d.city ?? ""}{d.direct_downline > 0 ? ` · 又邀 ${d.direct_downline} 人` : ""}
                   </Text>
@@ -96,7 +107,7 @@ export default function Invite() {
         )}
       </View>
 
-      <View className="card">
+      <View className="card" style={{ background: "transparent", border: "none" }}>
         <Text className="muted">
           邀请奖励为成长值/会员时长等虚拟权益，不涉及现金返利；关系链最多记录三级，仅用于归因统计。
         </Text>

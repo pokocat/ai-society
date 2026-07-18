@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "我的群",
+  navigationBarTitleText: "我的社群",
 });

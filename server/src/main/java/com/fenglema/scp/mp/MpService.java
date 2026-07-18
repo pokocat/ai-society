@@ -144,6 +144,8 @@ public class MpService {
                 .query(Rows.MAP).optional().orElse(Map.of());
         Integer growth = db.sql("SELECT COALESCE(SUM(delta),0) FROM growth_ledger WHERE member_id = :m")
                 .param("m", memberId).query(Integer.class).single();
+        Integer points = db.sql("SELECT COALESCE(SUM(delta),0) FROM points_ledger WHERE member_id = :m")
+                .param("m", memberId).query(Integer.class).single();
         List<Map<String, Object>> orders = db.sql("""
                         SELECT o.order_no, o.status, o.amount_cents, o.paid_at, p.name AS plan_name, p.duration_days
                         FROM membership_order o JOIN membership_plan p ON p.id = o.plan_id
@@ -155,7 +157,58 @@ public class MpService {
         out.put("identity", identity);
         out.put("hasPaidEntitlement", entitlementService.hasPaidEntitlement(memberId, pid));
         out.put("growthTotal", growth);
+        out.put("pointsTotal", points);
         out.put("orders", orders);
+        return out;
+    }
+
+    /** 档案卡（小程序「我的」信息卡）：个微号/城市/入会时间/来源渠道/推荐人，全部真实字段。 */
+    public Map<String, Object> profileCard(long memberId) {
+        Map<String, Object> member = db.sql("""
+                        SELECT member_no, name, phone, city, source_channel, created_at
+                        FROM member WHERE id = :id
+                        """)
+                .param("id", memberId).query(Rows.MAP).single();
+        String wechatId = db.sql("""
+                        SELECT id_value FROM member_identifier
+                        WHERE member_id = :m AND id_type = '个微号' ORDER BY created_at LIMIT 1
+                        """)
+                .param("m", memberId).query(String.class).optional().orElse(null);
+        Map<String, Object> referrer = db.sql("""
+                        SELECT r.member_no, r.name FROM referral_relation rr
+                        JOIN member r ON r.id = rr.referrer_id
+                        WHERE rr.member_id = :m
+                        """)
+                .param("m", memberId).query(Rows.MAP).optional().orElse(null);
+        Map<String, Object> out = new HashMap<>(member);
+        out.put("wechatId", wechatId);
+        out.put("referrer", referrer);
+        return out;
+    }
+
+    /** 收益（earnings_snapshot 只读镜像，SPEC §2.2）+ 提现记录 + 已打款累计。 */
+    public Map<String, Object> earnings(long memberId) {
+        Map<String, Object> snapshot = db.sql("""
+                        SELECT total_est, withdrawable, pending, frozen, synced_at FROM earnings_snapshot
+                        WHERE member_id = :mid AND project_id IS NULL
+                        """)
+                .param("mid", memberId)
+                .query(Rows.MAP).optional()
+                .orElse(Map.of("total_est", 0, "withdrawable", 0, "pending", 0, "frozen", 0));
+        List<Map<String, Object>> withdrawals = db.sql("""
+                        SELECT id, amount, method, status, created_at, decided_at
+                        FROM withdrawal_request WHERE member_id = :mid ORDER BY created_at DESC LIMIT 20
+                        """)
+                .param("mid", memberId).query(Rows.MAP).list();
+        var paidOut = db.sql("""
+                        SELECT COALESCE(SUM(amount),0) FROM withdrawal_request
+                        WHERE member_id = :mid AND status = '已打款'
+                        """)
+                .param("mid", memberId).query(java.math.BigDecimal.class).single();
+        Map<String, Object> out = new HashMap<>();
+        out.put("summary", snapshot);
+        out.put("paidOut", paidOut);
+        out.put("withdrawals", withdrawals);
         return out;
     }
 
@@ -215,6 +268,18 @@ public class MpService {
                 .param("g", assignment.get("group_id"))
                 .query(String.class).optional().orElse(null);
         out.put("groupQrcodeUrl", qr);
+        // 我的服务老师：本群主责客服（优先个微客服；个微客服经 account.user_employee_id 落到员工）
+        out.put("serviceTeacher", db.sql("""
+                        SELECT e.name, e.service_region, gs.role
+                        FROM group_staffing gs
+                        LEFT JOIN account a ON a.id = gs.account_id
+                        LEFT JOIN employee e ON e.id = COALESCE(gs.employee_id, a.user_employee_id)
+                        WHERE gs.group_id = :g AND gs.is_primary AND e.id IS NOT NULL
+                        ORDER BY CASE gs.role WHEN '个微客服' THEN 0 ELSE 1 END
+                        LIMIT 1
+                        """)
+                .param("g", assignment.get("group_id"))
+                .query(Rows.MAP).optional().orElse(null));
         return out;
     }
 

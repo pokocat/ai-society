@@ -5,7 +5,12 @@ import com.fenglema.scp.common.IdempotencyGuard;
 import com.fenglema.scp.common.Perm;
 import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.membership.MembershipOrderService;
+import com.fenglema.scp.ops.MemberTaskService;
+import com.fenglema.scp.ops.WithdrawalService;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,11 +35,16 @@ public class MpController {
     private final MpService service;
     private final MembershipOrderService orderService;
     private final IdempotencyGuard idempotency;
+    private final MemberTaskService taskService;
+    private final WithdrawalService withdrawalService;
 
-    public MpController(MpService service, MembershipOrderService orderService, IdempotencyGuard idempotency) {
+    public MpController(MpService service, MembershipOrderService orderService, IdempotencyGuard idempotency,
+                        MemberTaskService taskService, WithdrawalService withdrawalService) {
         this.service = service;
         this.orderService = orderService;
         this.idempotency = idempotency;
+        this.taskService = taskService;
+        this.withdrawalService = withdrawalService;
     }
 
     public record LoginRequest(@NotBlank String code, String inviteCode, String nickname) {
@@ -117,5 +127,49 @@ public class MpController {
     @Perm(module = "mp")
     public ApiResponse<List<Map<String, Object>>> faq() {
         return ApiResponse.ok(service.faq());
+    }
+
+    /** 档案卡（「我的」页信息卡：个微号/城市/入会时间/来源渠道/推荐人）。 */
+    @GetMapping("/profile")
+    @Perm(module = "mp")
+    public ApiResponse<Map<String, Object>> profile() {
+        return ApiResponse.ok(service.profileCard(UserContext.get().userId()));
+    }
+
+    /** 收益（只读镜像）+ 提现记录。 */
+    @GetMapping("/earnings")
+    @Perm(module = "mp")
+    public ApiResponse<Map<String, Object>> earnings() {
+        return ApiResponse.ok(service.earnings(UserContext.get().userId()));
+    }
+
+    public record MpWithdrawal(@NotNull BigDecimal amount, @NotBlank String method, String accountInfo) {
+    }
+
+    /** 提现申请（审批协同，打款归外部系统）：memberNo 取自 JWT，支持幂等键。 */
+    @PostMapping("/withdrawals")
+    @Perm(module = "mp", action = Perm.Action.CREATE)
+    public ApiResponse<Map<String, Object>> withdraw(@RequestBody MpWithdrawal req,
+                                                     @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+        if (!idempotency.tryRegister(key, "/mp/withdrawals")) {
+            return ApiResponse.ok(Map.of("result", "重复提交，已按首次受理", "idempotent", true));
+        }
+        var user = UserContext.get();
+        return ApiResponse.ok(withdrawalService.apply(user.userId(), req.amount(), req.method(),
+                req.accountInfo(), key, user.displayName()));
+    }
+
+    /** 我的任务（打卡得积分）。 */
+    @GetMapping("/tasks")
+    @Perm(module = "mp")
+    public ApiResponse<List<Map<String, Object>>> tasks() {
+        return ApiResponse.ok(taskService.list(UserContext.get().userId()));
+    }
+
+    /** 完成任务：带归属校验（只能完成本人任务），完成得积分。 */
+    @PostMapping("/tasks/{id}/complete")
+    @Perm(module = "mp", action = Perm.Action.EDIT)
+    public ApiResponse<Map<String, Object>> completeTask(@PathVariable long id) {
+        return ApiResponse.ok(taskService.complete(id, UserContext.get().userId()));
     }
 }

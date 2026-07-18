@@ -2,7 +2,7 @@ import Taro from "@tarojs/taro";
 import { BASE, ensureLogin, getToken, logout } from "../utils/auth";
 
 /** /mp/* API 封装：统一信封 {code,message,data}；4030 清登录态重登一次。 */
-async function request<T>(path: string, opts: { method?: "GET" | "POST"; data?: unknown } = {}, retried = false): Promise<T> {
+async function request<T>(path: string, opts: { method?: "GET" | "POST"; data?: unknown; headers?: Record<string, string> } = {}, retried = false): Promise<T> {
   await ensureLogin();
   const resp = await Taro.request<{ code: number; message: string; data: T }>({
     url: `${BASE}${path}`,
@@ -11,6 +11,7 @@ async function request<T>(path: string, opts: { method?: "GET" | "POST"; data?: 
     header: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getToken()}`,
+      ...(opts.headers ?? {}),
     },
   });
   if (resp.data.code === 4030 && !retried) {
@@ -35,9 +36,11 @@ export interface Plan {
 export interface MeData {
   member_no: string;
   name: string;
-  identity: { identity?: string; status?: string; valid_until?: string };
+  city: string | null;
+  identity: { identity?: string; status?: string; valid_from?: string; valid_until?: string };
   hasPaidEntitlement: boolean;
   growthTotal: number;
+  pointsTotal: number;
   orders: Array<{ order_no: string; status: string; amount_cents: number; plan_name: string; paid_at: string | null }>;
 }
 
@@ -59,6 +62,35 @@ export interface GroupData {
     member_count: number; target_capacity: number; joined_at: string | null;
   };
   groupQrcodeUrl?: string | null;
+  serviceTeacher?: null | { name: string; service_region: string | null; role: string };
+}
+
+export interface ProfileCard {
+  member_no: string;
+  name: string | null;
+  phone: string | null;
+  city: string | null;
+  source_channel: string | null;
+  created_at: string;
+  wechatId: string | null;
+  referrer: null | { member_no: string; name: string };
+}
+
+export interface EarningsData {
+  summary: { total_est: number; withdrawable: number; pending: number; frozen: number; synced_at?: string };
+  paidOut: number;
+  withdrawals: Array<{ id: number; amount: number; method: string; status: string; created_at: string; decided_at: string | null }>;
+}
+
+export interface MemberTask {
+  id: number;
+  title: string;
+  task_type: string;
+  priority: string;
+  points: number;
+  deadline: string | null;
+  done: boolean;
+  completed_at: string | null;
 }
 
 export interface Course {
@@ -78,3 +110,17 @@ export const payOrder = (orderNo: string) =>
 export const getMyGroup = () => request<GroupData>("/mp/my-group");
 export const getCourses = () => request<Course[]>("/mp/courses");
 export const getFaq = () => request<FaqItem[]>("/mp/faq");
+export const getProfile = () => request<ProfileCard>("/mp/profile");
+export const getEarnings = () => request<EarningsData>("/mp/earnings");
+/** 提现申请：idemKey 由页面在打开表单时生成一次，同一次填单重复提交只受理一次 */
+export const applyWithdrawal = (amount: number, method: string, accountInfo: string | undefined, idemKey: string) =>
+  request<{ withdrawalId: number; approvalId: number; status: string; message: string }>(
+    "/mp/withdrawals", {
+      method: "POST",
+      data: { amount, method, accountInfo },
+      headers: { "Idempotency-Key": idemKey },
+    });
+export const getTasks = () => request<MemberTask[]>("/mp/tasks");
+export const completeTask = (id: number) =>
+  request<{ taskId: number; pointsAwarded: number; pointsBalance: number }>(
+    `/mp/tasks/${id}/complete`, { method: "POST" });
