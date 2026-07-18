@@ -1,0 +1,103 @@
+<view class="page">
+  <view class="hd hd--earn">
+    <text class="hd-title title-block">我的收益</text>
+
+    <!-- 可提现主卡 -->
+    <view class="card-hero hero-flush">
+      <view>
+        <text class="hero-k">可提现余额</text>
+        <view class="amt-wrap"><text class="amt">¥{{withdrawableText}}</text></view>
+        <text class="hero-note">收益由项目方系统结算同步（只读镜像）{{syncText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计四宫格 -->
+  <view class="stat-grid stat-grid--wrap mt-30">
+    <view wx:for="{{stats}}" wx:key="label" class="stat-card stat-card--half">
+      <text class="stat-label">{{item.label}}</text>
+      <view><text class="stat-value stat-value--lg" style="color:{{item.color}}">{{item.value}}</text></view>
+    </view>
+  </view>
+
+  <!-- 提现按钮 -->
+  <view class="withdraw-wrap">
+    <button class="btn btn--gradient" disabled="{{!canWithdraw}}" bind:tap="openForm">
+      <ui-icon name="wallet" size="{{30}}" color="#ffffff" />
+      申请提现
+    </button>
+    <view wx:if="{{!canWithdraw}}" class="withdraw-hint">
+      <text class="t-muted">可提现余额满 ¥100 才可申请</text>
+    </view>
+  </view>
+
+  <!-- 提现记录 -->
+  <view class="section-head"><text class="section-title">提现记录</text></view>
+  <view class="card card--list">
+    <view wx:if="{{withdrawals.length === 0}}" class="empty-row"><text class="t-muted">暂无提现记录</text></view>
+    <view wx:for="{{withdrawals}}" wx:key="id" class="row">
+      <view class="f f-1 wd-row">
+        <view class="li-icon" style="background:{{item.paid ? 'rgba(16,185,129,0.15)' : 'rgba(67,97,238,0.15)'}}">
+          <ui-icon name="wallet" size="{{26}}" color="{{item.paid ? '#10b981' : '#7c9aff'}}" />
+        </view>
+        <view class="f-1">
+          <text class="t-body">{{item.label}}</text>
+          <view class="mt-6"><text class="t-muted">{{item.timeText}}</text></view>
+        </view>
+      </view>
+      <text class="{{item.tagClass}}">{{item.statusText}}</text>
+    </view>
+  </view>
+
+  <view class="foot-note">
+    <text class="t-muted">提现申请提交后进入审批流程，审批通过后由项目方系统打款，预计 1-3 个工作日到账。</text>
+  </view>
+
+  <!-- 提现表单（底部弹层，对齐设计稿） -->
+  <ui-sheet wx:if="{{formOpen}}" title="申请提现" bind:close="closeForm">
+    <view class="form-balance">
+      <text class="form-balance-k">可提现金额</text>
+      <view class="mt-6"><text class="form-balance-v">¥{{withdrawableText}}</text></view>
+    </view>
+
+    <view class="mt-26">
+      <text class="t-sec">提现金额（100 起，整数）</text>
+      <input
+        type="number"
+        value="{{amount}}"
+        placeholder="最低 100 元"
+        placeholder-style="color:#64748b"
+        class="field-input {{hintError ? 'field-input--error' : ''}}"
+        bindinput="onAmount"
+      />
+      <view class="form-hint">
+        <text class="form-hint-text {{hintError ? 'form-hint-text--error' : ''}}">{{hintText}}</text>
+      </view>
+    </view>
+
+    <view class="mt-6">
+      <text class="t-sec">提现渠道</text>
+      <picker mode="selector" range="{{methods}}" value="{{methodIdx}}" bindchange="onMethod">
+        <view class="f-between method-picker">
+          <text class="t-body">{{methods[methodIdx]}}</text>
+          <ui-icon name="chevron-right" size="{{28}}" color="#64748b" />
+        </view>
+      </picker>
+    </view>
+
+    <view class="mt-26">
+      <text class="t-sec">收款账户（选填，银行卡请填卡号）</text>
+      <input
+        value="{{account}}"
+        placeholder="默认使用实名账户"
+        placeholder-style="color:#64748b"
+        class="field-input"
+        bindinput="onAccount"
+      />
+    </view>
+
+    <button class="btn btn--gradient mt-40" disabled="{{!valid}}" loading="{{submitting}}" bind:tap="submit">
+      确认提交（进入审批）
+    </button>
+  </ui-sheet>
+</view>

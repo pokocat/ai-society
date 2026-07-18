@@ -1,0 +1,16 @@
+.empty-card { text-align: center; padding: 70rpx 32rpx; }
+.glow-label { margin: 0 40rpx 10rpx; }
+.glow-label-text { font-size: 22rpx; font-weight: 600; color: #7c9aff; }
+.group-head { gap: 22rpx; margin-bottom: 26rpx; }
+.cap-row { margin-bottom: 10rpx; }
+.cap-num { font-size: 22rpx; color: #94a3b8; }
+.cap-num--danger { color: #f87171; }
+.teacher-card { gap: 26rpx; }
+.qr-img { width: 360rpx; height: 360rpx; }
+
+.mt-6 { margin-top: 6rpx; }
+.mt-8 { margin-top: 8rpx; }
+.mt-14 { margin-top: 14rpx; }
+.mt-22 { margin-top: 22rpx; }
+.mt-30 { margin-top: 30rpx; }
+.mt-40 { margin-top: 40rpx; }

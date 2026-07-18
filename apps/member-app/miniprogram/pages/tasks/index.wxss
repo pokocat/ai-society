@@ -1,0 +1,18 @@
+.prog-row { gap: 24rpx; margin-top: 16rpx; }
+.prog-done { font-size: 24rpx; font-weight: 600; color: #34d399; }
+.prog-points { font-size: 24rpx; color: #f59e0b; }
+.mt-22 { margin-top: 22rpx; }
+
+.empty-card { text-align: center; padding: 70rpx 32rpx; }
+
+.task-card--done {
+  opacity: 0.75;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.task-row { gap: 22rpx; align-items: flex-start; }
+.task-check { margin-top: 2rpx; }
+.task-title { font-size: 28rpx; font-weight: 600; color: #e2e8f0; }
+.task-title--done { color: #64748b; text-decoration: line-through; }
+.task-meta { gap: 16rpx; margin-top: 14rpx; flex-wrap: wrap; }
+.meta-clock { gap: 8rpx; }

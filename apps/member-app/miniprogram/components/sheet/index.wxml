@@ -1,0 +1,11 @@
+<view class="sheet-mask" catch:touchmove="noop" bind:tap="close">
+  <view class="sheet-body" catch:tap="noop">
+    <view class="sheet-head">
+      <text class="sheet-title">{{title}}</text>
+      <view class="sheet-close" bind:tap="close">
+        <ui-icon name="x" size="{{34}}" color="#64748b" />
+      </view>
+    </view>
+    <slot />
+  </view>
+</view>

@@ -1,0 +1,29 @@
+<view class="page page--sub pt-30">
+  <view wx:if="{{loaded && courses.length === 0}}" class="card empty-card">
+    <text class="t-muted">暂无课程安排</text>
+  </view>
+
+  <view
+    wx:for="{{courses}}"
+    wx:key="id"
+    class="card"
+    data-url="{{item.replayUrl}}"
+    bind:tap="openReplay"
+  >
+    <view class="f course-row">
+      <view class="li-icon" style="background:{{item.iconBg}}">
+        <ui-icon name="tv" size="{{28}}" color="{{item.color}}" />
+      </view>
+      <view class="f-1">
+        <view class="f-between">
+          <text class="t-strong">{{item.title}}</text>
+          <text class="status" style="color:{{item.color}}">{{item.status}}</text>
+        </view>
+        <view class="mt-8"><text class="t-muted">{{item.metaText}}</text></view>
+        <view wx:if="{{item.replayUrl}}" class="mt-14">
+          <text class="tag">有回放 · 点击复制链接（微信内可看）</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

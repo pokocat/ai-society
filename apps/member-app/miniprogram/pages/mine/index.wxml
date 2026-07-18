@@ -1,0 +1,103 @@
+<view class="page">
+  <!-- 居中档案头（渐变头区） -->
+  <view class="hd profile-hd">
+    <view class="avatar avatar--lg avatar-center">{{avatarChar}}</view>
+    <view class="mt-24"><text class="profile-name">{{name}}</text></view>
+    <view class="mt-10"><text class="t-muted">{{metaText}}</text></view>
+    <view class="f-center tags-row">
+      <view wx:if="{{isPaid}}" class="tag">
+        <ui-icon name="star" size="{{18}}" color="#7c9aff" fill="{{true}}" />
+        {{identityTag}}
+      </view>
+      <text wx:else class="tag tag--gray">未开通会员</text>
+      <text class="tag tag--amber">积分 {{pointsText}}</text>
+      <text class="tag tag--green">成长值 {{growthText}}</text>
+    </view>
+  </view>
+
+  <!-- 信息卡（全部真实字段，缺失显示 —） -->
+  <view class="card card--list">
+    <view wx:for="{{infoRows}}" wx:key="k" class="row">
+      <text class="info-k">{{item.k}}</text>
+      <text class="t-body fw-500">{{item.v}}</text>
+    </view>
+  </view>
+
+  <!-- 订单记录 -->
+  <view class="section-head"><text class="section-title">订单记录</text></view>
+  <view class="card card--list">
+    <view wx:if="{{orders.length === 0}}" class="empty-row"><text class="t-muted">暂无订单</text></view>
+    <view wx:for="{{orders}}" wx:key="orderNo" class="row">
+      <view class="f f-1 order-row">
+        <view class="li-icon order-icon">
+          <ui-icon name="package" size="{{26}}" color="#7c9aff" />
+        </view>
+        <view class="f-1">
+          <text class="t-body">{{item.planName}}</text>
+          <view class="mt-6"><text class="t-muted">{{item.subText}}</text></view>
+        </view>
+      </view>
+      <view class="ta-r">
+        <text class="order-amt">¥{{item.amountText}}</text>
+        <view class="mt-6"><text class="{{item.tagClass}}">{{item.statusText}}</text></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 图标菜单 -->
+  <view class="menus">
+    <view
+      wx:for="{{menus}}"
+      wx:key="label"
+      class="f menu-item"
+      data-type="{{item.type}}"
+      data-url="{{item.url}}"
+      bind:tap="menuTap"
+    >
+      <ui-icon name="{{item.icon}}" size="{{34}}" color="#7c9aff" />
+      <view class="f-1">
+        <text class="t-body fw-500">{{item.label}}</text>
+        <view class="mt-4"><text class="t-muted">{{item.sub}}</text></view>
+      </view>
+      <ui-icon name="chevron-right" size="{{30}}" color="#64748b" />
+    </view>
+  </view>
+
+  <!-- 常见问题 -->
+  <block wx:if="{{faq.length > 0}}">
+    <view class="section-head">
+      <view class="f faq-head">
+        <ui-icon name="help-circle" size="{{28}}" color="#7c9aff" />
+        <text class="section-title">常见问题</text>
+      </view>
+    </view>
+    <view class="card card--list">
+      <view
+        wx:for="{{faq}}"
+        wx:key="question"
+        class="faq-item {{index < faq.length - 1 ? 'faq-item--line' : ''}}"
+        data-i="{{index}}"
+        bind:tap="toggleFaq"
+      >
+        <view class="f-between">
+          <text class="t-body fw-600">{{item.question}}</text>
+          <ui-icon
+            name="chevron-right"
+            size="{{26}}"
+            color="#64748b"
+            extStyle="{{openFaq === index ? 'transform:rotate(90deg)' : ''}}"
+          />
+        </view>
+        <view wx:if="{{openFaq === index}}" class="mt-12"><text class="t-sec">{{item.answer}}</text></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 退出登录 -->
+  <view class="logout-wrap">
+    <button class="btn btn--danger" bind:tap="doLogout">
+      <ui-icon name="log-out" size="{{28}}" color="#f87171" />
+      退出登录
+    </button>
+  </view>
+</view>

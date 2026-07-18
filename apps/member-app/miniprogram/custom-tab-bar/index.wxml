@@ -1,0 +1,15 @@
+<view class="tabbar">
+  <view
+    wx:for="{{list}}"
+    wx:key="path"
+    class="tabbar-item"
+    data-index="{{index}}"
+    data-path="{{item.path}}"
+    bind:tap="switchTab"
+  >
+    <view class="tabbar-icon {{selected === index ? 'tabbar-icon--active' : ''}}">
+      <ui-icon name="{{item.icon}}" size="{{36}}" color="{{selected === index ? '#4361ee' : '#64748b'}}" />
+    </view>
+    <text class="tabbar-label {{selected === index ? 'tabbar-label--active' : ''}}">{{item.text}}</text>
+  </view>
+</view>

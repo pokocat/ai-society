@@ -1,0 +1,257 @@
+/**
+ * 主理人公社 · 全局样式（设计权威：设计仓库 MobileApp.tsx，深蓝紫主题）
+ * 原生 WXSS，单位一律 rpx（750 设计稿基准）。
+ */
+page {
+  background: #0d1629;
+  color: #e2e8f0;
+  font-size: 26rpx;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+/* ─── 页面骨架 ─────────────────────────────── */
+.page {
+  min-height: 100vh;
+  padding-bottom: 200rpx; /* 自定义 TabBar 让位 */
+  box-sizing: border-box;
+}
+.page--sub { padding-bottom: 48rpx; } /* 非 Tab 页 */
+
+/* 渐变头区 */
+.hd {
+  padding: 40rpx 40rpx 32rpx;
+  background: linear-gradient(180deg, #131628 0%, #0e1120 100%);
+}
+.hd-title { font-size: 38rpx; font-weight: 700; color: #e2e8f0; }
+.hd-sub { font-size: 22rpx; color: #64748b; margin-top: 6rpx; }
+
+/* ─── 文字 ────────────────────────────────── */
+.t-title { font-size: 30rpx; font-weight: 700; color: #e2e8f0; }
+.t-strong { font-size: 28rpx; font-weight: 600; color: #e2e8f0; }
+.t-body { font-size: 26rpx; color: #e2e8f0; }
+.t-sec { font-size: 24rpx; color: #94a3b8; }
+.t-muted { font-size: 22rpx; color: #64748b; }
+.t-primary { font-size: 24rpx; color: #7c9aff; }
+.t-amber { font-size: 22rpx; color: #f59e0b; }
+.t-green { font-size: 22rpx; color: #34d399; }
+.t-red { font-size: 22rpx; color: #f87171; }
+
+.section-title { font-size: 28rpx; font-weight: 600; color: #e2e8f0; }
+.section-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 32rpx 40rpx 20rpx;
+}
+.section-head--first { margin-top: 8rpx; }
+
+/* ─── 卡片 ────────────────────────────────── */
+.card {
+  background: #1a2640;
+  border-radius: 30rpx;
+  padding: 30rpx;
+  margin: 0 40rpx 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+/* 渐变主卡（会员卡/收益卡），带装饰圆 */
+.card-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 30rpx;
+  padding: 38rpx;
+  margin: 0 40rpx 30rpx;
+  background: linear-gradient(135deg, #4361ee 0%, #7c3aed 60%, #3b82f6 100%);
+}
+.card-hero::before {
+  content: "";
+  position: absolute; top: -60rpx; right: -60rpx;
+  width: 240rpx; height: 240rpx; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+.card-hero::after {
+  content: "";
+  position: absolute; bottom: -46rpx; left: -46rpx;
+  width: 180rpx; height: 180rpx; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+.card-hero > view { position: relative; z-index: 1; }
+
+/* 高亮描边卡（已加入群） */
+.card-glow {
+  border-radius: 30rpx;
+  padding: 30rpx;
+  margin: 0 40rpx 24rpx;
+  background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(124, 58, 237, 0.15));
+  border: 1rpx solid rgba(67, 97, 238, 0.3);
+}
+
+/* ─── 头像块 ──────────────────────────────── */
+.avatar {
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #4361ee, #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  color: #ffffff; font-weight: 700; flex-shrink: 0;
+}
+.avatar--sm { width: 84rpx; height: 84rpx; font-size: 34rpx; border-radius: 24rpx; }
+.avatar--md { width: 92rpx; height: 92rpx; font-size: 36rpx; }
+.avatar--lg { width: 152rpx; height: 152rpx; font-size: 60rpx; border-radius: 48rpx; }
+.avatar--card { background: rgba(255, 255, 255, 0.2); }
+
+/* ─── 快捷宫格 ─────────────────────────────── */
+.qa-grid { display: flex; gap: 22rpx; }
+.qa-tile {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 14rpx;
+  padding: 24rpx 0;
+  border-radius: 30rpx;
+  background: #1a2640;
+}
+.qa-icon {
+  width: 68rpx; height: 68rpx; border-radius: 22rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+.qa-label { font-size: 22rpx; color: #94a3b8; }
+
+/* ─── 数据统计卡 ───────────────────────────── */
+.stat-grid { display: flex; gap: 22rpx; margin: 0 40rpx 30rpx; }
+.stat-grid--wrap { flex-wrap: wrap; }
+.stat-card {
+  flex: 1; min-width: 0;
+  background: #1a2640; border-radius: 30rpx; padding: 24rpx;
+  box-sizing: border-box;
+}
+.stat-card--half { flex: none; width: calc(50% - 11rpx); padding: 28rpx; }
+.stat-label { font-size: 22rpx; color: #64748b; }
+.stat-value { font-size: 30rpx; font-weight: 700; margin-top: 8rpx; }
+.stat-value--lg { font-size: 32rpx; }
+
+/* ─── 按钮 ────────────────────────────────── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  border: none; border-radius: 24rpx;
+  font-size: 26rpx; font-weight: 600;
+  padding: 20rpx 0; width: 100%; box-sizing: border-box;
+  line-height: 1.4;
+}
+.btn::after { border: none; }
+.btn--primary { background: #4361ee; color: #ffffff; }
+.btn--gradient {
+  background: linear-gradient(135deg, #4361ee, #7c3aed);
+  color: #ffffff; font-weight: 700; font-size: 30rpx;
+  border-radius: 30rpx; padding: 26rpx 0;
+}
+.btn--ghost { background: rgba(67, 97, 238, 0.15); color: #7c9aff; }
+.btn--danger {
+  background: rgba(239, 68, 68, 0.1); color: #f87171;
+  border: 1rpx solid rgba(239, 68, 68, 0.2);
+}
+.btn--mini {
+  display: inline-flex; width: auto;
+  padding: 10rpx 28rpx; font-size: 24rpx; border-radius: 22rpx;
+}
+.btn[disabled] { opacity: 0.4; color: #cbd5e1; background: #4361ee; }
+.btn--gradient[disabled] { background: linear-gradient(135deg, #4361ee, #7c3aed); }
+
+/* ─── 标签 ────────────────────────────────── */
+.tag {
+  display: inline-flex; align-items: center; gap: 8rpx;
+  padding: 6rpx 20rpx; border-radius: 999rpx; font-size: 22rpx;
+  background: rgba(67, 97, 238, 0.25); color: #7c9aff;
+}
+.tag--amber { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.tag--green { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.tag--red { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+.tag--gray { background: rgba(100, 116, 139, 0.25); color: #94a3b8; }
+
+/* ─── 进度条 ──────────────────────────────── */
+.progress-track {
+  height: 12rpx; border-radius: 999rpx; overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+.progress-fill {
+  height: 100%; border-radius: 999rpx;
+  background: linear-gradient(90deg, #4361ee, #10b981);
+  transition: width 0.3s;
+}
+.progress-fill--danger { background: linear-gradient(90deg, #4361ee, #ef4444); }
+
+/* ─── 列表行 ──────────────────────────────── */
+.row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.07);
+}
+.row:last-child { border-bottom: none; }
+
+/* 图标块列表项（收益明细/订单） */
+.li-icon {
+  width: 60rpx; height: 60rpx; border-radius: 20rpx;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ─── 待办圆圈 / 任务复选圆 ─────────────────── */
+.todo-dot {
+  width: 30rpx; height: 30rpx; border-radius: 50%; flex-shrink: 0;
+  border: 4rpx solid #64748b; box-sizing: border-box;
+}
+.todo-dot--urgent { border-color: #ef4444; }
+.task-check {
+  width: 38rpx; height: 38rpx; border-radius: 50%; flex-shrink: 0;
+  border: 4rpx solid #64748b; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── 居中弹窗（二维码） ────────────────────── */
+.modal-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-body {
+  background: #1a2640; border-radius: 46rpx;
+  padding: 44rpx; margin: 0 60rpx; text-align: center;
+}
+.qr-box {
+  background: #ffffff; border-radius: 30rpx;
+  padding: 22rpx; margin-top: 30rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── 表单 ────────────────────────────────── */
+.field-input {
+  margin-top: 14rpx; padding: 22rpx 26rpx; border-radius: 22rpx;
+  background: #1a2640; color: #e2e8f0; font-size: 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  box-sizing: border-box; width: 100%; height: auto; min-height: 84rpx;
+}
+.field-input--error { border-color: rgba(239, 68, 68, 0.6); }
+
+/* ─── 通用弹性布局工具 ──────────────────────── */
+.f { display: flex; align-items: center; }
+.f-between { display: flex; align-items: center; justify-content: space-between; }
+.f-col { display: flex; flex-direction: column; }
+.f-1 { flex: 1; min-width: 0; }
+.f-center { display: flex; align-items: center; justify-content: center; }
+
+/* 公告轮播小圆点 */
+.dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.15); }
+.dot--active { background: #4361ee; }
+.dot--pulse {
+  width: 12rpx; height: 12rpx; border-radius: 50%; background: #4361ee;
+  animation: pulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* 铃铛角标 */
+.badge {
+  position: absolute; top: -4rpx; right: -4rpx;
+  min-width: 30rpx; height: 30rpx; padding: 0 6rpx;
+  border-radius: 999rpx; background: #ef4444;
+  color: #ffffff; font-size: 18rpx;
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box;
+}

@@ -1,0 +1,6 @@
+.pt-30 { padding-top: 30rpx; }
+.empty-card { text-align: center; padding: 70rpx 32rpx; }
+.course-row { gap: 22rpx; align-items: flex-start; }
+.status { font-size: 22rpx; flex-shrink: 0; margin-left: 16rpx; }
+.mt-8 { margin-top: 8rpx; }
+.mt-14 { margin-top: 14rpx; }

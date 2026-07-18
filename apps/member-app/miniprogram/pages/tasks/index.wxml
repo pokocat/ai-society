@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="hd">
+    <text class="hd-title">我的任务</text>
+    <view class="f prog-row">
+      <text class="t-muted">今日进度</text>
+      <text class="prog-done">{{doneCount}}/{{total}} 已完成</text>
+      <text wx:if="{{donePoints > 0}}" class="prog-points">+{{donePoints}} 积分获得</text>
+    </view>
+    <view class="progress-track mt-22">
+      <view class="progress-fill" style="width:{{pct}}%" />
+    </view>
+  </view>
+
+  <view wx:if="{{loaded && tasks.length === 0}}" class="card empty-card">
+    <text class="t-muted">暂无任务，稍后再来看看</text>
+  </view>
+
+  <view
+    wx:for="{{tasks}}"
+    wx:key="id"
+    class="card task-card {{item.done ? 'task-card--done' : ''}}"
+    data-id="{{item.id}}"
+    bind:tap="complete"
+  >
+    <view class="f task-row">
+      <view
+        class="task-check"
+        style="border-color:{{item.done ? '#10b981' : item.pc}};background:{{item.done ? '#10b981' : 'transparent'}}"
+      >
+        <ui-icon wx:if="{{item.done}}" name="check-circle" size="{{22}}" color="#ffffff" />
+      </view>
+      <view class="f-1">
+        <text class="task-title {{item.done ? 'task-title--done' : ''}}">{{item.title}}</text>
+        <view class="f task-meta">
+          <text class="tag" style="{{item.tagStyle}}">{{item.typeText}}</text>
+          <view wx:if="{{item.deadlineText}}" class="f meta-clock">
+            <ui-icon name="clock" size="{{20}}" color="#64748b" />
+            <text class="t-muted">{{item.deadlineText}}</text>
+          </view>
+          <text wx:if="{{item.points > 0}}" class="t-amber">+{{item.points}}积分</text>
+          <text wx:if="{{busyId === item.id}}" class="t-muted">提交中…</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

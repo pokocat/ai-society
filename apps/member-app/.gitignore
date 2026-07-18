@@ -1,4 +1,2 @@
-node_modules/
-dist/
-.swc/
 project.private.config.json
+.DS_Store

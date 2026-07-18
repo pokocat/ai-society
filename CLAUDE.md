@@ -129,5 +129,5 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
       （membership_plan/order 一方交易、门控三注入点、到期作业）、代理归属优先（引擎第 0 级）、
       企微网关 Mock 扩展（活码/欢迎语/群发/直播）、webhook create/dismiss 事件、内容域
       （欢迎语/群发派发器/排课）、管理台三页（会员权益/内容运营/代理商总览）。V5 迁移 + 5 新测试。
-- [ ] **M3b 小程序**（apps/member-app，Taro）与 **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；
+- [ ] **M3b 小程序**（apps/member-app，微信原生，源码在 miniprogram/）与 **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；
       M3c 前置的办证清单（ICP/增值电信/企微认证/开放平台）须业务侧并行启动。

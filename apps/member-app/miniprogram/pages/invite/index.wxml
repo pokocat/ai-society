@@ -1,0 +1,66 @@
+<view class="page page--sub pt-30">
+  <!-- 邀请码主卡 -->
+  <view class="card-hero ta-c">
+    <view>
+      <view class="f-center code-cap">
+        <ui-icon name="gift" size="{{26}}" color="rgba(255,255,255,0.75)" />
+        <text class="code-cap-text">我的专属邀请码（7 天自动轮换）</text>
+      </view>
+      <view class="code-wrap"><text class="code">{{inviteCode}}</text></view>
+      <view class="f hero-btns">
+        <button class="btn share-btn" open-type="share">
+          <ui-icon name="share-2" size="{{26}}" color="#4361ee" />
+          转发邀请
+        </button>
+        <button class="btn copy-btn" bind:tap="copyCode">
+          <ui-icon name="copy" size="{{26}}" color="#ffffff" />
+          复制邀请码
+        </button>
+      </view>
+      <view wx:if="{{qrcodeMock}}" class="mt-22">
+        <text class="mock-note">专属小程序码将在正式版提供（当前演示环境）</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 三项统计 -->
+  <view class="stat-grid">
+    <view wx:for="{{stats}}" wx:key="label" class="stat-card ta-c">
+      <view><text class="stat-value mt-0" style="color:{{item.color}}">{{item.value}}</text></view>
+      <view class="mt-8"><text class="stat-label">{{item.label}}</text></view>
+    </view>
+  </view>
+
+  <!-- 邀请树 -->
+  <view class="card">
+    <view class="f tree-head">
+      <ui-icon name="users" size="{{30}}" color="#7c9aff" />
+      <text class="t-title">我的邀请树</text>
+    </view>
+    <view wx:for="{{levels}}" wx:key="level" wx:for-item="lv" class="mt-22">
+      <text class="tag" style="{{lv.tagStyle}}">LV{{lv.level}} · {{lv.count}} 人</text>
+      <view
+        wx:for="{{lv.rows}}"
+        wx:key="memberNo"
+        wx:for-item="d"
+        class="f-between tree-row"
+        style="padding-left:{{lv.indent}}rpx"
+      >
+        <view class="f tree-name">
+          <view class="f-center tree-chip" style="{{lv.chipStyle}}">{{d.char}}</view>
+          <text class="t-body">{{d.name}}</text>
+        </view>
+        <text class="t-muted">{{d.metaText}}</text>
+      </view>
+    </view>
+    <view wx:if="{{!hasDownline}}" class="mt-18">
+      <text class="t-muted">还没有邀请记录——转发给第一位好友吧</text>
+    </view>
+  </view>
+
+  <view class="foot-note">
+    <text class="t-muted">
+      邀请奖励为成长值/会员时长等虚拟权益，不涉及现金返利；关系链最多记录三级，仅用于归因统计。
+    </text>
+  </view>
+</view>
