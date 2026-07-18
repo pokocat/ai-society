@@ -40,7 +40,7 @@ public class SyncController {
         }
         return ApiResponse.ok(service.ingestPendingMember("人工导入", "人工导入",
                 new SyncService.IncomingMember(req.name(), req.phone(), req.city(), req.sourceChannel(),
-                        req.projectId(), req.identity(), req.referrerNo(), req.inviteCode(), null, null)));
+                        req.projectId(), req.identity(), req.referrerNo(), req.inviteCode(), null, null, null)));
     }
 
     @GetMapping("/jobs")

@@ -21,10 +21,10 @@ class IdentityMergeAndGrowthTest extends TestSupport {
         String phone = "13" + uid();
         var first = syncService.ingestPendingMember("test", "人工导入",
                 new com.fenglema.scp.sync.SyncService.IncomingMember("并档甲" + uid(), phone, "北京", "公众号",
-                        "flm-membership", "游客", null, null, null, null));
+                        "flm-membership", "游客", null, null, null, null, null));
         var second = syncService.ingestPendingMember("test", "人工导入",
                 new com.fenglema.scp.sync.SyncService.IncomingMember("并档甲改名" + uid(), phone, "北京", "抖音",
-                        "experience-camp", "游客", null, null, null, null));
+                        "experience-camp", "游客", null, null, null, null, null));
         assertEquals(first.get("memberNo"), second.get("memberNo"), "同手机号必须归并到同一统一会员");
         assertEquals(Boolean.FALSE, second.get("created"));
     }

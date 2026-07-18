@@ -38,7 +38,7 @@ public class MockProjectSystemController {
         return ApiResponse.ok(syncService.ingestPendingMember("mock-project-system", "Webhook",
                 new SyncService.IncomingMember(req.name(), req.phone(), req.city(), req.sourceChannel(),
                         req.projectId(), req.identity(), req.referrerNo(), req.inviteCode(),
-                        req.unionid(), req.wechatId())));
+                        req.unionid(), req.wechatId(), null)));
     }
 
     public record PushOrder(@NotBlank String externalOrderNo, @NotBlank String memberNo, String projectId,

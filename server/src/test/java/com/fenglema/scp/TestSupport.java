@@ -33,7 +33,7 @@ public abstract class TestSupport {
     protected String ingestMember(String name, String city, String projectId, String identity, String referrerNo) {
         var result = syncService.ingestPendingMember("test", "人工导入",
                 new SyncService.IncomingMember(name, "1" + uid(), city, "转介绍",
-                        projectId, identity, referrerNo, null, null, null));
+                        projectId, identity, referrerNo, null, null, null, null));
         String memberNo = (String) result.get("memberNo");
         db.sql("""
                 UPDATE member_project_identity SET valid_until = now() + interval '30 days'

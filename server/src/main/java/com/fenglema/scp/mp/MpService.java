@@ -88,7 +88,7 @@ public class MpService {
                     new SyncService.IncomingMember(
                             nickname == null || nickname.isBlank() ? "微信用户" : nickname,
                             null, null, "小程序",
-                            defaultProject, "游客", referrerNo, inviteCode, null, null));
+                            defaultProject, "游客", referrerNo, inviteCode, null, null, openid));
             memberId = ((Number) ingest.get("memberId")).longValue();
             memberNo = (String) ingest.get("memberNo");
             referralNote = (String) ingest.get("referral");
