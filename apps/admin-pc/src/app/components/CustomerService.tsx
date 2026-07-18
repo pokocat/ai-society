@@ -33,15 +33,14 @@ const csStaff = [
 ];
 
 // 客服详情页内的微信群数据（按Tab区分）
+// 注：推送次数/扫码次数/入群人数/招募时间/口罩数量目前没有对应后端接口（无论选中哪个客服都是同一组数据），
+// 属于纯编造的示例值，渲染时一律显示“—”，不当作真实业务数据展示。
 const wechatTabs = ["FLA001","FLA002","FLA003","FLA004","FLA005","FLA006","FLA007"];
 const groupDetail = Array.from({ length: 8 }, (_, i) => ({
-  groupNo: `0000${i + 1}`, name: `主理人体验官${i + 1}群`, city: "北京", maskType: "棉花", maskCount: 5,
+  groupNo: `0000${i + 1}`, name: `主理人体验官${i + 1}群`, city: "北京", maskType: "棉花",
   status: ["配置完成","待配置","配置完成","配置完成","待配置","配置完成","配置完成","配置完成"][i],
   wechat: "FLA001", type: ["体验官群","游客群","PRO会员群","尊享群","体验官群","家族群","游客群","分站群"][i],
-  pushCount: [100, 786, 491, 774, 204, 589, 780, 308][i],
-  scanCount: [100, 864, 765, 220, 164, 538, 967, 453][i],
-  memberCount: [100, 786, 491, 200, 204, 500, 380, 308][i],
-  allowSignup: i % 3 !== 0, recruitTime: `2018-0${(i % 9) + 1}-${10 + i}`,
+  allowSignup: i % 3 !== 0,
 }));
 
 // ─── 新建客服弹窗 ─────────────────────────────────────────────
@@ -109,9 +108,9 @@ function NewStaffModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* 操作按钮 */}
+        {/* 操作按钮：客服域暂无创建接口，禁用避免假成功（点击关闭但未实际保存） */}
         <div className="flex justify-center px-6 py-4" style={{ borderTop: `1px solid ${L.border}` }}>
-          <button className="px-10 py-2.5 rounded-xl text-sm text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }} onClick={onClose}>
+          <button disabled title="接线中" className="px-10 py-2.5 rounded-xl text-sm text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
             保存
           </button>
         </div>
@@ -217,19 +216,22 @@ function StaffDetail({ staff, onBack }: { staff: typeof csStaff[0]; onBack: () =
                 <div className="flex-shrink-0 font-medium" style={{ width: 160, color: L.text }}>{g.name}</div>
                 <div className="flex-shrink-0" style={{ width: 80, color: L.muted }}>{g.city}</div>
                 <div className="flex-shrink-0" style={{ width: 80, color: L.muted }}>{g.maskType}</div>
-                <div className="flex-shrink-0" style={{ width: 70, color: L.muted }}>{g.maskCount}</div>
+                {/* 口罩数量无后端来源，不编造数字 */}
+                <div className="flex-shrink-0" style={{ width: 70, color: L.muted }}>—</div>
                 <div className="flex-shrink-0" style={{ width: 80 }}>
                   <span className="px-1.5 py-0.5 rounded-full" style={{ background: st.bg, color: st.color }}>{g.status}</span>
                 </div>
                 <div className="flex-shrink-0" style={{ width: 90, color: L.primary }}>{g.wechat}</div>
                 <div className="flex-shrink-0" style={{ width: 90, color: tc.color }}>{g.type}</div>
-                <div className="flex-shrink-0 font-medium" style={{ width: 75, color: "#34d399" }}>{g.pushCount}</div>
-                <div className="flex-shrink-0" style={{ width: 75, color: "#818cf8" }}>{g.scanCount}</div>
-                <div className="flex-shrink-0" style={{ width: 75, color: L.primary }}>{g.memberCount}</div>
+                {/* 推送次数/扫码次数/入群人数无后端来源，不编造数字 */}
+                <div className="flex-shrink-0 font-medium" style={{ width: 75, color: L.muted }}>—</div>
+                <div className="flex-shrink-0" style={{ width: 75, color: L.muted }}>—</div>
+                <div className="flex-shrink-0" style={{ width: 75, color: L.muted }}>—</div>
                 <div className="flex-shrink-0" style={{ width: 75 }}>
                   <span className="px-1.5 py-0.5 rounded-full" style={{ background: g.allowSignup ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", color: g.allowSignup ? "#34d399" : "#f87171" }}>{g.allowSignup ? "允许" : "不允许"}</span>
                 </div>
-                <div className="flex-shrink-0" style={{ width: 100, color: L.muted }}>{g.recruitTime}</div>
+                {/* 招募时间（基准日期）无后端来源，不编造日期 */}
+                <div className="flex-shrink-0" style={{ width: 100, color: L.muted }}>—</div>
               </div>
             );
           })}

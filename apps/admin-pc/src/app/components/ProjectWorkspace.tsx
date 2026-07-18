@@ -112,7 +112,7 @@ export default function ProjectWorkspace() {
   const { currentProject, projects } = useProject();
   const [scope, setScope] = useState<"all" | "current">("all");
   const [queueType, setQueueType] = useState<QueueType>("待处理");
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks] = useState(initialTasks);
   const [selectedTaskId, setSelectedTaskId] = useState(1);
   const [profileTab, setProfileTab] = useState<"回访记录" | "订单记录" | "用户资料">("回访记录");
   const [period, setPeriod] = useState("本周");
@@ -120,13 +120,10 @@ export default function ProjectWorkspace() {
   const [priority, setPriority] = useState("非常重要");
   const [assignee, setAssignee] = useState("运营部 · 小七");
   const [note, setNote] = useState("");
-  const [saved, setSaved] = useState(false);
   const [search, setSearch] = useState("");
-  const [attachmentAdded, setAttachmentAdded] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [newFollowUpOpen, setNewFollowUpOpen] = useState(false);
   const [communicationOpen, setCommunicationOpen] = useState(false);
-  const [createdNotice, setCreatedNotice] = useState("");
 
   const tasksInScope = useMemo(() => tasks.filter(task => scope === "all" || task.projectId === currentProject.id), [tasks, scope, currentProject.id]);
   const visibleTasks = useMemo(() => tasksInScope.filter(task =>
@@ -149,7 +146,8 @@ export default function ProjectWorkspace() {
   const scopeStats = {
     pending: tasksInScope.filter(task => !task.done).length,
     completed: tasksInScope.filter(task => task.done).length,
-    members: scope === "all" ? 4186 : currentProject.users,
+    // 跨项目成员总数无后端来源，不编数字，显示"—"
+    members: scope === "all" ? null : currentProject.users,
     anomalies: scope === "all" ? projects.filter(project => project.status === "warning").length : Number(currentProject.status === "warning"),
   };
 
@@ -162,44 +160,12 @@ export default function ProjectWorkspace() {
     setCategory(selectedTask.category);
     setPriority(selectedTask.priority);
     setAssignee(selectedTask.assignee ?? "运营部 · 小七");
-    setAttachmentAdded(false);
   }, [selectedTask.id]);
 
-  const submitVisit = () => {
-    if (!note.trim()) return;
-    setTasks(items => items.map(task => task.id === selectedTask.id ? { ...task, done: true, type: "我回访的", due: "刚刚完成" } : task));
-    setSaved(true);
-    setAttachmentAdded(false);
-    setNote("");
-    window.setTimeout(() => setSaved(false), 2200);
-  };
-
-  const createFollowUp = (value: NewFollowUpValue) => {
-    const project = projects.find(item => item.id === value.projectId) ?? currentProject;
-    const nextId = Math.max(...tasks.map(task => task.id)) + 1;
-    const dueDate = new Date(value.due);
-    const due = Number.isNaN(dueDate.getTime())
-      ? value.due
-      : dueDate.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
-    const task: QueueItem = {
-      id: nextId,
-      member: value.memberId as MemberKey,
-      type: value.queueType,
-      title: value.title,
-      category: value.category,
-      priority: value.priority,
-      due,
-      projectId: value.projectId,
-      project: project.name,
-      assignee: value.assignee,
-      writeBack: value.writeBack,
-    };
-    setTasks(items => [...items, task]);
-    setQueueType(value.queueType);
-    setSelectedTaskId(nextId);
-    if (scope === "current" && value.projectId !== currentProject.id) setScope("all");
-    setCreatedNotice(`已创建任务 #${nextId}，并加入${value.queueType}`);
-    window.setTimeout(() => setCreatedNotice(""), 2600);
+  // 未接线：回访回填/任务创建无后端 API（tasks API 仅支持列表与既有任务回填），
+  // 假提交与假成功提示已移除，入口按钮已禁用（title="接线中"）。
+  const createFollowUp = (_value: NewFollowUpValue) => {
+    // 入口已禁用，此回调不可达；接线后在此调用后端创建任务
   };
 
   return (
@@ -209,9 +175,7 @@ export default function ProjectWorkspace() {
           <div className="flex items-center gap-2">
             <h1 className="font-semibold" style={{ color: C.text, fontSize: 18 }}>跨项目社群工作台</h1>
             <Badge color={scope === "all" ? C.purple : currentProject.accent}>{scope === "all" ? "全部项目" : currentProject.shortName}</Badge>
-            <span className="flex items-center gap-1" style={{ color: C.green, fontSize: 10 }}>
-              <CheckCircle2 size={11} /> 数据已同步
-            </span>
+            {/* 同步状态未接线后端，不展示伪造的"数据已同步" */}
           </div>
           <p className="mt-1" style={{ color: C.muted, fontSize: 11 }}>统一处理成员关系、项目身份、回访任务与订单服务记录</p>
         </div>
@@ -224,7 +188,8 @@ export default function ProjectWorkspace() {
             <Link2 size={13} style={{ color: C.cyan }} />
             <span style={{ color: C.text2, fontSize: 11 }}>已接入 {connectedProjects.length} 个项目</span>
           </div>
-          <button onClick={() => setNewFollowUpOpen(true)} className="px-3 py-2 rounded-md flex items-center gap-1.5" style={{ color: "white", background: C.indigo, fontSize: 11 }}>
+          {/* 未接线：回访任务创建无后端 API，禁用假创建 */}
+          <button disabled title="接线中" className="px-3 py-2 rounded-md flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: "white", background: C.indigo, fontSize: 11 }}>
             <PhoneCall size={13} /> 新建回访
           </button>
         </div>
@@ -234,7 +199,7 @@ export default function ProjectWorkspace() {
         {[
           ["当前待处理", String(scopeStats.pending), scope === "all" ? "覆盖全部项目" : currentProject.shortName, C.red, AlertCircle],
           ["已完成回访", String(scopeStats.completed), scope === "all" ? "统一归档" : "已回写项目", C.green, CheckCircle2],
-          [scope === "all" ? "跨项目成员" : "项目成员", scopeStats.members.toLocaleString(), scope === "all" ? "已合并 312 人" : `${currentProject.groups} 个社群`, C.cyan, Users2],
+          [scope === "all" ? "跨项目成员" : "项目成员", scopeStats.members == null ? "—" : scopeStats.members.toLocaleString(), scope === "all" ? "统一档案" : `${currentProject.groups} 个社群`, C.cyan, Users2],
           ["同步异常", String(scopeStats.anomalies), scopeStats.anomalies ? "需要人工确认" : "运行正常", C.amber, Link2],
         ].map(([label, value, detail, color, Icon]) => {
           const IconComponent = Icon as typeof AlertCircle;
@@ -423,12 +388,12 @@ export default function ProjectWorkspace() {
                     placeholder={`记录 ${member.name} 的反馈、处理结果及下一步安排...`} />
                 </label>
                 <div className="mt-2 flex items-center justify-between">
-                  <button onClick={() => setAttachmentAdded(value => !value)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md" style={{ color: attachmentAdded ? C.green : C.text2, background: C.panel2, border: `1px solid ${attachmentAdded ? "rgba(52,211,153,0.35)" : C.border}`, fontSize: 9 }}>
-                    {attachmentAdded ? <Check size={11} /> : <Paperclip size={11} />} {attachmentAdded ? "已添加反馈截图" : "添加附件"}
+                  {/* 未接线：附件上传与回访回填均无后端 API，禁用假交互 */}
+                  <button disabled title="接线中" className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: C.text2, background: C.panel2, border: `1px solid ${C.border}`, fontSize: 9 }}>
+                    <Paperclip size={11} /> 添加附件
                   </button>
                   <div className="flex items-center gap-2">
-                    {saved && <span className="flex items-center gap-1" style={{ color: C.green, fontSize: 9 }}><Check size={11} />已写入统一档案</span>}
-                    <button disabled={!note.trim()} onClick={submitVisit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md disabled:opacity-40"
+                    <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{ color: "white", background: C.indigo, fontSize: 10 }}><Send size={11} /> 完成回访</button>
                   </div>
                 </div>
@@ -547,11 +512,6 @@ export default function ProjectWorkspace() {
         </aside>
       </div>
 
-      {createdNotice && (
-        <div className="fixed top-16 left-1/2 z-[70] -translate-x-1/2 px-4 py-2.5 rounded-md shadow-2xl flex items-center gap-2" style={{ color: C.green, background: C.panel, border: "1px solid rgba(52,211,153,0.3)", fontSize: 10 }}>
-          <CheckCircle2 size={13} />{createdNotice}
-        </div>
-      )}
       <NewFollowUpDialog
         open={newFollowUpOpen}
         onOpenChange={setNewFollowUpOpen}

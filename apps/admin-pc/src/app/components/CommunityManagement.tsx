@@ -334,7 +334,7 @@ function MemberList({ group, onBack }: { group: UiGroup; onBack: () => void }) {
                 <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: m.inGroup ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", color: m.inGroup ? "#34d399" : "#f87171" }}>{m.inGroup ? "是" : "否"}</span>
               </div>
               <div className="flex-shrink-0" style={{ width: 60 }}>
-                <button disabled title="M2 接线" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>修改</button>
+                <button disabled title="接线中" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>修改</button>
               </div>
             </div>
           ))}
@@ -629,7 +629,7 @@ export default function CommunityManagement() {
                     <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }} onClick={() => setMemberGroup(g)}>
                       <Users size={11} className="inline mr-0.5" />查看名单
                     </button>
-                    <button disabled title="M2 接线" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>修改</button>
+                    <button disabled title="接线中" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>修改</button>
                   </div>
                 </div>
               );
@@ -730,8 +730,8 @@ export default function CommunityManagement() {
             <div className="grid grid-cols-4 gap-3 mt-5">{[[`已分配${getCapacityUnit(selectedGroup.type)}`, selectedGroup.memberCount], [`${getCapacityUnit(selectedGroup.type)}上限`, selectedGroup.max], ["填充率", `${Math.round(selectedGroup.fillRate * 100)}%`], ["生效预占", selectedGroup.activeReservations]].map(([label, value]) => <div key={label as string} className="p-3 rounded-md" style={{ background: L.bg }}><div className="text-xs" style={{ color: L.muted }}>{label}</div><div className="text-xl font-semibold mt-1" style={{ color: L.text }}>{value}</div></div>)}</div>
             <div className="grid grid-cols-2 gap-3 mt-4"><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>群运营信息</div>{[["服务大区", selectedGroup.region], ["账号用途", getWechatRole(selectedGroup.type)], ["群状态", selectedGroup.ownerStatus], ["企微客服", selectedGroup.wecomCsName ?? "待配置"], ["个微客服", selectedGroup.personalCsName ?? "待配置"], ["二维码版本", `v${selectedGroup.qrcodeVersion}`]].map(([label, value]) => <div key={label as string} className="flex justify-between py-2 text-xs" style={{ borderBottom: `1px solid ${L.border}`, color: L.muted }}><span>{label}</span><span style={{ color: L.text }}>{value}</span></div>)}{latestQr?.valid_until && <div className="flex justify-between py-2 text-xs" style={{ color: L.muted }}><span>二维码有效期</span><span style={{ color: L.text }}>{new Date(latestQr.valid_until).toLocaleDateString("zh-CN")}</span></div>}</div><div className="p-4 rounded-md" style={{ background: L.bg }}><div className="text-xs font-medium mb-3" style={{ color: L.text }}>快捷操作</div>
               <button onClick={() => rotateQr(selectedGroup.no)} disabled={rotating} className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs flex items-center gap-1.5 disabled:opacity-60" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>{rotating ? <Loader2 size={12} className="animate-spin" /> : <QrCode size={12} />} 更新群二维码</button>
-              <button disabled title="M2 接线" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>调整群主状态</button>
-              <button disabled title="M2 接线" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>同步成员名单</button>
+              <button disabled title="接线中" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>调整群主状态</button>
+              <button disabled title="接线中" className="w-full mb-2 px-3 py-2 rounded-md text-left text-xs opacity-50 cursor-not-allowed" style={{ color: L.textSec, border: `1px solid ${L.border}` }}>同步成员名单</button>
             </div></div>
           </div>
         </div>

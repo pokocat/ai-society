@@ -57,7 +57,7 @@ export default function CityBranch() {
           <h2 className="font-semibold" style={{ color: L.text }}>城市分站管理</h2>
           <p className="text-xs mt-0.5" style={{ color: L.muted }}>管理各城市区域负责人、会员、群组和运营状态</p>
         </div>
-        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white" style={{ background: L.primary }}>
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primary }}>
           <Plus size={13} /> 新建分站
         </button>
       </div>
@@ -178,9 +178,9 @@ export default function CityBranch() {
             </ResponsiveContainer>
 
             <div className="mt-4 flex flex-col gap-2">
-              <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: L.primary }}>查看分站详情</button>
-              <button className="w-full py-2 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}>联系负责人</button>
-              <button className="w-full py-2 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}>导出月报</button>
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primary }}>查看分站详情</button>
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>联系负责人</button>
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>导出月报</button>
             </div>
           </div>
         </div>

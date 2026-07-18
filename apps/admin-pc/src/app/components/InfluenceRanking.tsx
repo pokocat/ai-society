@@ -319,7 +319,7 @@ export default function InfluenceRanking() {
             </div>
             <div className="flex gap-2 mt-auto">
               <button className="flex-1 py-2 rounded-lg text-xs" style={{ background: L.borderLight, color: L.muted }}>取消</button>
-              <button className="flex-1 py-2 rounded-lg text-xs text-white" style={{ background: L.primary }}>
+              <button disabled title="接线中" className="flex-1 py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: L.primary }}>
                 <Send size={11} className="inline mr-1" />提交
               </button>
             </div>

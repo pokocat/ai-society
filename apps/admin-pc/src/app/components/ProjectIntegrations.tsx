@@ -27,36 +27,29 @@ const sourceRows = [
 ];
 
 export default function ProjectIntegrations() {
-  const { projects, currentProjectId, setCurrentProjectId, syncProject, addProject } = useProject();
+  const { projects, currentProjectId, setCurrentProjectId, syncProject } = useProject();
   const [syncing, setSyncing] = useState<string | null>(null);
   const [showConnect, setShowConnect] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ name: "", code: "", category: "会员业务", endpoint: "", apiType: "OpenAPI" });
 
-  const runSync = (project: ProjectItem) => {
+  // 真正等待 syncProject（真实接口）的结果，只有成功才提示成功，失败要如实展示失败
+  const runSync = async (project: ProjectItem) => {
     setSyncing(project.id);
-    window.setTimeout(() => {
-      syncProject(project.id);
-      setSyncing(null);
+    try {
+      await syncProject(project.id);
       setMessage(`${project.shortName}的数据已完成同步`);
+    } catch {
+      setMessage(`${project.shortName}同步失败，请稍后重试`);
+    } finally {
+      setSyncing(null);
       window.setTimeout(() => setMessage(""), 2400);
-    }, 900);
+    }
   };
 
-  const submitProject = (event: FormEvent) => {
-    event.preventDefault();
-    if (!form.name.trim() || !form.code.trim() || !form.endpoint.trim()) return;
-    addProject({
-      code: form.code.toUpperCase(), name: form.name, shortName: form.name.replace("项目", ""),
-      category: form.category, status: "configuring", statusText: "等待鉴权", accent: C.cyan,
-      apiType: form.apiType, endpoint: form.endpoint, lastSync: "尚未同步",
-      users: 0, groups: 0, wechatAccounts: 0, employees: 0,
-    });
-    setShowConnect(false);
-    setMessage(`${form.name}已加入接入队列`);
-    setForm({ name: "", code: "", category: "会员业务", endpoint: "", apiType: "OpenAPI" });
-    window.dispatchEvent(new CustomEvent("flm:navigate", { detail: "resourceconfig" }));
-  };
+  // 接入向导尚未有创建项目的真实接口（ProjectContext.addProject 明确标注仅本地占位、不落库），
+  // 表单只阻止默认提交，不再伪造"已加入接入队列"之类的成功提示；提交按钮已 disabled
+  const blockSubmit = (event: FormEvent) => event.preventDefault();
 
   return (
     <div className="p-5 h-full overflow-auto min-w-[980px]" style={{ background: C.bg }}>
@@ -69,7 +62,7 @@ export default function ProjectIntegrations() {
 
       {showConnect && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(2,6,23,0.72)" }}>
-          <form onSubmit={submitProject} className="w-[460px] rounded-md overflow-hidden shadow-2xl" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+          <form onSubmit={blockSubmit} className="w-[460px] rounded-md overflow-hidden shadow-2xl" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
               <div><h2 className="font-semibold" style={{ color: C.text, fontSize: 14 }}>接入新的项目系统</h2><p className="mt-1" style={{ color: C.muted, fontSize: 9 }}>先创建连接，鉴权与字段映射可在下一步完成</p></div>
               <button type="button" onClick={() => setShowConnect(false)} className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: C.panel2 }} title="关闭"><X size={14} style={{ color: C.muted }} /></button>
@@ -84,7 +77,7 @@ export default function ProjectIntegrations() {
             </div>
             <div className="px-4 py-3 flex justify-end gap-2" style={{ borderTop: `1px solid ${C.border}` }}>
               <button type="button" onClick={() => setShowConnect(false)} className="px-3 py-2 rounded-md" style={{ color: C.text2, background: C.panel2, fontSize: 10 }}>取消</button>
-              <button type="submit" className="px-3 py-2 rounded-md flex items-center gap-1.5" style={{ color: "white", background: C.indigo, fontSize: 10 }}><Link2 size={12} />创建连接</button>
+              <button type="submit" disabled title="接线中" className="px-3 py-2 rounded-md flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: "white", background: C.indigo, fontSize: 10 }}><Link2 size={12} />创建连接</button>
             </div>
           </form>
         </div>
@@ -101,9 +94,9 @@ export default function ProjectIntegrations() {
       <div className="grid grid-cols-4 gap-2 mt-4">
         {[
           ["已接入项目", projects.length.toString(), `${projects.filter(project => project.status === "connected").length} 个运行正常`, Link2, C.purple],
-          ["统一成员", projects.reduce((sum, project) => sum + project.users, 0).toLocaleString(), "跨项目去重后 4,186", Users2, C.cyan],
-          ["微信号资产", projects.reduce((sum, project) => sum + project.wechatAccounts, 0).toString(), "38 个在线", MessageCircle, C.green],
-          ["今日同步事件", "12,680", "2 条需要人工确认", Activity, C.amber],
+          ["统一成员", projects.reduce((sum, project) => sum + project.users, 0).toLocaleString(), "—", Users2, C.cyan],
+          ["微信号资产", projects.reduce((sum, project) => sum + project.wechatAccounts, 0).toString(), "—", MessageCircle, C.green],
+          ["今日同步事件", "—", "—", Activity, C.amber],
         ].map(([label, value, detail, Icon, color]) => {
           const IconComponent = Icon as typeof Link2;
           return <div key={label as string} className="p-3 rounded-md flex items-center gap-3" style={{ background: C.panel, border: `1px solid ${C.border}` }}><div className="w-9 h-9 rounded-md flex items-center justify-center" style={{ background: `${color}18` }}><IconComponent size={16} style={{ color: color as string }} /></div><div><div className="font-semibold" style={{ color: C.text, fontSize: 16 }}>{value as string}</div><div className="mt-0.5" style={{ color: C.text2, fontSize: 9 }}>{label as string} · <span style={{ color: color as string }}>{detail as string}</span></div></div></div>;
@@ -136,7 +129,7 @@ export default function ProjectIntegrations() {
                     <button onClick={() => setCurrentProjectId(project.id)} className="px-2.5 py-1.5 rounded-md" style={{ color: active ? project.accent : C.text2, background: C.panel2, border: `1px solid ${C.border}`, fontSize: 9 }}>{active ? "正在使用" : "设为当前"}</button>
                     <button onClick={() => { setCurrentProjectId(project.id); window.dispatchEvent(new CustomEvent("flm:navigate", { detail: "resourceconfig" })); }} className="px-2.5 py-1.5 rounded-md" style={{ color: C.cyan, background: "rgba(34,211,238,0.1)", border: `1px solid ${C.border}`, fontSize: 9 }}>配置资源</button>
                     <button onClick={() => runSync(project)} disabled={syncing === project.id} className="px-2.5 py-1.5 rounded-md flex items-center gap-1 disabled:opacity-60" style={{ color: "white", background: project.accent, fontSize: 9 }}>{syncing === project.id ? <LoaderCircle size={11} className="animate-spin" /> : <RefreshCw size={11} />}同步</button>
-                    <button title="连接设置" onClick={() => setMessage(`${project.shortName}的连接设置已打开`)} className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: C.panel2, border: `1px solid ${C.border}` }}><Settings2 size={12} style={{ color: C.muted }} /></button>
+                    <button disabled title="接线中" className="w-7 h-7 rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: C.panel2, border: `1px solid ${C.border}` }}><Settings2 size={12} style={{ color: C.muted }} /></button>
                   </div>
                 </div>
               </div>

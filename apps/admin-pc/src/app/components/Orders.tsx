@@ -99,7 +99,7 @@ export default function Orders() {
                   </select>
                   <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: L.muted }} />
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>
+                <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>
                   <Filter size={13} /> 筛选
                 </button>
               </div>
@@ -176,10 +176,10 @@ export default function Orders() {
                       </div>
                     )}
                     <div className="flex gap-2 mt-3">
-                      <button className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}><CheckCircle size={11} className="inline mr-1" />批准退款</button>
-                      <button className="px-3 py-1.5 rounded-lg text-xs" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}><X size={11} className="inline mr-1" />拒绝</button>
-                      <button className="px-3 py-1.5 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}><FileText size={11} className="inline mr-1" />查看详情</button>
-                      <button className="px-3 py-1.5 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}><Clock size={11} className="inline mr-1" />转人工复核</button>
+                      <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}><CheckCircle size={11} className="inline mr-1" />批准退款</button>
+                      <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}><X size={11} className="inline mr-1" />拒绝</button>
+                      <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}><FileText size={11} className="inline mr-1" />查看详情</button>
+                      <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}><Clock size={11} className="inline mr-1" />转人工复核</button>
                     </div>
                   </div>
                 ))}
@@ -208,9 +208,9 @@ export default function Orders() {
               </div>
             ))}
             <div className="flex flex-col gap-2 mt-auto">
-              {detail.status === "待确认" && <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>确认收款</button>}
-              {detail.status === "退款申请" && <button className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>处理退款</button>}
-              <button className="w-full py-2 rounded-lg text-xs" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>建立工单</button>
+              {detail.status === "待确认" && <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>确认收款</button>}
+              {detail.status === "退款申请" && <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>处理退款</button>}
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>建立工单</button>
             </div>
           </div>
         )}

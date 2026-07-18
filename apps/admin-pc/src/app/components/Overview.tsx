@@ -1,10 +1,13 @@
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell } from "recharts";
 import {
   TrendingUp, Database, Users2, UserPlus, AlertTriangle, Zap,
-  CheckCircle, Clock, ArrowUp, ArrowDown, MessageCircle, Bot,
+  CheckCircle, Clock, MessageCircle, Bot,
   Activity, DollarSign, Star, Bell, ArrowRight, Sparkles, Shield, RefreshCw
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useProject } from "../contexts/ProjectContext";
+import { assignmentApi, riskApi, ApiError } from "../../api";
+import type { RiskEventRow } from "../../api/risk";
 
 const D = {
   bg:       "#0d1629",
@@ -68,14 +71,6 @@ const teamMembers = [
   { name: "赵欣", role: "杭州运营", color: "#ef4444" },
 ];
 
-const kpiCards = [
-  { label: "总用户数", value: "2,892", delta: "+186", deltaDir: "up", sub: "本月新增", color: "#4361ee", glow: "rgba(67,97,238,0.2)" },
-  { label: "活跃微信账号", value: "1,827", delta: "+32", deltaDir: "up", sub: "在线数量", color: "#06b6d4", glow: "rgba(6,182,212,0.2)" },
-  { label: "活跃社群", value: "326", delta: "-3", deltaDir: "down", sub: "接近满员", color: "#8b5cf6", glow: "rgba(139,92,246,0.2)" },
-  { label: "消息到达率", value: "68.6%", delta: "+2.4%", deltaDir: "up", sub: "较上周", color: "#10b981", glow: "rgba(16,185,129,0.2)" },
-  { label: "本月收益", value: "¥482,920", delta: "+12.8%", deltaDir: "up", sub: "较上月", color: "#f59e0b", glow: "rgba(245,158,11,0.2)" },
-];
-
 const DarkTip = ({ active, payload, label }: any) => active && payload?.length ? (
   <div className="px-3 py-2 rounded-lg text-xs shadow-xl" style={{ background: "#1e2d47", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}>
     <div className="font-medium mb-1 text-slate-300">{label}</div>
@@ -86,12 +81,51 @@ const DarkTip = ({ active, payload, label }: any) => active && payload?.length ?
 ) : null;
 
 export default function Overview() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { currentProject } = useProject();
+  const projectId = currentProject.id;
 
-  const handleRefresh = () => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  // 待分配用户数、高风险事件均走真实接口；无对应后端来源的指标（消息到达率/本月收益/新增订单/未处理工单）保持 null，渲染为 "—"，不臆造数字
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [riskEvents, setRiskEvents] = useState<RiskEventRow[]>([]);
+
+  const loadStats = useCallback(async () => {
+    if (!projectId) { setPendingCount(null); setRiskEvents([]); return; }
+    try {
+      const rows = await assignmentApi.listPending(projectId);
+      setPendingCount(rows.length);
+    } catch (err) {
+      console.error("[Overview] 加载待分配用户数失败：", err instanceof ApiError ? err.message : err);
+      setPendingCount(null);
+    }
+    try {
+      const risks = await riskApi.listRiskEvents({ level: "高", projectId });
+      setRiskEvents(risks.filter(r => r.status === "待处理" || r.status === "处理中"));
+    } catch (err) {
+      console.error("[Overview] 加载高风险事件失败：", err instanceof ApiError ? err.message : err);
+      setRiskEvents([]);
+    }
+  }, [projectId]);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  // 真正刷新：重新拉取待分配数/高风险事件（不再是纯 setTimeout 的假成功）
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1500);
+    try {
+      await loadStats();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
+
+  const kpiCards = [
+    { label: "总用户数", value: currentProject.users != null ? currentProject.users.toLocaleString() : "—", sub: "当前项目成员", color: "#4361ee", glow: "rgba(67,97,238,0.2)" },
+    { label: "活跃微信账号", value: currentProject.wechatAccounts != null ? currentProject.wechatAccounts.toLocaleString() : "—", sub: "账号资产", color: "#06b6d4", glow: "rgba(6,182,212,0.2)" },
+    { label: "活跃社群", value: currentProject.groups != null ? currentProject.groups.toLocaleString() : "—", sub: "本项目群组", color: "#8b5cf6", glow: "rgba(139,92,246,0.2)" },
+    { label: "待分配用户", value: pendingCount != null ? pendingCount.toLocaleString() : "—", sub: "待入群分配", color: "#10b981", glow: "rgba(16,185,129,0.2)" },
+    { label: "本月收益", value: "—", sub: "暂无接口来源", color: "#f59e0b", glow: "rgba(245,158,11,0.2)" },
+  ];
 
   return (
     <div className="p-5 space-y-4" style={{ background: D.bg }}>
@@ -147,10 +181,7 @@ export default function Overview() {
             <div className="text-xs" style={{ color: D.muted }}>{k.label}</div>
             <div className="text-xl font-bold" style={{ color: k.color }}>{k.value}</div>
             <div className="flex items-center gap-1">
-              <span className="text-xs font-medium" style={{ color: k.deltaDir === "up" ? "#10b981" : "#ef4444" }}>
-                {k.deltaDir === "up" ? <ArrowUp size={10} className="inline" /> : <ArrowDown size={10} className="inline" />}
-                {k.delta}
-              </span>
+              {/* 无后端同比/环比字段来源，不再编造涨跌幅，仅展示说明文案 */}
               <span style={{ color: D.muted, fontSize: "10px" }}>{k.sub}</span>
             </div>
           </div>
@@ -180,13 +211,13 @@ export default function Overview() {
               </div>
               <h2 className="font-bold mb-2" style={{ color: "#ffffff", fontSize: "26px", lineHeight: 1.2 }}>内容驱动增长</h2>
               <p style={{ color: "#94a3b8", fontSize: "12px", lineHeight: 1.6, maxWidth: "360px" }}>
-                AI 助手已分析您的私域生态，发现 4 项优化机会。通过智能分群、精准触达和自动化运营，帮助提升用户留存与转化效率。
+                AI 助手可通过智能分群、精准触达和自动化运营，帮助提升用户留存与转化效率（该能力接线中）。
               </p>
               <div className="flex gap-2 mt-4">
-                <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-medium" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+                <button disabled title="接线中" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
                   <Sparkles size={12} />查看 AI 建议
                 </button>
-                <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium" style={{ background: "rgba(255,255,255,0.08)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <button disabled title="接线中" className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(255,255,255,0.08)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)" }}>
                   运营报告 <ArrowRight size={11} />
                 </button>
               </div>
@@ -244,13 +275,13 @@ export default function Overview() {
             </div>
           </div>
 
-          {/* Bottom mini stats */}
+          {/* Bottom mini stats — AI 建议引擎尚无后端来源，不编造数字，统一展示 "—" */}
           <div className="relative z-10 flex gap-4 mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             {[
-              { label: "AI识别风险", value: "4项", color: "#ef4444" },
-              { label: "待处理建议", value: "11条", color: "#f59e0b" },
-              { label: "自动执行任务", value: "23个", color: "#10b981" },
-              { label: "本月节省时长", value: "86h", color: "#818cf8" },
+              { label: "AI识别风险", value: "—", color: "#ef4444" },
+              { label: "待处理建议", value: "—", color: "#f59e0b" },
+              { label: "自动执行任务", value: "—", color: "#10b981" },
+              { label: "本月节省时长", value: "—", color: "#818cf8" },
             ].map((s, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
@@ -281,33 +312,30 @@ export default function Overview() {
             ))}
           </div>
 
-          {/* Risk banner */}
+          {/* Risk banner —— 真实高风险事件（riskApi），非硬编码示例 */}
           <div className="rounded-xl p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={11} style={{ color: "#ef4444" }} />
               <span style={{ color: "#fca5a5", fontSize: "11px", fontWeight: 600 }}>高风险提醒</span>
             </div>
             <div className="space-y-1.5">
-              <div className="flex items-start gap-1.5">
-                <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: "#ef4444" }} />
-                <span style={{ color: "#fca5a5", fontSize: "10px" }}>王建国退款申请超时 2h</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: "#ef4444" }} />
-                <span style={{ color: "#fca5a5", fontSize: "10px" }}>fengle_gz_01 微信30天未登录</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: "#f59e0b" }} />
-                <span style={{ color: "#fde68a", fontSize: "10px" }}>深圳代理群接近满员 (290/300)</span>
-              </div>
+              {riskEvents.slice(0, 3).map(r => (
+                <div key={r.id} className="flex items-start gap-1.5">
+                  <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: "#ef4444" }} />
+                  <span style={{ color: "#fca5a5", fontSize: "10px" }}>{r.title}</span>
+                </div>
+              ))}
+              {riskEvents.length === 0 && (
+                <div style={{ color: "#fca5a5", fontSize: "10px", opacity: 0.7 }}>暂无高风险事项</div>
+              )}
             </div>
           </div>
 
           {/* Account summary */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "账号总数", value: "1,247", color: "#4361ee" },
-              { label: "在用微信", value: "68", color: "#06b6d4" },
+              { label: "账号总数", value: currentProject.wechatAccounts != null ? currentProject.wechatAccounts.toLocaleString() : "—", color: "#4361ee" },
+              { label: "在用微信", value: "—", color: "#06b6d4" },
             ].map((s, i) => (
               <div key={i} className="rounded-xl p-3 text-center" style={{ background: D.surface2 }}>
                 <div className="font-bold" style={{ color: s.color, fontSize: "16px" }}>{s.value}</div>
@@ -460,13 +488,13 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* ── Bottom mini metrics ──────────────────────────────── */}
+      {/* ── Bottom mini metrics —— 有真实接口来源的走接口，无来源（订单/工单域中台不建）展示 "—" ── */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: "账号资产总数", value: "1,247", sub: "12 本月新增", icon: Database, color: "#4361ee", bg: "rgba(67,97,238,0.12)" },
-          { label: "待分配用户",   value: "23",    sub: "8 今日新增",  icon: UserPlus, color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
-          { label: "本周新增订单", value: "127",   sub: "↑28% 较上周", icon: TrendingUp, color: "#10b981", bg: "rgba(16,185,129,0.12)" },
-          { label: "未处理工单",   value: "38",    sub: "12 高优先级", icon: Shield, color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+          { label: "账号资产总数", value: currentProject.wechatAccounts != null ? currentProject.wechatAccounts.toLocaleString() : "—", sub: "当前项目", icon: Database, color: "#4361ee", bg: "rgba(67,97,238,0.12)" },
+          { label: "待分配用户",   value: pendingCount != null ? pendingCount.toLocaleString() : "—", sub: "待入群分配", icon: UserPlus, color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+          { label: "本周新增订单", value: "—", sub: "暂无接口来源", icon: TrendingUp, color: "#10b981", bg: "rgba(16,185,129,0.12)" },
+          { label: "未处理工单",   value: "—", sub: "暂无接口来源", icon: Shield, color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
         ].map((s, i) => (
           <div key={i} className="rounded-xl p-4 flex items-center gap-3" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.bg }}>

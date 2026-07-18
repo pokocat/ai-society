@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  Check, CheckCircle2, Clock3, FolderSync, MessageCircle,
+  Check, Clock3, FolderSync, MessageCircle,
   Send, Smartphone, UserRound, Users2,
 } from "lucide-react";
 import {
@@ -190,7 +190,8 @@ export function NewFollowUpDialog({
               {(["我发布的", "待处理"] as const).map(type => <button key={type} type="button" onClick={() => setQueueType(type)} className="px-3 py-1.5 rounded" style={{ color: queueType === type ? W.text : W.muted, background: queueType === type ? W.panel2 : "transparent", fontSize: 10 }}>{type}</button>)}
             </div>
             <button type="button" onClick={() => onOpenChange(false)} className="px-4 py-2 rounded-md" style={{ color: W.text2, background: W.panel2, fontSize: 10 }}>取消</button>
-            <button type="submit" disabled={!title.trim()} className="px-4 py-2 rounded-md flex items-center gap-1.5 disabled:opacity-40" style={{ color: "white", background: W.indigo, fontSize: 10 }}><Check size={12} />创建任务</button>
+            {/* 未接线：任务创建无后端 API，禁用假提交 */}
+            <button type="submit" disabled title="接线中" className="px-4 py-2 rounded-md flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: "white", background: W.indigo, fontSize: 10 }}><Check size={12} />创建任务</button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -219,20 +220,12 @@ export function CommunicationSheet({
   const [projectId, setProjectId] = useState(member.projectIds[0] ?? "");
   const [message, setMessage] = useState("");
   const [archive, setArchive] = useState(true);
-  const [sentMessages, setSentMessages] = useState<string[]>([]);
   const eligibleProjects = projects.filter(project => member.projectIds.includes(project.id));
 
   useEffect(() => {
     setProjectId(member.projectIds[0] ?? "");
     setMessage("");
-    setSentMessages([]);
   }, [member.id]);
-
-  const sendMessage = () => {
-    if (!message.trim()) return;
-    setSentMessages(items => [...items, message.trim()]);
-    setMessage("");
-  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -265,15 +258,8 @@ export function CommunicationSheet({
             </div>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <div className="max-w-[85%] p-2.5 rounded-md" style={{ color: W.text2, background: W.bg, fontSize: 9 }}>您好，上次的服务记录已经同步，今天想继续确认一下您的体验情况。</div>
-            {sentMessages.map((content, index) => (
-              <div key={`${content}-${index}`} className="ml-auto max-w-[85%] p-2.5 rounded-md" style={{ color: "white", background: W.indigo, fontSize: 9 }}>
-                {content}
-                <div className="mt-1 flex items-center justify-end gap-1" style={{ color: "#c7d2fe", fontSize: 8 }}><CheckCircle2 size={9} />已发送并归档</div>
-              </div>
-            ))}
-          </div>
+          {/* 历史消息未接线后端：无来源数据，不展示伪造会话记录 */}
+          <div className="mt-4 p-2.5 rounded-md text-center" style={{ color: W.muted, background: W.bg, fontSize: 9 }}>历史消息 —（接线中）</div>
 
           <label className="block mt-4">
             <span style={{ color: W.text2, fontSize: 9 }}>消息内容</span>
@@ -286,7 +272,8 @@ export function CommunicationSheet({
         </div>
         <SheetFooter style={{ borderTop: `1px solid ${W.border}` }}>
           <div className="flex items-center justify-between" style={{ color: W.muted, fontSize: 8 }}><span className="flex items-center gap-1"><Clock3 size={9} />发送后记录当前时间</span><span>{channel}</span></div>
-          <button onClick={sendMessage} disabled={!message.trim()} className="w-full py-2.5 rounded-md flex items-center justify-center gap-1.5 disabled:opacity-40" style={{ color: "white", background: W.indigo, fontSize: 10 }}><Send size={12} />发送消息</button>
+          {/* 未接线：消息发送须走「任务派发→人工执行→回填」链路（SPEC §2.3），禁用假发送 */}
+          <button disabled title="接线中" className="w-full py-2.5 rounded-md flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: "white", background: W.indigo, fontSize: 10 }}><Send size={12} />发送消息</button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

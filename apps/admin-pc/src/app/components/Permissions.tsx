@@ -62,7 +62,7 @@ export default function Permissions() {
           <h2 className="font-semibold" style={{ color: L.text }}>权限设置</h2>
           <p className="text-xs mt-0.5" style={{ color: L.muted }}>管理角色、模块权限、数据范围及高风险操作审批</p>
         </div>
-        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white" style={{ background: L.primary }}>
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primary }}>
           <Plus size={13} /> 新建角色
         </button>
       </div>
@@ -147,7 +147,7 @@ export default function Permissions() {
                       </div>
                     ))}
                     <div className="w-16 flex justify-center">
-                      <button className="text-xs px-2 py-1 rounded" style={{ background: L.primaryBg, color: L.primary }}>编辑</button>
+                      <button disabled title="接线中" className="text-xs px-2 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>编辑</button>
                     </div>
                   </div>
                 );
@@ -173,7 +173,7 @@ export default function Permissions() {
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 py-2 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}>
+          <button disabled title="接线中" className="w-full mt-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>
             查看完整日志
           </button>
         </div>

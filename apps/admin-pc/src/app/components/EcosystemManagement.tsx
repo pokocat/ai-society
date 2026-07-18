@@ -35,7 +35,7 @@ const tiers = [
       { label: "下属生态数", value: "3" },
       { label: "SaaS平台数", value: "7" },
       { label: "项目总数",   value: "24" },
-      { label: "全局用户数", value: "12,847" },
+      { label: "全局用户数", value: "—" },
     ],
   },
   {
@@ -55,8 +55,8 @@ const tiers = [
     metrics: [
       { label: "下属SaaS平台", value: "7" },
       { label: "活跃项目",    value: "24" },
-      { label: "生态会员",    value: "8,320" },
-      { label: "月营收",      value: "¥84万" },
+      { label: "生态会员",    value: "—" },
+      { label: "月营收",      value: "—" },
     ],
   },
   {
@@ -75,9 +75,9 @@ const tiers = [
     count: 7,
     metrics: [
       { label: "服务项目数", value: "24" },
-      { label: "平台用户",  value: "6,120" },
-      { label: "活跃群组",  value: "187" },
-      { label: "本月工单",  value: "342" },
+      { label: "平台用户",  value: "—" },
+      { label: "活跃群组",  value: "—" },
+      { label: "本月工单",  value: "—" },
     ],
   },
   {
@@ -95,10 +95,10 @@ const tiers = [
     role: "项目负责人 / 区域运营 / 客服",
     count: 24,
     metrics: [
-      { label: "本项目用户", value: "1,623" },
-      { label: "活跃群组",  value: "34" },
-      { label: "服务老师",  value: "12" },
-      { label: "本月营收",  value: "¥51.6万" },
+      { label: "本项目用户", value: "—" },
+      { label: "活跃群组",  value: "—" },
+      { label: "服务老师",  value: "—" },
+      { label: "本月营收",  value: "—" },
     ],
   },
 ];
@@ -200,7 +200,8 @@ function ArchitectureDiagram({ activeTier, onSelect }: { activeTier: string; onS
 
 // ─── 超级生态视图 ─────────────────────────────────────────────
 function SuperView() {
-  const total = { ecosystems: 3, saas: 7, projects: 24, users: 12847, revenue: "¥142万", groups: 187 };
+  // 结构数量取自演示数据集；用户/营收/群组等运营口径无后端来源，显示"—"
+  const total = { ecosystems: ecosystems.length, saas: saasPlatforms.length, projects: projects.length, users: null, revenue: null, groups: null };
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-6 gap-3">
@@ -208,9 +209,9 @@ function SuperView() {
           { label: "下属生态", value: total.ecosystems, color: "#4361ee" },
           { label: "SaaS平台", value: total.saas, color: "#0ea5e9" },
           { label: "运营项目", value: total.projects, color: "#10b981" },
-          { label: "全局用户", value: total.users.toLocaleString(), color: "#6366f1" },
-          { label: "全局群组", value: total.groups, color: "#f59e0b" },
-          { label: "总月营收", value: total.revenue, color: "#ef4444" },
+          { label: "全局用户", value: total.users ?? "—", color: "#6366f1" },
+          { label: "全局群组", value: total.groups ?? "—", color: "#f59e0b" },
+          { label: "总月营收", value: total.revenue ?? "—", color: "#ef4444" },
         ].map(s => (
           <div key={s.label} className="rounded-xl px-3 py-3" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
             <div className="text-xs" style={{ color: L.muted }}>{s.label}</div>
@@ -246,7 +247,7 @@ function EcoView() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium" style={{ color: L.text }}>旗下生态 ({ecosystems.length})</span>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: L.primary }}>
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primary }}>
           <Plus size={12} /> 创建生态
         </button>
       </div>
@@ -284,8 +285,9 @@ function EcoView() {
 
           {selected === e.id && (
             <div className="mt-4 pt-4 flex gap-2" style={{ borderTop: `1px solid ${L.border}` }}>
+              {/* 未接线：生态详情/子模块跳转无后端能力，禁用假交互 */}
               {["查看详情", "SaaS平台", "项目列表", "权限设置", "数据报表"].map(a => (
-                <button key={a} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}>{a}</button>
+                <button key={a} disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>{a}</button>
               ))}
             </div>
           )}
@@ -301,7 +303,7 @@ function SaasView() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium" style={{ color: L.text }}>SaaS 平台 ({saasPlatforms.length})</span>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: "#0ea5e9" }}>
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "#0ea5e9" }}>
           <Plus size={12} /> 新建平台
         </button>
       </div>
@@ -337,7 +339,8 @@ function SaasView() {
             </div>
             <div className="flex items-center justify-between">
               <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: statusCfg[p.status]?.bg, color: statusCfg[p.status]?.color }}>{p.status}</span>
-              <button className="flex items-center gap-1 text-xs" style={{ color: L.primary }}>
+              {/* 未接线：平台跳转无后端能力，禁用假交互 */}
+              <button disabled title="接线中" className="flex items-center gap-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: L.primary }}>
                 进入管理 <ChevronRight size={12} />
               </button>
             </div>
@@ -356,8 +359,9 @@ function ProjectView() {
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium" style={{ color: L.text }}>使用私域社群工具的项目 ({projects.length})</span>
         <div className="flex gap-2">
-          <button className="px-3 py-1.5 rounded-lg text-xs" style={{ background: L.surface, border: `1px solid ${L.border}`, color: L.muted }}>全部生态</button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: "#10b981" }}>
+          {/* 未接线：禁用假交互 */}
+          <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.surface, border: `1px solid ${L.border}`, color: L.muted }}>全部生态</button>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "#10b981" }}>
             <Plus size={12} /> 接入新项目
           </button>
         </div>
@@ -403,8 +407,9 @@ function ProjectView() {
               <span className="px-1.5 py-0.5 rounded-full" style={{ background: statusCfg[p.status]?.bg, color: statusCfg[p.status]?.color }}>{p.status}</span>
             </div>
             <div className="flex-shrink-0 flex gap-1" style={{ width: 80 }}>
-              <button className="px-2 py-1 rounded text-xs" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }} onClick={e => e.stopPropagation()}>进入</button>
-              <button className="px-1.5 py-1 rounded" style={{ background: L.borderLight, color: L.muted }} onClick={e => e.stopPropagation()}>
+              {/* 未接线：平台跳转/设置无后端能力，禁用假交互 */}
+              <button disabled title="接线中" className="px-2 py-1 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }} onClick={e => e.stopPropagation()}>进入</button>
+              <button disabled title="接线中" className="px-1.5 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.borderLight, color: L.muted }} onClick={e => e.stopPropagation()}>
                 <Settings size={11} />
               </button>
             </div>

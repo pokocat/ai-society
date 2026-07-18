@@ -159,7 +159,7 @@ export default function UserSegment() {
             <div className="flex items-center gap-2">
               <span className="text-xs" style={{ color: L.muted }}>已选 {selectedUsers.length} 人</span>
               {["批量打标签", "批量发消息", "批量分配群", "导出名单"].map(action => (
-                <button key={action} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors hover:bg-gray-50"
+                <button key={action} disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors opacity-50 cursor-not-allowed"
                   style={{ background: L.surface, border: `1px solid ${L.border}`, color: L.textSec }}>
                   {action === "导出名单" && <Download size={12} />}
                   {action}
@@ -189,7 +189,7 @@ export default function UserSegment() {
                 <Tag size={14} style={{ color: L.primary }} />
                 <span className="text-sm font-semibold" style={{ color: L.text }}>标签库</span>
               </div>
-              <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-gray-100 transition-colors"
+              <button disabled title="接线中" className="w-6 h-6 rounded-md flex items-center justify-center transition-colors opacity-50 cursor-not-allowed"
                 style={{ color: L.primary }}>
                 <Plus size={14} />
               </button>

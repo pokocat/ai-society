@@ -160,11 +160,12 @@ export default function Activities() {
     return matchTab && matchSearch;
   });
 
+  // 无后端统计接口来源，不臆造具体数值/环比，如实展示 "—"
   const statCards = [
-    { label: "进行中活动数", value: "3", sub: "本月新增1个", color: L.primary },
-    { label: "本月参与人次", value: "557", sub: "较上月+23%", color: "#10b981" },
-    { label: "平均转化率", value: "28.4%", sub: "较上月+5.2%", color: "#f59e0b" },
-    { label: "活动带来新会员", value: "89", sub: "本月累计", color: "#8b5cf6" },
+    { label: "进行中活动数", value: "—", sub: "—", color: L.primary },
+    { label: "本月参与人次", value: "—", sub: "—", color: "#10b981" },
+    { label: "平均转化率", value: "—", sub: "—", color: "#f59e0b" },
+    { label: "活动带来新会员", value: "—", sub: "—", color: "#8b5cf6" },
   ];
 
   function openModal() {
@@ -246,11 +247,11 @@ export default function Activities() {
             )}
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border hover:opacity-80 transition-opacity"
+            <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border opacity-50 cursor-not-allowed"
               style={{ color: L.textSec, borderColor: L.border, background: L.surface }}>
               <Download size={13} /> 批量导出
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border hover:opacity-80 transition-opacity"
+            <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border opacity-50 cursor-not-allowed"
               style={{ color: L.textSec, borderColor: L.border, background: L.surface }}>
               <Bell size={13} /> 批量发通知
             </button>
@@ -301,7 +302,7 @@ export default function Activities() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button className="text-xs hover:opacity-70" style={{ color: L.primary }}>查看详情</button>
+                    <button disabled title="接线中" className="text-xs opacity-50 cursor-not-allowed" style={{ color: L.primary }}>查看详情</button>
                   </td>
                 </tr>
               ))}
@@ -320,9 +321,11 @@ export default function Activities() {
           <div className="flex items-center gap-2"><h2 className="font-semibold text-base" style={{ color: L.text }}>活动与通知</h2><span className="px-2 py-0.5 rounded-md" style={{ color: currentProject.accent, background: `${currentProject.accent}15`, fontSize: 9 }}>{currentProject.shortName}</span></div>
           <p className="text-xs mt-0.5" style={{ color: L.muted }}>管理活动、课程、通知草稿与跨项目推送渠道</p>
         </div>
+        {/* 中台暂无活动创建接口，新建流程无真实后端落地，先禁用避免"点击后假成功" */}
         <button
           onClick={openModal}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          disabled title="接线中"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white opacity-50 cursor-not-allowed"
           style={{ background: L.primary }}>
           <Plus size={15} /> 新建活动
         </button>
@@ -434,11 +437,11 @@ export default function Activities() {
                     style={{ background: L.primaryBg, color: L.primary }}>
                     <Eye size={12} /> 查看报名
                   </button>
-                  <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 transition-opacity border"
+                  <button disabled title="接线中" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border opacity-50 cursor-not-allowed"
                     style={{ color: L.textSec, borderColor: L.border, background: L.surface }}>
                     <Settings size={12} /> 管理
                   </button>
-                  <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 transition-opacity border"
+                  <button disabled title="接线中" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border opacity-50 cursor-not-allowed"
                     style={{ color: L.textSec, borderColor: L.border, background: L.surface }}>
                     <Copy size={12} /> 复制
                   </button>

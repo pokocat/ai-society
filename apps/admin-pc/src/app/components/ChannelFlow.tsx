@@ -96,7 +96,7 @@ function ChannelsTab() {
             { label: "已绑定渠道", value: channels.filter(c => c.status === "已绑定").length, color: "#34d399", bg: "rgba(16,185,129,0.15)" },
             { label: "待配置", value: channels.filter(c => c.status === "待配置").length, color: "#fbbf24", bg: "rgba(245,158,11,0.15)" },
             { label: "本月总流量", value: channels.reduce((s, c) => s + c.monthlyTraffic, 0).toLocaleString(), color: "#4361ee", bg: "rgba(67,97,238,0.12)" },
-            { label: "平均转化率", value: "6.8%", color: "#059669", bg: "rgba(16,185,129,0.15)" },
+            { label: "平均转化率", value: "—", color: "#059669", bg: "rgba(16,185,129,0.15)" }, // 无后端来源的独立编造值，不展示假数字
           ].map(s => (
             <div key={s.label} className="rounded-xl px-4 py-3" style={{ background: L.surface, border: `1px solid ${L.border}` }}>
               <div className="text-xs" style={{ color: L.muted }}>{s.label}</div>
@@ -163,7 +163,7 @@ function ChannelsTab() {
 
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-xs" style={{ color: L.mutedLight }}>同步 {c.lastSync}</span>
-                  <button className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg" style={{ background: L.primaryBg, color: L.primary }} onClick={e => e.stopPropagation()}>
+                  <button disabled title="接线中" className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }} onClick={e => e.stopPropagation()}>
                     <Settings size={11} /> 配置规则
                   </button>
                 </div>
@@ -224,12 +224,12 @@ function ChannelsTab() {
             ))}
           </div>
           <div className="p-4 flex flex-col gap-2 flex-shrink-0" style={{ borderTop: `1px solid ${L.border}` }}>
-            <button className="w-full py-2 rounded-lg text-xs text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑绑定配置</button>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white font-medium opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑绑定配置</button>
             <div className="grid grid-cols-2 gap-2">
-              <button className="py-2 rounded-lg text-xs font-medium" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.textSec }}>
+              <button disabled title="接线中" className="py-2 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.textSec }}>
                 <RefreshCw size={11} className="inline mr-1" />手动同步
               </button>
-              <button className="py-2 rounded-lg text-xs font-medium" style={{ background: L.primaryBg, color: L.primary }}>查看流量</button>
+              <button disabled title="接线中" className="py-2 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>查看流量</button>
             </div>
           </div>
         </div>
@@ -264,7 +264,7 @@ function RulesTab() {
           </div>
           <div className="flex justify-end gap-2 mt-3">
             <button className="px-3 py-2 rounded-lg text-xs" style={{ background: "#fff", border: `1px solid ${L.border}`, color: L.textSec }} onClick={() => setShowNew(false)}>取消</button>
-            <button className="px-4 py-2 rounded-lg text-xs text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存规则</button>
+            <button disabled title="接线中" className="px-4 py-2 rounded-lg text-xs text-white font-medium opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存规则</button>
           </div>
         </div>
       )}
@@ -302,8 +302,8 @@ function RulesTab() {
             </div>
 
             <div className="flex gap-2 flex-shrink-0">
-              <button className="px-2.5 py-1.5 rounded-lg text-xs" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.muted }}>编辑</button>
-              <button className="px-2.5 py-1.5 rounded-lg text-xs font-medium" style={{ background: rule.active ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", color: rule.active ? "#f87171" : "#34d399" }}>
+              <button disabled title="接线中" className="px-2.5 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.muted }}>编辑</button>
+              <button disabled title="接线中" className="px-2.5 py-1.5 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed" style={{ background: rule.active ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", color: rule.active ? "#f87171" : "#34d399" }}>
                 {rule.active ? "停用" : "启用"}
               </button>
             </div>
@@ -395,9 +395,10 @@ export default function ChannelFlow() {
             绑定各媒体渠道账号（微信小店/抖音/小红书等），配置用户从不同渠道进来后的自动分配规则
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl flex-shrink-0" style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399" }}>
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          实时同步中
+        {/* 无后端同步作业支撑，不再冒充"实时同步"的活跃状态 */}
+        <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl flex-shrink-0" style={{ background: "rgba(100,116,139,0.15)", border: `1px solid ${L.border}`, color: L.muted }}>
+          <div className="w-2 h-2 rounded-full" style={{ background: L.mutedLight }} />
+          同步状态：M2 接线
         </div>
       </div>
 

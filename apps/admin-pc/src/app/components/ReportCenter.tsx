@@ -464,7 +464,8 @@ export default function ReportCenter() {
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+          {/* 未接线：批量导出属高风险动作，须走审批单链路（SPEC §7.4），禁用假交互 */}
+          <button disabled title="接线中" className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: L.primary }}>
             <Download size={14} /> 导出报表
           </button>

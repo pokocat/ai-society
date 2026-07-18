@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Search, Plus, Clock, CheckCircle, AlertTriangle, X, ChevronRight, User } from "lucide-react";
+import { useState } from "react";
+import { Search, Plus, CheckCircle, AlertTriangle, X, ChevronRight, User } from "lucide-react";
 
 const L = {
   bg: "#0d1629",
@@ -52,59 +52,12 @@ function SlaBar({ hours, total }: { hours: number; total: number }) {
 }
 
 export default function Tickets() {
-  const [ticketList, setTicketList] = useState(tickets);
+  // 工单模块尚未接线后端（无 tickets API）：仅保留展示与筛选，
+  // 写操作（新建/指派/完成/升级/跟进）一律禁用，禁止假成功反馈。
+  const ticketList = tickets;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("全部");
   const [selected, setSelected] = useState<number | null>(null);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    if (!message) return;
-    const timer = window.setTimeout(() => setMessage(""), 2200);
-    return () => window.clearTimeout(timer);
-  }, [message]);
-
-  const assignTicket = (id: number) => {
-    setTicketList(items => items.map(item => item.id === id ? { ...item, assignee: "吴思远", status: item.status === "待处理" ? "进行中" : item.status } : item));
-    setSelected(id);
-    setMessage("工单已指派给吴思远");
-  };
-
-  const completeTicket = (id: number) => {
-    setTicketList(items => items.map(item => item.id === id ? { ...item, status: "已解决", slaHours: item.slaTotal } : item));
-    setSelected(id);
-    setMessage("工单已标记为已解决");
-  };
-
-  const escalateTicket = (id: number) => {
-    setTicketList(items => items.map(item => item.id === id ? { ...item, priority: "高", assignee: item.assignee === "待分配" ? "技术支持" : item.assignee } : item));
-    setSelected(id);
-    setMessage("工单已升级为高优先级");
-  };
-
-  const createTicket = () => {
-    const nextId = Math.max(...ticketList.map(item => item.id)) + 1;
-    const ticket = {
-      id: nextId,
-      no: `TK20260713${String(nextId).padStart(2, "0")}`,
-      type: "服务回访",
-      user: "新建用户",
-      phone: "待补充",
-      assignee: "待分配",
-      city: "待确认",
-      status: "待处理",
-      priority: "中",
-      slaHours: 0,
-      slaTotal: 12,
-      created: "2026-07-13 10:00",
-      desc: "从工单中心快速创建，待补充用户诉求与处理记录",
-      tags: ["新建", "待补充"],
-    };
-    setTicketList(items => [ticket, ...items]);
-    setStatusFilter("全部");
-    setSelected(nextId);
-    setMessage("已创建新工单，可在右侧补充详情");
-  };
 
   const stats = [
     { label: "全部", count: ticketList.length },
@@ -123,17 +76,13 @@ export default function Tickets() {
 
   return (
     <div className="p-6 h-full flex flex-col gap-4" style={{ background: L.bg }}>
-      {message && (
-        <div className="fixed top-16 left-1/2 z-[70] -translate-x-1/2 px-4 py-2.5 rounded-md shadow-2xl flex items-center gap-2" style={{ color: "#34d399", background: L.surface, border: "1px solid rgba(52,211,153,0.3)", fontSize: 10 }}>
-          <CheckCircle size={13} />{message}
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold" style={{ color: L.text }}>工单中心</h2>
           <p className="text-xs mt-0.5" style={{ color: L.muted }}>管理咨询、售后、入群异常、退款跟进等工单</p>
         </div>
-        <button onClick={createTicket} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
+        {/* 未接线：禁用，防止假成功 */}
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>
           <Plus size={13} /> 新建工单
         </button>
       </div>
@@ -204,11 +153,12 @@ export default function Tickets() {
                     <span className="text-xs" style={{ color: L.muted }}>—</span>
                   )}
                   <div className="flex gap-1">
+                    {/* 未接线：禁用写操作 */}
                     {t.status === "待处理" && (
-                      <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }} onClick={e => { e.stopPropagation(); assignTicket(t.id); }}>指派</button>
+                      <button disabled title="接线中" className="px-2 py-1 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }} onClick={e => e.stopPropagation()}>指派</button>
                     )}
                     {t.status === "进行中" && (
-                      <button className="px-2 py-1 rounded text-xs" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }} onClick={e => { e.stopPropagation(); completeTicket(t.id); }}>完成</button>
+                      <button disabled title="接线中" className="px-2 py-1 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }} onClick={e => e.stopPropagation()}>完成</button>
                     )}
                     <button className="px-2 py-1 rounded text-xs flex items-center gap-0.5" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }} onClick={() => setSelected(t.id)}>
                       <ChevronRight size={11} />
@@ -257,16 +207,17 @@ export default function Tickets() {
             ))}
 
             <div className="flex flex-col gap-2 mt-auto">
+              {/* 未接线：写操作一律禁用，防止假成功 */}
               {detail.assignee === "待分配" && (
-                <button onClick={() => assignTicket(detail.id)} className="w-full py-2 rounded-lg text-xs text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>指派处理人</button>
+                <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>指派处理人</button>
               )}
               {detail.status === "进行中" && (
-                <button onClick={() => completeTicket(detail.id)} className="w-full py-2 rounded-lg text-xs" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>
+                <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>
                   <CheckCircle size={12} className="inline mr-1" />标记已解决
                 </button>
               )}
-              <button onClick={() => setMessage("已添加一条跟进记录")} className="w-full py-2 rounded-lg text-xs" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>添加跟进记录</button>
-              <button onClick={() => escalateTicket(detail.id)} className="w-full py-2 rounded-lg text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "#1a2640", border: `1px solid ${L.border}`, color: L.textSec }}>添加跟进记录</button>
+              <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>
                 <AlertTriangle size={12} className="inline mr-1" />升级处理
               </button>
             </div>

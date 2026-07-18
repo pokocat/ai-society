@@ -209,8 +209,10 @@ function WithdrawalModal({ onClose }: { onClose: () => void }) {
           >
             取消
           </button>
+          {/* 未接线：提现申请须经审批协同链路，禁用假提交 */}
           <button
-            onClick={onClose}
+            disabled
+            title="接线中"
             style={{
               flex: 1,
               padding: "8px",
@@ -219,7 +221,8 @@ function WithdrawalModal({ onClose }: { onClose: () => void }) {
               background: L.primary,
               color: "#fff",
               fontSize: 13,
-              cursor: "pointer",
+              cursor: "not-allowed",
+              opacity: 0.5,
               fontWeight: 600,
             }}
           >
@@ -299,8 +302,10 @@ function AgentTree() {
 export default function Commission() {
   const [activeTab, setActiveTab] = useState("overview");
   const [withdrawalModal, setWithdrawalModal] = useState(false);
-  const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
   const [detailFilter, setDetailFilter] = useState({ level: "全部", type: "全部" });
+  // 佣金/提现模块尚未接线后端：提现审批须走审批单→回调执行器（SPEC §7.4），
+  // 本地直改状态属假交互，写操作一律禁用。
+  const withdrawals = WITHDRAWAL_REQUESTS;
 
   const tabs = [
     { key: "overview",    label: "收益总览" },
@@ -308,13 +313,6 @@ export default function Commission() {
     { key: "settlement",  label: "结算记录" },
     { key: "withdrawal",  label: "提现管理" },
   ];
-
-  const approveWithdrawal = (id: number) => {
-    setWithdrawals(w => w.map(r => r.id === id ? { ...r, status: "已打款" } : r));
-  };
-  const rejectWithdrawal = (id: number) => {
-    setWithdrawals(w => w.map(r => r.id === id ? { ...r, status: "已拒绝" } : r));
-  };
 
   const filteredDetail = COMMISSION_DETAIL.filter(
     r =>
@@ -923,8 +921,10 @@ export default function Commission() {
                   <td style={{ padding: "9px 16px" }}>
                     {r.status === "待审核" ? (
                       <div className="flex gap-1">
+                        {/* 未接线：提现审批须走审批单，禁用假交互 */}
                         <button
-                          onClick={() => approveWithdrawal(r.id)}
+                          disabled
+                          title="接线中"
                           style={{
                             padding: "3px 10px",
                             borderRadius: 5,
@@ -933,13 +933,15 @@ export default function Commission() {
                             color: "#34d399",
                             fontSize: 11,
                             fontWeight: 600,
-                            cursor: "pointer",
+                            opacity: 0.5,
+                            cursor: "not-allowed",
                           }}
                         >
                           通过
                         </button>
                         <button
-                          onClick={() => rejectWithdrawal(r.id)}
+                          disabled
+                          title="接线中"
                           style={{
                             padding: "3px 10px",
                             borderRadius: 5,
@@ -948,7 +950,8 @@ export default function Commission() {
                             color: "#f87171",
                             fontSize: 11,
                             fontWeight: 600,
-                            cursor: "pointer",
+                            opacity: 0.5,
+                            cursor: "not-allowed",
                           }}
                         >
                           拒绝

@@ -35,7 +35,7 @@ const initialStaff: StaffItem[] = [
 
 export default function StaffManagement() {
   const { projects, currentProject } = useProject();
-  const [staff, setStaff] = useState(initialStaff);
+  const [staff] = useState(initialStaff);
   const [scope, setScope] = useState<"current" | "all">("current");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("全部");
@@ -49,13 +49,10 @@ export default function StaffManagement() {
     (item.name.includes(search) || item.no.includes(search) || item.wechat.includes(search) || item.department.includes(search))),
   [staff, scope, currentProject.id, search, status, accountFilter]);
 
+  // 员工域目前只有 listEmployees（只读）接口，无创建/更新绑定的真实接口，
+  // 保存动作禁止在本地悄悄伪造成功，保存按钮已 disabled，这里仅阻止表单默认提交
   const saveBinding = (event: FormEvent) => {
     event.preventDefault();
-    if (!editing) return;
-    setStaff(items => items.some(item => item.id === editing.id)
-      ? items.map(item => item.id === editing.id ? editing : item)
-      : [...items, editing]);
-    setEditing(null);
   };
 
   return (
@@ -72,7 +69,7 @@ export default function StaffManagement() {
               <label className="col-span-2"><span style={{ color: C.text2, fontSize: 10 }}>绑定微信号</span><input value={editing.wechat} onChange={event => setEditing({ ...editing, wechat: event.target.value })} className="mt-1.5 w-full px-3 py-2 rounded-md outline-none" style={{ color: C.text, background: C.panel2, border: `1px solid ${C.border}`, fontSize: 10 }} /></label>
               <div className="col-span-2"><span style={{ color: C.text2, fontSize: 10 }}>可服务项目</span><div className="grid grid-cols-2 gap-2 mt-2">{projects.map(project => { const checked = editing.projectIds.includes(project.id); return <label key={project.id} className="px-2.5 py-2 rounded-md flex items-center gap-2 cursor-pointer" style={{ background: checked ? `${project.accent}12` : C.panel2, border: `1px solid ${checked ? `${project.accent}35` : C.border}` }}><input type="checkbox" checked={checked} onChange={() => setEditing({ ...editing, projectIds: checked ? editing.projectIds.filter(id => id !== project.id) : [...editing.projectIds, project.id] })} /><span className="w-1.5 h-1.5 rounded-full" style={{ background: project.accent }} /><span style={{ color: C.text2, fontSize: 9 }}>{project.name}</span></label>; })}</div></div>
             </div>
-            <div className="px-4 py-3 flex justify-end gap-2" style={{ borderTop: `1px solid ${C.border}` }}><button type="button" onClick={() => setEditing(null)} className="px-3 py-2 rounded-md" style={{ color: C.text2, background: C.panel2, fontSize: 10 }}>取消</button><button type="submit" className="px-3 py-2 rounded-md flex items-center gap-1.5" style={{ color: "white", background: C.indigo, fontSize: 10 }}><Check size={12} />保存绑定</button></div>
+            <div className="px-4 py-3 flex justify-end gap-2" style={{ borderTop: `1px solid ${C.border}` }}><button type="button" onClick={() => setEditing(null)} className="px-3 py-2 rounded-md" style={{ color: C.text2, background: C.panel2, fontSize: 10 }}>取消</button><button type="submit" disabled title="接线中" className="px-3 py-2 rounded-md flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: "white", background: C.indigo, fontSize: 10 }}><Check size={12} />保存绑定</button></div>
           </form>
         </div>
       )}

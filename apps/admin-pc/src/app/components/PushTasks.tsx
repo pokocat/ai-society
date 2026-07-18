@@ -85,7 +85,15 @@ const LOGS = [
 ];
 
 const STATUS_FILTER = ["全部", "已完成", "进行中", "待发送", "草稿", "已暂停"];
-const STATUS_COUNTS: Record<string, number> = { 全部: 6, 已完成: 1, 进行中: 1, 待发送: 2, 草稿: 1, 已暂停: 1 };
+// 由 TASKS 实时统计而来，不再手写死数字（避免与实际列表脱节）
+const STATUS_COUNTS: Record<string, number> = {
+  全部: TASKS.length,
+  已完成: TASKS.filter(t => t.status === "已完成").length,
+  进行中: TASKS.filter(t => t.status === "进行中").length,
+  待发送: TASKS.filter(t => t.status === "待发送").length,
+  草稿: TASKS.filter(t => t.status === "草稿").length,
+  已暂停: TASKS.filter(t => t.status === "已暂停").length,
+};
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   "朋友圈图文": <Image size={16} />,
@@ -466,16 +474,17 @@ function TaskCard({ task, onSelect, selected }: { task: Task; onSelect: (t: Task
             )}
           </div>
         </div>
+        {/* 中台暂无推送任务执行/回填接口，以下操作均无真实后端落地，先禁用避免"点击后假成功" */}
         <div className="flex flex-col gap-1.5">
           {task.status === "已完成" && (
-            <button className="text-xs px-3 py-1.5 rounded-lg font-medium"
+            <button disabled title="接线中" className="text-xs px-3 py-1.5 rounded-lg font-medium opacity-50 cursor-not-allowed"
               style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}
               onClick={e => e.stopPropagation()}>
               查看报告
             </button>
           )}
           {task.status === "进行中" && (
-            <button className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium"
+            <button disabled title="接线中" className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium opacity-50 cursor-not-allowed"
               style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}
               onClick={e => e.stopPropagation()}>
               <Pause size={11} /> 暂停
@@ -483,12 +492,12 @@ function TaskCard({ task, onSelect, selected }: { task: Task; onSelect: (t: Task
           )}
           {task.status === "待发送" && (
             <>
-              <button className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium text-white"
+              <button disabled title="接线中" className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium text-white opacity-50 cursor-not-allowed"
                 style={{ background: L.primary }}
                 onClick={e => e.stopPropagation()}>
                 <Send size={11} /> 立即发
               </button>
-              <button className="text-xs px-3 py-1.5 rounded-lg font-medium border"
+              <button disabled title="接线中" className="text-xs px-3 py-1.5 rounded-lg font-medium border opacity-50 cursor-not-allowed"
                 style={{ border: `1px solid ${L.border}`, color: L.textSec }}
                 onClick={e => e.stopPropagation()}>
                 编辑
@@ -496,7 +505,7 @@ function TaskCard({ task, onSelect, selected }: { task: Task; onSelect: (t: Task
             </>
           )}
           {task.status === "草稿" && (
-            <button className="text-xs px-3 py-1.5 rounded-lg font-medium border"
+            <button disabled title="接线中" className="text-xs px-3 py-1.5 rounded-lg font-medium border opacity-50 cursor-not-allowed"
               style={{ border: `1px solid ${L.border}`, color: L.textSec }}
               onClick={e => e.stopPropagation()}>
               编辑
@@ -504,12 +513,12 @@ function TaskCard({ task, onSelect, selected }: { task: Task; onSelect: (t: Task
           )}
           {task.status === "已暂停" && (
             <>
-              <button className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium"
+              <button disabled title="接线中" className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium opacity-50 cursor-not-allowed"
                 style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}
                 onClick={e => e.stopPropagation()}>
                 <Play size={11} /> 恢复
               </button>
-              <button className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border"
+              <button disabled title="接线中" className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium border opacity-50 cursor-not-allowed"
                 style={{ border: `1px solid ${L.border}`, color: L.textSec }}
                 onClick={e => e.stopPropagation()}>
                 <Copy size={11} /> 复制
@@ -561,30 +570,31 @@ function DetailPanel({ task, onClose }: { task: Task; onClose: () => void }) {
           ))}
         </div>
 
+        {/* 中台暂无推送任务执行/回填接口，以下操作均无真实后端落地，先禁用避免"点击后假成功" */}
         <div className="pt-2 space-y-2 border-t" style={{ borderColor: L.borderLight }}>
           {task.status === "已完成" && (
-            <button className="w-full py-2 rounded-lg text-sm font-medium"
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed"
               style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>查看完整报告</button>
           )}
           {task.status === "进行中" && (
-            <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium"
+            <button disabled title="接线中" className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed"
               style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}>
               <Pause size={14} /> 暂停任务
             </button>
           )}
           {task.status === "待发送" && (
-            <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium text-white"
+            <button disabled title="接线中" className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium text-white opacity-50 cursor-not-allowed"
               style={{ background: L.primary }}>
               <Send size={14} /> 立即发送
             </button>
           )}
           {task.status === "已暂停" && (
-            <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium"
+            <button disabled title="接线中" className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed"
               style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>
               <Play size={14} /> 恢复任务
             </button>
           )}
-          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm border"
+          <button disabled title="接线中" className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm border opacity-50 cursor-not-allowed"
             style={{ border: `1px solid ${L.border}`, color: L.textSec }}>
             <Copy size={14} /> 复制任务
           </button>
@@ -620,8 +630,9 @@ export default function PushTasks() {
               </button>
             ))}
           </div>
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white"
+          {/* 中台暂无推送任务创建/群发接口，新建流程无真实后端落地，先禁用避免"点击后假成功" */}
+          <button onClick={() => setShowModal(true)} disabled title="接线中"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white opacity-50 cursor-not-allowed"
             style={{ background: L.primary }}>
             <Plus size={14} /> 新建任务
           </button>
@@ -671,8 +682,8 @@ export default function PushTasks() {
       {/* 模板库 */}
       {activeView === "模板库" && (
         <div className="grid grid-cols-3 gap-4">
-          {/* Create template card */}
-          <button className="rounded-xl p-6 flex flex-col items-center justify-center gap-3 border-2 border-dashed transition-colors hover:bg-gray-50"
+          {/* Create template card（中台暂无模板管理接口，先禁用避免"点击后假成功"） */}
+          <button disabled title="接线中" className="rounded-xl p-6 flex flex-col items-center justify-center gap-3 border-2 border-dashed opacity-50 cursor-not-allowed"
             style={{ borderColor: L.border, minHeight: 180 }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: L.primaryBg }}>
               <Plus size={20} style={{ color: L.primary }} />
@@ -694,9 +705,9 @@ export default function PushTasks() {
               <div className="flex items-center justify-between">
                 <span className="text-xs" style={{ color: L.mutedLight }}>已使用 {tpl.used} 次</span>
                 <div className="flex gap-2">
-                  <button className="text-xs px-2.5 py-1 rounded-md border"
+                  <button disabled title="接线中" className="text-xs px-2.5 py-1 rounded-md border opacity-50 cursor-not-allowed"
                     style={{ border: `1px solid ${L.border}`, color: L.textSec }}>编辑</button>
-                  <button className="text-xs px-2.5 py-1 rounded-md text-white"
+                  <button disabled title="接线中" className="text-xs px-2.5 py-1 rounded-md text-white opacity-50 cursor-not-allowed"
                     style={{ background: L.primary }}>使用</button>
                 </div>
               </div>

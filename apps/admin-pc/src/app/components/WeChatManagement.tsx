@@ -163,7 +163,8 @@ function NewWechatModal({ onClose }: { onClose: () => void }) {
 
         <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${L.border}` }}>
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: L.bg, color: L.muted, border: `1px solid ${L.border}` }}>取消</button>
-          <button className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存</button>
+          {/* 新建微信号尚无对应后端接口，禁止假装保存成功 */}
+          <button disabled title="接线中" className="flex-1 py-2.5 rounded-xl text-sm text-white font-medium opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>保存</button>
         </div>
       </div>
     </div>
@@ -293,8 +294,9 @@ function PersonalDetailPanel({ account, onChange, onClose }: { account: Personal
       </div>
 
       <div className="p-4 flex gap-2" style={{ borderTop: `1px solid ${L.border}` }}>
-        <button className="flex-1 py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}><Save size={13} />保存修改</button>
-        <button className="px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>发起交接</button>
+        {/* 保存修改 / 发起交接均无对应后端接口，禁止假装成功 */}
+        <button disabled title="接线中" className="flex-1 py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}><Save size={13} />保存修改</button>
+        <button disabled title="接线中" className="px-3 py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }}>发起交接</button>
       </div>
     </aside>
   );
@@ -364,10 +366,11 @@ function WecomDetailPanel({ account, onChange, onClose }: { account: WecomAccoun
       </div>
 
       <div className="p-4 flex flex-col gap-2" style={{ borderTop: `1px solid ${L.border}` }}>
-        <button className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 text-white" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}><Save size={13} />保存企业微信</button>
+        {/* 保存企业微信 / 手动同步 / 新建群均无对应后端接口，禁止假装成功 */}
+        <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1.5 text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}><Save size={13} />保存企业微信</button>
         <div className="grid grid-cols-2 gap-2">
-          <button className="py-2 rounded-lg text-xs" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.textSec }}>手动同步</button>
-          <button className="py-2 rounded-lg text-xs" style={{ background: L.primaryBg, color: L.primary }}>新建群</button>
+          <button disabled title="接线中" className="py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.bg, border: `1px solid ${L.border}`, color: L.textSec }}>手动同步</button>
+          <button disabled title="接线中" className="py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }}>新建群</button>
         </div>
       </div>
     </aside>
@@ -704,7 +707,8 @@ export default function WeChatManagement() {
             const enableState = getEnableState(w);
             const region = getServiceRegion(w.city);
             const isSelected = selectedRow === w.no;
-            const daysAgo = w.lastLogin !== "—" ? Math.floor((new Date("2026-07-05").getTime() - new Date(w.lastLogin).getTime()) / 86400000) : null;
+            // 基准"今天"改用当前时间，不写死日期（避免假装某天为固定基准）
+            const daysAgo = w.lastLogin !== "—" ? Math.floor((Date.now() - new Date(w.lastLogin).getTime()) / 86400000) : null;
             return (
               <div
                 key={w.no}
@@ -766,10 +770,10 @@ export default function WeChatManagement() {
                 <div className="flex-shrink-0 text-xs" style={{ width: 90, color: daysAgo !== null && daysAgo > 7 ? "#f87171" : L.muted }}>
                   {daysAgo !== null ? (daysAgo === 0 ? "今天" : `${daysAgo}天前`) : "—"}
                 </div>
-                {/* 操作 */}
+                {/* 操作：编辑/交接均无对应后端接口，禁止假装成功 */}
                 <div className="flex-shrink-0 flex gap-1.5" style={{ width: 100 }}>
-                  <button className="px-2 py-1 rounded text-xs" style={{ background: L.primaryBg, color: L.primary }} onClick={e => e.stopPropagation()}>编辑</button>
-                  <button className="px-2 py-1 rounded text-xs" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }} onClick={e => e.stopPropagation()}>交接</button>
+                  <button disabled title="接线中" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: L.primary }} onClick={e => e.stopPropagation()}>编辑</button>
+                  <button disabled title="接线中" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(245,158,11,0.15)", color: "#fbbf24" }} onClick={e => e.stopPropagation()}>交接</button>
                 </div>
               </div>
             );

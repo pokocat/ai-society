@@ -17,12 +17,13 @@ const D = {
   muted:    "#64748b",
 };
 
+// 无后端来源的统计口径：数值与环比暂以 "—" 占位，禁止编造数字（接线后由真实接口填充）
 const kpiCards = [
-  { label: "总用户数",    value: "2,892",    delta: "+186", deltaDir: "up",   sub: "本月新增",  color: "#4361ee" },
-  { label: "活跃微信账号", value: "1,827",   delta: "+32",  deltaDir: "up",   sub: "在线数量",  color: "#06b6d4" },
-  { label: "活跃社群",    value: "326",      delta: "-3",   deltaDir: "down", sub: "接近满员",  color: "#8b5cf6" },
-  { label: "消息到达率",  value: "68.6%",    delta: "+2.4%",deltaDir: "up",   sub: "较上周",   color: "#10b981" },
-  { label: "本月收益",    value: "¥482,920", delta: "+12.8%",deltaDir:"up",   sub: "较上月",   color: "#f59e0b" },
+  { label: "总用户数",    value: "—", delta: null, deltaDir: "up",   sub: "本月新增",  color: "#4361ee" },
+  { label: "活跃微信账号", value: "—", delta: null, deltaDir: "up",   sub: "在线数量",  color: "#06b6d4" },
+  { label: "活跃社群",    value: "—", delta: null, deltaDir: "down", sub: "接近满员",  color: "#8b5cf6" },
+  { label: "消息到达率",  value: "—", delta: null, deltaDir: "up",   sub: "较上周",   color: "#10b981" },
+  { label: "本月收益",    value: "—", delta: null, deltaDir:"up",   sub: "较上月",   color: "#f59e0b" },
 ];
 
 type MemberTier = "黑金" | "PRO" | "VIP" | "体验官" | "游客";
@@ -110,10 +111,12 @@ export default function MemberBenefits() {
             <div style={{ color: D.muted, fontSize: "11px" }}>{k.label}</div>
             <div className="font-bold mt-0.5" style={{ color: k.color, fontSize: "18px" }}>{k.value}</div>
             <div className="flex items-center gap-1 mt-0.5">
-              <span style={{ color: k.deltaDir === "up" ? "#10b981" : "#ef4444", fontSize: "10px" }}>
-                {k.deltaDir === "up" ? <ArrowUp size={9} className="inline" /> : <ArrowDown size={9} className="inline" />}
-                {k.delta}
-              </span>
+              {k.delta && (
+                <span style={{ color: k.deltaDir === "up" ? "#10b981" : "#ef4444", fontSize: "10px" }}>
+                  {k.deltaDir === "up" ? <ArrowUp size={9} className="inline" /> : <ArrowDown size={9} className="inline" />}
+                  {k.delta}
+                </span>
+              )}
               <span style={{ color: D.muted, fontSize: "10px" }}>{k.sub}</span>
             </div>
           </div>
@@ -127,10 +130,10 @@ export default function MemberBenefits() {
           <p style={{ color: D.muted, fontSize: "11px" }}>管理所有会员信息，配置权益和积分规则，查看用户详情</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
             <Download size={12} />导出
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
             + 添加会员
           </button>
         </div>
@@ -236,8 +239,8 @@ export default function MemberBenefits() {
                       {/* Actions */}
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
                         <div className="flex items-center gap-1">
-                          <button className="px-2 py-1 rounded text-xs" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8" }}>详情</button>
-                          <button className="p-1 rounded" style={{ background: D.surface2, color: D.muted }}>
+                          <button disabled title="接线中" className="px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8" }}>详情</button>
+                          <button disabled title="接线中" className="p-1 rounded opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.muted }}>
                             <MoreHorizontal size={12} />
                           </button>
                         </div>
@@ -351,12 +354,12 @@ export default function MemberBenefits() {
 
           {/* Action buttons */}
           <div className="flex flex-col gap-2">
-            <button className="w-full py-2.5 rounded-xl text-xs font-medium text-white" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+            <button disabled title="接线中" className="w-full py-2.5 rounded-xl text-xs font-medium text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
               发送消息
             </button>
             <div className="grid grid-cols-2 gap-2">
-              <button className="py-2 rounded-xl text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>升级会员</button>
-              <button className="py-2 rounded-xl text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>创建工单</button>
+              <button disabled title="接线中" className="py-2 rounded-xl text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>升级会员</button>
+              <button disabled title="接线中" className="py-2 rounded-xl text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>创建工单</button>
             </div>
           </div>
         </div>
