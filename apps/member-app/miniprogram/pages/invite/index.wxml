@@ -1,25 +1,29 @@
 <view class="page page--sub pt-30">
-  <!-- 邀请码主卡 -->
+  <!-- 邀请码主卡（double-bezel 白卡，等宽字号邀请码） -->
   <view class="card-hero ta-c">
     <view>
       <view class="f-center code-cap">
-        <ui-icon name="gift" size="{{26}}" color="rgba(255,255,255,0.75)" />
+        <ui-icon name="gift" size="{{26}}" color="#787774" />
         <text class="code-cap-text">我的专属邀请码（7 天自动轮换）</text>
       </view>
-      <view class="code-wrap"><text class="code">{{inviteCode}}</text></view>
+      <view class="code-wrap"><text class="code mono">{{inviteCode}}</text></view>
       <view class="f hero-btns">
         <button class="btn share-btn" open-type="share">
-          <ui-icon name="share-2" size="{{26}}" color="#4361ee" />
+          <ui-icon name="share-2" size="{{26}}" color="#FFFFFF" />
           转发邀请
         </button>
         <button class="btn copy-btn" bind:tap="copyCode">
-          <ui-icon name="copy" size="{{26}}" color="#ffffff" />
+          <ui-icon name="copy" size="{{26}}" color="#2F3437" />
           复制邀请码
         </button>
       </view>
       <view wx:if="{{qrcodeMock}}" class="mt-22">
         <text class="mock-note">专属小程序码将在正式版提供（当前演示环境）</text>
       </view>
+      <button wx:else class="btn btn--ghost mt-22" loading="{{qrLoading}}" bind:tap="showQrcode">
+        <ui-icon name="qr-code" size="{{26}}" color="#2F3437" />
+        我的专属小程序码
+      </button>
     </view>
   </view>
 
@@ -34,7 +38,7 @@
   <!-- 邀请树 -->
   <view class="card">
     <view class="f tree-head">
-      <ui-icon name="users" size="{{30}}" color="#7c9aff" />
+      <ui-icon name="users" size="{{30}}" color="#1F6C9F" />
       <text class="t-title">我的邀请树</text>
     </view>
     <view wx:for="{{levels}}" wx:key="level" wx:for-item="lv" class="mt-22">
@@ -62,5 +66,17 @@
     <text class="t-muted">
       邀请奖励为成长值/会员时长等虚拟权益，不涉及现金返利；关系链最多记录三级，仅用于归因统计。
     </text>
+  </view>
+
+  <!-- 专属小程序码弹窗（真实 getUnlimitedQRCode） -->
+  <view wx:if="{{qrOpen && qrImage}}" class="modal-mask" catch:touchmove="noop" bind:tap="closeQrcode">
+    <view class="modal-body" catch:tap="noop">
+      <text class="t-strong">我的专属小程序码</text>
+      <view class="mt-8"><text class="t-muted">扫码进入即绑定你的邀请关系</text></view>
+      <view class="qr-box">
+        <image src="{{qrImage}}" show-menu-by-longpress class="qr-img" />
+      </view>
+      <button class="btn btn--ghost mt-30" bind:tap="closeQrcode">关闭</button>
+    </view>
   </view>
 </view>

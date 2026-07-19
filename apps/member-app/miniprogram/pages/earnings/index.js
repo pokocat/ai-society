@@ -36,6 +36,11 @@ Page({
     this.load();
   },
 
+  async onPullDownRefresh() {
+    await this.load();
+    wx.stopPullDownRefresh();
+  },
+
   async load() {
     try {
       const data = await api.getEarnings();
@@ -46,10 +51,10 @@ Page({
         canWithdraw: withdrawable >= 100,
         syncText: data.summary.synced_at ? ` · 同步于 ${d16(data.summary.synced_at)}` : "",
         stats: [
-          { label: "累计收益(预估)", value: `¥${money(data.summary.total_est)}`, color: "#7c9aff" },
-          { label: "待结算", value: `¥${money(data.summary.pending)}`, color: "#f59e0b" },
-          { label: "已提现", value: `¥${money(data.paidOut)}`, color: "#34d399" },
-          { label: "冻结中", value: `¥${money(data.summary.frozen)}`, color: "#f87171" },
+          { label: "累计收益(预估)", value: `¥${money(data.summary.total_est)}`, color: "#1F6C9F" },
+          { label: "待结算", value: `¥${money(data.summary.pending)}`, color: "#956400" },
+          { label: "已提现", value: `¥${money(data.paidOut)}`, color: "#346538" },
+          { label: "冻结中", value: `¥${money(data.summary.frozen)}`, color: "#9F2F2D" },
         ],
         withdrawals: (data.withdrawals || []).map(w => ({
           id: w.id,

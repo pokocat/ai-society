@@ -14,11 +14,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +23,8 @@ import java.util.Map;
  * 裂变主链路：扫码落地（scene=邀请码）→ wx.login 静默建档/并档 → 绑定关系链（三公理服务端校验）
  * → 购买会员（权益生效）→ 安置进群 → 生成自己的专属邀请码继续裂变。
  *
- * M3b 为 Mock code2Session：openid 由 code 确定性推导（同 code 同 openid，保证登录幂等可测）；
- * M3c 换真实 wx code2Session（appid/secret 就位后），本服务其余逻辑不变。
+ * 登录凭证经 WxClient 适配：scp.wx.mock=true 为确定性 Mock openid（开发/CI），
+ * 生产注入 WX_SECRET + WX_MOCK=false 即切真实 code2Session，本服务其余逻辑不变。
  * 合规（M3 §1.1）：邀请奖励=成长值/会员时长（虚拟权益），无现金返利，无强制分享。
  */
 @Service
@@ -41,11 +37,12 @@ public class MpService {
     private final ReferralService referralService;
     private final EntitlementService entitlementService;
     private final JwtService jwtService;
+    private final WxClient wxClient;
     private final String defaultProject;
 
     public MpService(JdbcClient db, MemberService memberService, SyncService syncService,
                      InviteCodeService inviteCodeService, ReferralService referralService,
-                     EntitlementService entitlementService, JwtService jwtService,
+                     EntitlementService entitlementService, JwtService jwtService, WxClient wxClient,
                      @Value("${scp.mp.default-project:flm-membership}") String defaultProject) {
         this.db = db;
         this.memberService = memberService;
@@ -54,6 +51,7 @@ public class MpService {
         this.referralService = referralService;
         this.entitlementService = entitlementService;
         this.jwtService = jwtService;
+        this.wxClient = wxClient;
         this.defaultProject = defaultProject;
     }
 
@@ -71,7 +69,7 @@ public class MpService {
         if (code == null || code.isBlank()) {
             throw new BusinessException("缺少 wx.login code");
         }
-        String openid = mockOpenid(code);
+        String openid = wxClient.code2Session(code);
         Long memberId = db.sql("""
                         SELECT m.id FROM member_identifier mi JOIN member m ON m.id = mi.member_id
                         WHERE mi.id_type = '小程序openid' AND mi.id_value = :v AND m.merged_into IS NULL
@@ -117,18 +115,47 @@ public class MpService {
         out.put("name", member.get("name"));
         out.put("created", created);
         out.put("referral", referralNote);
-        out.put("mockSession", true);   // M3c 接真实 code2Session 后移除
+        out.put("mockSession", wxClient.isMock());
         return out;
     }
 
-    /** Mock code2Session：openid 由 code 确定性推导（sha256 截断），M3c 换官方接口。 */
-    static String mockOpenid(String code) {
-        try {
-            byte[] hash = MessageDigest.getInstance("SHA-256").digest(code.getBytes(StandardCharsets.UTF_8));
-            return "wxo-" + HexFormat.of().formatHex(hash).substring(0, 24);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
+    /** 更新昵称（头像昵称填写能力回传；member.name 即展示名）。 */
+    @Transactional
+    public Map<String, Object> updateNickname(long memberId, String nickname) {
+        String name = nickname == null ? "" : nickname.trim();
+        if (name.isEmpty() || name.length() > 30) {
+            throw new BusinessException("昵称需为 1-30 个字符");
         }
+        String old = db.sql("SELECT name FROM member WHERE id = :id").param("id", memberId)
+                .query(String.class).single();
+        db.sql("UPDATE member SET name = :n, updated_at = now() WHERE id = :id")
+                .param("n", name).param("id", memberId).update();
+        memberService.appendTimeline(memberId, null, "资料更新", "昵称由「" + old + "」改为「" + name + "」", "会员本人");
+        return Map.of("name", name);
+    }
+
+    /** 绑定手机号（open-type=getPhoneNumber 的 code 换号；Mock 模式由 WxClient 明确报错）。 */
+    @Transactional
+    public Map<String, Object> bindPhone(long memberId, String phoneCode) {
+        if (phoneCode == null || phoneCode.isBlank()) {
+            throw new BusinessException("缺少手机号授权 code");
+        }
+        String phone = wxClient.phoneNumber(phoneCode);
+        db.sql("UPDATE member SET phone = :p, updated_at = now() WHERE id = :id")
+                .param("p", phone).param("id", memberId).update();
+        memberService.appendTimeline(memberId, null, "资料更新", "绑定手机号（微信快速验证）", "会员本人");
+        return Map.of("phone", phone);
+    }
+
+    /** 专属小程序码（scene=邀请码，落地 pages/index/index）；Mock 模式返回占位标记。 */
+    public Map<String, Object> inviteQrcode(long memberId) {
+        Map<String, Object> code = inviteCodeService.mine(memberId, null);
+        String base64 = wxClient.unlimitedQrcodeBase64((String) code.get("code"), "pages/index/index");
+        Map<String, Object> out = new HashMap<>();
+        out.put("inviteCode", code.get("code"));
+        out.put("mock", base64 == null);
+        out.put("qrcodeBase64", base64);
+        return out;
     }
 
     /** 我的（档案摘要+权益）。 */
@@ -228,8 +255,8 @@ public class MpService {
         out.put("inviteCode", code.get("code"));
         out.put("validUntil", code.get("valid_until"));
         out.put("sharePath", "/pages/index/index?inviteCode=" + code.get("code"));
-        out.put("qrcodeUrl", null);          // M3c: getUnlimitedQRCode 预生成后回填
-        out.put("qrcodeMock", true);
+        out.put("qrcodeUrl", null);          // 真实小程序码经 GET /mp/invite/qrcode 按需生成
+        out.put("qrcodeMock", wxClient.isMock());
         out.put("downline", chain.get("downline"));
         out.put("influence", chain.get("influence"));
         out.put("inviteGrowth", growth);

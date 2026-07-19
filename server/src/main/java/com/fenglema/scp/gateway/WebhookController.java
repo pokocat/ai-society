@@ -9,10 +9,12 @@ import com.fenglema.scp.identity.MemberService;
 import com.fenglema.scp.resource.GroupController;
 import com.fenglema.scp.resource.GroupService;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -22,7 +24,9 @@ import java.util.Map;
  * M3 §5.2 事件扩展：join/quit（既有）+ create（群建立→回填 wecom_chat_id）+ dismiss（群解散→归档）。
  * 归因：join 事件可带 join_way state（≤30 字符，携带邀请码/会员号上下文）；
  * 会员无法识别时进人工核对（不猜测、不静默丢弃）。
- * Mock 阶段免签名；M3c 接真实企微回调时在此加 msg_signature 验签 + AES 解密。
+ * 验签（上架审阅项）：scp.webhook.verify-signature=true 时强制校验 msg_signature
+ * （企微规则：sha1(sort(token,timestamp,nonce))；接真实企微加密通道时在此基础上加 AES 解密）。
+ * 开发/CI 默认关闭（Mock 注入无签名）。
  */
 @RestController
 @RequestMapping("/api/v1/webhook")
@@ -33,14 +37,46 @@ public class WebhookController {
     private final MemberService memberService;
     private final GroupService groupService;
     private final AuditService audit;
+    private final boolean verifySignature;
+    private final String webhookToken;
 
     public WebhookController(JdbcClient db, AssignmentService assignmentService, MemberService memberService,
-                             GroupService groupService, AuditService audit) {
+                             GroupService groupService, AuditService audit,
+                             @Value("${scp.webhook.verify-signature:false}") boolean verifySignature,
+                             @Value("${scp.webhook.token:}") String webhookToken) {
         this.db = db;
         this.assignmentService = assignmentService;
         this.memberService = memberService;
         this.groupService = groupService;
         this.audit = audit;
+        this.verifySignature = verifySignature;
+        this.webhookToken = webhookToken;
+    }
+
+    /** 企微回调 URL 参数验签：sha1(字典序拼接 token/timestamp/nonce) 必须等于 msg_signature。 */
+    private void requireValidSignature(String msgSignature, String timestamp, String nonce) {
+        if (!verifySignature) {
+            return;
+        }
+        if (webhookToken == null || webhookToken.isBlank()) {
+            throw BusinessException.forbidden("webhook 验签已启用但未配置 token（SCP_WEBHOOK_TOKEN）");
+        }
+        if (msgSignature == null || timestamp == null || nonce == null) {
+            throw BusinessException.forbidden("缺少签名参数 msg_signature/timestamp/nonce");
+        }
+        String[] parts = {webhookToken, timestamp, nonce};
+        java.util.Arrays.sort(parts);
+        String expected;
+        try {
+            var sha1 = java.security.MessageDigest.getInstance("SHA-1");
+            expected = java.util.HexFormat.of().formatHex(
+                    sha1.digest(String.join("", parts).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        if (!expected.equalsIgnoreCase(msgSignature)) {
+            throw BusinessException.forbidden("webhook 签名校验失败");
+        }
     }
 
     /** groupId 与 chatId 二选一（企微真实回调只有 chat_id，经 wecom_chat_id 反查）；state 为活码归因上下文。 */
@@ -49,7 +85,12 @@ public class WebhookController {
     }
 
     @PostMapping("/wecom/group-event")
-    public ApiResponse<Map<String, Object>> groupEvent(@RequestBody GroupEvent event) {
+    public ApiResponse<Map<String, Object>> groupEvent(
+            @RequestBody GroupEvent event,
+            @RequestParam(value = "msg_signature", required = false) String msgSignature,
+            @RequestParam(value = "timestamp", required = false) String timestamp,
+            @RequestParam(value = "nonce", required = false) String nonce) {
+        requireValidSignature(msgSignature, timestamp, nonce);
         String groupId = resolveGroupId(event);
         switch (event.eventType()) {
             case "join" -> {

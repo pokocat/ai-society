@@ -1,11 +1,16 @@
 /**
- * 主理人公社 · 全局样式（设计权威：设计仓库 MobileApp.tsx，深蓝紫主题）
- * 原生 WXSS，单位一律 rpx（750 设计稿基准）。
+ * 主理人公社 · 全局样式（浅色主题，配色基线：taste-skill minimalist/soft）
+ * 暖骨白画布 + 白卡细边 + 炭墨文字 + 水洗粉彩语义色；禁渐变、禁重阴影、
+ * 大容器不用胶囊圆角；卡片用 double-bezel（外圈环影）营造器物感。
+ * 色板：canvas #F7F6F3 / surface #FFF / fill #F1F0EC / border #EAEAEA / ink #111111
+ *       text #2F3437 / sec #787774 / muted #9B9A97
+ *       blue #1F6C9F·#E1F3FE / green #346538·#EDF3EC / amber #956400·#FBF3DB / red #9F2F2D·#FDEBEC
  */
 page {
-  background: #0d1629;
-  color: #e2e8f0;
+  background: #F7F6F3;
+  color: #2F3437;
   font-size: 26rpx;
+  line-height: 1.6;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
 }
 
@@ -15,28 +20,27 @@ page {
   padding-bottom: 200rpx; /* 自定义 TabBar 让位 */
   box-sizing: border-box;
 }
-.page--sub { padding-bottom: 48rpx; } /* 非 Tab 页 */
+.page--sub { padding-bottom: 48rpx; }
 
-/* 渐变头区 */
+/* 头区（浅色平铺，靠留白与字重立层级） */
 .hd {
   padding: 40rpx 40rpx 32rpx;
-  background: linear-gradient(180deg, #131628 0%, #0e1120 100%);
 }
-.hd-title { font-size: 38rpx; font-weight: 700; color: #e2e8f0; }
-.hd-sub { font-size: 22rpx; color: #64748b; margin-top: 6rpx; }
+.hd-title { font-size: 40rpx; font-weight: 700; color: #111111; letter-spacing: -0.5rpx; }
+.hd-sub { font-size: 22rpx; color: #9B9A97; margin-top: 8rpx; }
 
 /* ─── 文字 ────────────────────────────────── */
-.t-title { font-size: 30rpx; font-weight: 700; color: #e2e8f0; }
-.t-strong { font-size: 28rpx; font-weight: 600; color: #e2e8f0; }
-.t-body { font-size: 26rpx; color: #e2e8f0; }
-.t-sec { font-size: 24rpx; color: #94a3b8; }
-.t-muted { font-size: 22rpx; color: #64748b; }
-.t-primary { font-size: 24rpx; color: #7c9aff; }
-.t-amber { font-size: 22rpx; color: #f59e0b; }
-.t-green { font-size: 22rpx; color: #34d399; }
-.t-red { font-size: 22rpx; color: #f87171; }
+.t-title { font-size: 30rpx; font-weight: 700; color: #111111; }
+.t-strong { font-size: 28rpx; font-weight: 600; color: #2F3437; }
+.t-body { font-size: 26rpx; color: #2F3437; }
+.t-sec { font-size: 24rpx; color: #787774; }
+.t-muted { font-size: 22rpx; color: #9B9A97; }
+.t-primary { font-size: 24rpx; color: #1F6C9F; }
+.t-amber { font-size: 22rpx; color: #956400; }
+.t-green { font-size: 22rpx; color: #346538; }
+.t-red { font-size: 22rpx; color: #9F2F2D; }
 
-.section-title { font-size: 28rpx; font-weight: 600; color: #e2e8f0; }
+.section-title { font-size: 28rpx; font-weight: 600; color: #111111; }
 .section-head {
   display: flex; justify-content: space-between; align-items: center;
   margin: 32rpx 40rpx 20rpx;
@@ -45,187 +49,187 @@ page {
 
 /* ─── 卡片 ────────────────────────────────── */
 .card {
-  background: #1a2640;
-  border-radius: 30rpx;
-  padding: 30rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 32rpx;
   margin: 0 40rpx 24rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  border: 1rpx solid #EAEAEA;
   overflow: hidden;
 }
 
-/* 渐变主卡（会员卡/收益卡），带装饰圆 */
+/* 主卡（会员卡/收益卡/邀请码卡）：double-bezel——白核 + 外圈骨白环，器物感 */
 .card-hero {
   position: relative;
   overflow: hidden;
-  border-radius: 30rpx;
+  border-radius: 28rpx;
   padding: 38rpx;
-  margin: 0 40rpx 30rpx;
-  background: linear-gradient(135deg, #4361ee 0%, #7c3aed 60%, #3b82f6 100%);
+  margin: 8rpx 46rpx 36rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #EAEAEA;
+  box-shadow: 0 0 0 6rpx #EFEEE9, 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
+/* 轻微冷调光斑（skill：radial light spot，低不透明度），替代旧渐变装饰圆 */
 .card-hero::before {
   content: "";
-  position: absolute; top: -60rpx; right: -60rpx;
-  width: 240rpx; height: 240rpx; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-}
-.card-hero::after {
-  content: "";
-  position: absolute; bottom: -46rpx; left: -46rpx;
-  width: 180rpx; height: 180rpx; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  position: absolute; top: -120rpx; right: -80rpx;
+  width: 360rpx; height: 360rpx; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(31, 108, 159, 0.07), rgba(31, 108, 159, 0));
 }
 .card-hero > view { position: relative; z-index: 1; }
 
-/* 高亮描边卡（已加入群） */
+/* 高亮卡（已加入群）：白卡 + 淡蓝洗底 */
 .card-glow {
-  border-radius: 30rpx;
-  padding: 30rpx;
+  border-radius: 24rpx;
+  padding: 32rpx;
   margin: 0 40rpx 24rpx;
-  background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(124, 58, 237, 0.15));
-  border: 1rpx solid rgba(67, 97, 238, 0.3);
+  background: #FBFDFF;
+  border: 1rpx solid #D8E9F4;
 }
 
-/* ─── 头像块 ──────────────────────────────── */
+/* ─── 头像块（淡蓝底 + 深蓝字，无渐变） ───────── */
 .avatar {
-  border-radius: 28rpx;
-  background: linear-gradient(135deg, #4361ee, #7c3aed);
+  border-radius: 24rpx;
+  background: #E1F3FE;
   display: flex; align-items: center; justify-content: center;
-  color: #ffffff; font-weight: 700; flex-shrink: 0;
+  color: #1F6C9F; font-weight: 700; flex-shrink: 0;
 }
-.avatar--sm { width: 84rpx; height: 84rpx; font-size: 34rpx; border-radius: 24rpx; }
+.avatar--sm { width: 84rpx; height: 84rpx; font-size: 34rpx; border-radius: 22rpx; }
 .avatar--md { width: 92rpx; height: 92rpx; font-size: 36rpx; }
-.avatar--lg { width: 152rpx; height: 152rpx; font-size: 60rpx; border-radius: 48rpx; }
-.avatar--card { background: rgba(255, 255, 255, 0.2); }
+.avatar--lg { width: 152rpx; height: 152rpx; font-size: 60rpx; border-radius: 44rpx; }
+.avatar--card { background: #F1F0EC; color: #2F3437; }
 
 /* ─── 快捷宫格 ─────────────────────────────── */
 .qa-grid { display: flex; gap: 22rpx; }
 .qa-tile {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; gap: 14rpx;
-  padding: 24rpx 0;
-  border-radius: 30rpx;
-  background: #1a2640;
+  padding: 26rpx 0;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #EAEAEA;
 }
 .qa-icon {
-  width: 68rpx; height: 68rpx; border-radius: 22rpx;
+  width: 68rpx; height: 68rpx; border-radius: 20rpx;
   display: flex; align-items: center; justify-content: center;
 }
-.qa-label { font-size: 22rpx; color: #94a3b8; }
+.qa-label { font-size: 22rpx; color: #787774; }
 
 /* ─── 数据统计卡 ───────────────────────────── */
 .stat-grid { display: flex; gap: 22rpx; margin: 0 40rpx 30rpx; }
 .stat-grid--wrap { flex-wrap: wrap; }
 .stat-card {
   flex: 1; min-width: 0;
-  background: #1a2640; border-radius: 30rpx; padding: 24rpx;
+  background: #FFFFFF; border-radius: 24rpx; padding: 26rpx;
+  border: 1rpx solid #EAEAEA;
   box-sizing: border-box;
 }
-/* 50% - gap/2 恰好顶满容器时 rpx→px 舍入会溢出换行，留 3rpx 余量 */
 .stat-card--half { flex: none; width: calc(50% - 14rpx); padding: 28rpx; }
-.stat-label { font-size: 22rpx; color: #64748b; }
-.stat-value { font-size: 30rpx; font-weight: 700; margin-top: 8rpx; }
+.stat-label { font-size: 22rpx; color: #9B9A97; }
+.stat-value { font-size: 30rpx; font-weight: 700; margin-top: 8rpx; color: #2F3437; }
 .stat-value--lg { font-size: 32rpx; }
 
-/* ─── 按钮 ────────────────────────────────── */
+/* ─── 按钮（墨色实心主按钮；克制圆角，非胶囊） ── */
 .btn {
   display: flex; align-items: center; justify-content: center; gap: 12rpx;
-  border: none; border-radius: 24rpx;
+  border: none; border-radius: 16rpx;
   font-size: 26rpx; font-weight: 600;
   padding: 20rpx 0; width: 100%; box-sizing: border-box;
   line-height: 1.4;
 }
 .btn::after { border: none; }
-.btn--primary { background: #4361ee; color: #ffffff; }
-.btn--gradient {
-  background: linear-gradient(135deg, #4361ee, #7c3aed);
-  color: #ffffff; font-weight: 700; font-size: 30rpx;
-  border-radius: 30rpx; padding: 26rpx 0;
+.btn--primary { background: #111111; color: #FFFFFF; }
+.btn--primary:active { background: #333333; }
+.btn--gradient { /* 语义=主 CTA 大按钮（浅色主题下为墨色实心，类名沿用） */
+  background: #111111;
+  color: #FFFFFF; font-weight: 700; font-size: 28rpx;
+  border-radius: 18rpx; padding: 26rpx 0;
 }
-.btn--ghost { background: rgba(67, 97, 238, 0.15); color: #7c9aff; }
-.btn--danger {
-  background: rgba(239, 68, 68, 0.1); color: #f87171;
-  border: 1rpx solid rgba(239, 68, 68, 0.2);
-}
+.btn--gradient:active { background: #333333; }
+.btn--ghost { background: #F1F0EC; color: #2F3437; }
+.btn--danger { background: #FDEBEC; color: #9F2F2D; }
 .btn--mini {
   display: inline-flex; width: auto;
-  padding: 10rpx 28rpx; font-size: 24rpx; border-radius: 22rpx;
+  padding: 10rpx 28rpx; font-size: 24rpx; border-radius: 14rpx;
 }
-.btn[disabled] { opacity: 0.4; color: #cbd5e1; background: #4361ee; }
-.btn--gradient[disabled] { background: linear-gradient(135deg, #4361ee, #7c3aed); }
+/* 禁用态：浅底上不用透明墨色（近乎不可见），改实色灰底 + 中性字 */
+.btn[disabled] { opacity: 1; color: #A8A6A0; background: #ECEAE5; }
+.btn--ghost[disabled] { color: #B9B7B1; background: #F1F0EC; }
 
-/* ─── 标签 ────────────────────────────────── */
+/* ─── 标签（粉彩胶囊，仅小徽章可用胶囊） ──────── */
 .tag {
   display: inline-flex; align-items: center; gap: 8rpx;
   padding: 6rpx 20rpx; border-radius: 999rpx; font-size: 22rpx;
-  background: rgba(67, 97, 238, 0.25); color: #7c9aff;
+  background: #E1F3FE; color: #1F6C9F;
 }
-.tag--amber { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-.tag--green { background: rgba(16, 185, 129, 0.18); color: #34d399; }
-.tag--red { background: rgba(239, 68, 68, 0.18); color: #f87171; }
-.tag--gray { background: rgba(100, 116, 139, 0.25); color: #94a3b8; }
+.tag--amber { background: #FBF3DB; color: #956400; }
+.tag--green { background: #EDF3EC; color: #346538; }
+.tag--red { background: #FDEBEC; color: #9F2F2D; }
+.tag--gray { background: #F1F0EC; color: #787774; }
 
 /* ─── 进度条 ──────────────────────────────── */
 .progress-track {
   height: 12rpx; border-radius: 999rpx; overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: #ECEAE5;
 }
 .progress-fill {
   height: 100%; border-radius: 999rpx;
-  background: linear-gradient(90deg, #4361ee, #10b981);
+  background: #1F6C9F;
   transition: width 0.3s;
 }
-.progress-fill--danger { background: linear-gradient(90deg, #4361ee, #ef4444); }
+.progress-fill--danger { background: #9F2F2D; }
 
 /* ─── 列表行 ──────────────────────────────── */
 .row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1rpx solid #F0EFEC;
 }
 .row:last-child { border-bottom: none; }
 
-/* 图标块列表项（收益明细/订单） */
 .li-icon {
-  width: 60rpx; height: 60rpx; border-radius: 20rpx;
+  width: 60rpx; height: 60rpx; border-radius: 18rpx;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
 /* ─── 待办圆圈 / 任务复选圆 ─────────────────── */
 .todo-dot {
   width: 30rpx; height: 30rpx; border-radius: 50%; flex-shrink: 0;
-  border: 4rpx solid #64748b; box-sizing: border-box;
+  border: 3rpx solid #C9C7C1; box-sizing: border-box;
 }
-.todo-dot--urgent { border-color: #ef4444; }
+.todo-dot--urgent { border-color: #9F2F2D; }
 .task-check {
   width: 38rpx; height: 38rpx; border-radius: 50%; flex-shrink: 0;
-  border: 4rpx solid #64748b; box-sizing: border-box;
+  border: 3rpx solid #C9C7C1; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
 }
 
-/* ─── 居中弹窗（二维码） ────────────────────── */
+/* ─── 居中弹窗（二维码/小程序码） ─────────────── */
 .modal-mask {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(24, 23, 21, 0.45);
   display: flex; align-items: center; justify-content: center;
 }
 .modal-body {
-  background: #1a2640; border-radius: 46rpx;
+  background: #FFFFFF; border-radius: 32rpx;
   padding: 44rpx; margin: 0 60rpx; text-align: center;
+  border: 1rpx solid #EAEAEA;
+  box-shadow: 0 0 0 6rpx rgba(239, 238, 233, 0.6);
 }
 .qr-box {
-  background: #ffffff; border-radius: 30rpx;
+  background: #F7F6F3; border-radius: 20rpx;
   padding: 22rpx; margin-top: 30rpx;
+  border: 1rpx solid #EAEAEA;
   display: flex; align-items: center; justify-content: center;
 }
 
 /* ─── 表单 ────────────────────────────────── */
 .field-input {
-  margin-top: 14rpx; padding: 22rpx 26rpx; border-radius: 22rpx;
-  background: #1a2640; color: #e2e8f0; font-size: 28rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  margin-top: 14rpx; padding: 22rpx 26rpx; border-radius: 16rpx;
+  background: #F7F6F3; color: #2F3437; font-size: 28rpx;
+  border: 1rpx solid #EAEAEA;
   box-sizing: border-box; width: 100%; height: auto; min-height: 84rpx;
 }
-.field-input--error { border-color: rgba(239, 68, 68, 0.6); }
+.field-input--error { border-color: #E4B6B4; background: #FDF7F7; }
 
 /* ─── 通用弹性布局工具 ──────────────────────── */
 .f { display: flex; align-items: center; }
@@ -235,24 +239,27 @@ page {
 .f-center { display: flex; align-items: center; justify-content: center; }
 
 /* 公告轮播小圆点 */
-.dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.15); }
-.dot--active { background: #4361ee; }
+.dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #DDDBD5; }
+.dot--active { background: #1F6C9F; }
 .dot--pulse {
-  width: 12rpx; height: 12rpx; border-radius: 50%; background: #4361ee;
+  width: 12rpx; height: 12rpx; border-radius: 50%; background: #1F6C9F;
   animation: pulse 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  50% { opacity: 0.3; }
 }
 
 /* 铃铛角标 */
 .badge {
   position: absolute; top: -4rpx; right: -4rpx;
   min-width: 30rpx; height: 30rpx; padding: 0 6rpx;
-  border-radius: 999rpx; background: #ef4444;
-  color: #ffffff; font-size: 18rpx;
+  border-radius: 999rpx; background: #C2453F;
+  color: #FFFFFF; font-size: 18rpx;
   display: flex; align-items: center; justify-content: center;
   box-sizing: border-box;
 }
+
+/* 等宽数字/邀请码 */
+.mono { font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }

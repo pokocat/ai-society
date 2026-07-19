@@ -2,7 +2,11 @@
 const api = require("../../api/mp");
 const { d16, toast } = require("../../utils/fmt");
 
-const STATUS_COLOR = { 已排期: "#7c9aff", 直播中: "#f59e0b", 已结束: "#64748b" };
+const STATUS = {
+  已排期: { c: "#1F6C9F", bg: "#E1F3FE" },
+  直播中: { c: "#956400", bg: "#FBF3DB" },
+  已结束: { c: "#9B9A97", bg: "#F1F0EC" },
+};
 
 Page({
   data: {
@@ -14,17 +18,22 @@ Page({
     this.load();
   },
 
+  async onPullDownRefresh() {
+    await this.load();
+    wx.stopPullDownRefresh();
+  },
+
   async load() {
     try {
       const list = await api.getCourses();
       const courses = (list || []).map(c => {
-        const color = STATUS_COLOR[c.status] || "#64748b";
+        const st = STATUS[c.status] || { c: "#9B9A97", bg: "#F1F0EC" };
         return {
           id: c.id,
           title: c.title,
           status: c.status,
-          color,
-          iconBg: `${color}22`,
+          color: st.c,
+          iconBg: st.bg,
           metaText: `${c.speaker ? `${c.speaker} · ` : ""}${d16(c.scheduled_at)}`,
           replayUrl: c.replay_url || "",
         };

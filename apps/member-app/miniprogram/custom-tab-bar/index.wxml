@@ -8,7 +8,7 @@
     bind:tap="switchTab"
   >
     <view class="tabbar-icon {{selected === index ? 'tabbar-icon--active' : ''}}">
-      <ui-icon name="{{item.icon}}" size="{{36}}" color="{{selected === index ? '#4361ee' : '#64748b'}}" />
+      <ui-icon name="{{item.icon}}" size="{{36}}" color="{{selected === index ? '#111111' : '#9B9A97'}}" />
     </view>
     <text class="tabbar-label {{selected === index ? 'tabbar-label--active' : ''}}">{{item.text}}</text>
   </view>

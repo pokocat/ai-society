@@ -1,5 +1,6 @@
 package com.fenglema.scp.common;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -9,9 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
+    private final String[] allowedOrigins;
 
-    public WebConfig(AuthInterceptor authInterceptor) {
+    public WebConfig(AuthInterceptor authInterceptor,
+                     @Value("${scp.cors.allowed-origins:*}") String allowedOrigins) {
         this.authInterceptor = authInterceptor;
+        this.allowedOrigins = allowedOrigins.split("\\s*,\\s*");
     }
 
     @Override
@@ -27,8 +31,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // 开发默认 *；生产以 SCP_CORS_ORIGINS 收敛到管理台域名（上架审阅项）
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
     }

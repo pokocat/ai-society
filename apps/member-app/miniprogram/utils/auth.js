@@ -3,7 +3,15 @@
  * - inviteCode 来源：分享 path 查询参数 / 小程序码 scene（≤32 可见字符，直接放邀请码）
  * - 登录：wx.login → POST /mp/login（M3b 后端为 Mock code2Session；M3c 换真实凭证，前端不变）
  */
-const BASE = "http://127.0.0.1:8080/api/v1"; // 开发期直连；上线换 HTTPS 域名并配业务域名白名单
+/**
+ * API 基址按运行环境切换（上架审阅项）：
+ * - develop（开发者工具/预览调试）：本机直连
+ * - trial/release（体验版/正式版）：HTTPS 正式域名（须 ICP 备案 + 小程序后台 request 合法域名白名单）
+ * 上线前把 PROD_BASE 换成真实域名即可，其余代码零改动。
+ */
+const PROD_BASE = "https://api.zhuliren.example.com/api/v1"; // TODO 上线替换为备案域名
+const ENV = (wx.getAccountInfoSync && wx.getAccountInfoSync().miniProgram.envVersion) || "release";
+const BASE = ENV === "develop" ? "http://127.0.0.1:8080/api/v1" : PROD_BASE;
 const TOKEN_KEY = "scp-mp-token";
 const MEMBER_KEY = "scp-mp-member";
 const INVITE_KEY = "scp-mp-invite-code";

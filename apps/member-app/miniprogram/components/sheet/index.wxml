@@ -3,7 +3,7 @@
     <view class="sheet-head">
       <text class="sheet-title">{{title}}</text>
       <view class="sheet-close" bind:tap="close">
-        <ui-icon name="x" size="{{34}}" color="#64748b" />
+        <ui-icon name="x" size="{{34}}" color="#9B9A97" />
       </view>
     </view>
     <slot />

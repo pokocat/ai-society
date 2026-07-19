@@ -10,17 +10,18 @@
   ],
   "window": {
     "backgroundTextStyle": "dark",
-    "backgroundColor": "#0d1629",
-    "navigationBarBackgroundColor": "#131628",
+    "backgroundColor": "#F7F6F3",
+    "navigationBarBackgroundColor": "#F7F6F3",
     "navigationBarTitleText": "主理人公社",
-    "navigationBarTextStyle": "white"
+    "navigationBarTextStyle": "black",
+    "enablePullDownRefresh": false
   },
   "tabBar": {
     "custom": true,
-    "color": "#64748b",
-    "selectedColor": "#4361ee",
-    "backgroundColor": "#0e1120",
-    "borderStyle": "black",
+    "color": "#9B9A97",
+    "selectedColor": "#111111",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
     "list": [
       { "pagePath": "pages/index/index", "text": "首页" },
       { "pagePath": "pages/group/index", "text": "社群" },
@@ -35,5 +36,6 @@
   },
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",
+  "__usePrivacyCheck__": true,
   "sitemapLocation": "sitemap.json"
 }

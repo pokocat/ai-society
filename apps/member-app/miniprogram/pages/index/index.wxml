@@ -5,16 +5,16 @@
       <view>
         <view class="f greet-row">
           <text class="greet">{{greeting}}</text>
-          <ui-icon name="sparkles" size="{{26}}" color="#a78bfa" />
+          <ui-icon name="sparkles" size="{{26}}" color="#956400" />
         </view>
         <view class="f sub-row">
-          <ui-icon name="star" size="{{20}}" color="#f59e0b" fill="{{true}}" />
+          <ui-icon name="star" size="{{20}}" color="#956400" fill="{{true}}" />
           <text class="t-muted">{{subText}}</text>
         </view>
       </view>
       <view class="bell-wrap" bind:tap="openNotify">
         <view class="bell f-center">
-          <ui-icon name="bell" size="{{32}}" color="#94a3b8" />
+          <ui-icon name="bell" size="{{32}}" color="#787774" />
         </view>
         <view wx:if="{{notifications.length > 0}}" class="badge">{{notifications.length}}</view>
       </view>
@@ -25,8 +25,7 @@
       <view class="f-between hero-top">
         <view>
           <view class="f hero-id-row">
-            <ui-icon name="star" size="{{24}}" color="#fbbf24" fill="{{true}}" />
-            <text class="hero-id">{{identityLabel}}</text>
+            <text class="hero-eyebrow">{{identityLabel}}</text>
           </view>
           <text class="hero-name">主理人私域会员</text>
         </view>
@@ -125,8 +124,8 @@
     </view>
   </block>
 
-  <!-- 未开通会员：套餐购买（真实下单 + Mock 支付） -->
-  <block wx:if="{{!isPaid && plans.length > 0}}">
+  <!-- 未开通会员：套餐购买（真实下单 + Mock 支付；iOS 端受平台政策限制隐藏购买入口） -->
+  <block wx:if="{{!isPaid && !iosLimited && plans.length > 0}}">
     <view class="section-head"><text class="section-title">开通会员</text></view>
     <view class="card">
       <view wx:for="{{plans}}" wx:key="code" class="row">
@@ -146,14 +145,21 @@
       <view class="mt-16"><text class="t-muted">当前为演示支付（Mock）；正式版走微信虚拟支付</text></view>
     </view>
   </block>
+  <block wx:if="{{!isPaid && iosLimited}}">
+    <view class="section-head"><text class="section-title">开通会员</text></view>
+    <view class="card">
+      <text class="t-sec">受 iOS 平台政策限制，暂不支持在 iPhone 上购买会员。可联系在线客服协助开通。</text>
+      <button class="btn btn--ghost mt-16" open-type="contact">联系在线客服</button>
+    </view>
+  </block>
 
-  <!-- 邀请裂变入口 -->
+  <!-- 邀请入口（分享按钮附近不出现利益字样——审核合规） -->
   <view class="card">
     <view class="f invite-title-row">
-      <ui-icon name="gift" size="{{32}}" color="#34d399" />
+      <ui-icon name="gift" size="{{32}}" color="#346538" />
       <text class="t-title">邀请好友，一起进圈</text>
     </view>
-    <view class="mt-10"><text class="t-muted">好友经你的邀请码加入，你得成长值奖励</text></view>
+    <view class="mt-10"><text class="t-muted">把圈子分享给同频的朋友，一起交流成长</text></view>
     <view class="f invite-btns">
       <button class="btn btn--gradient invite-share-btn" open-type="share">转发给好友</button>
       <button class="btn btn--ghost f-1" bind:tap="goInvite">我的邀请</button>
@@ -168,12 +174,16 @@
         <text class="t-body fw-500">{{teacher.name}}</text>
         <view class="mt-6"><text class="t-muted">{{teacher.metaText}} · 专属服务</text></view>
       </view>
-      <ui-icon name="headphones" size="{{34}}" color="#34d399" />
+      <ui-icon name="headphones" size="{{34}}" color="#346538" />
     </view>
     <view class="mt-20">
       <text class="t-muted">入群、权益、课程问题都可以在社群里 @ 老师，老师会第一时间回复。</text>
     </view>
-    <button class="btn btn--primary mt-30" bind:tap="serviceToGroup">去社群找老师</button>
+    <button class="btn btn--primary mt-30" open-type="contact">
+      <ui-icon name="message-circle" size="{{28}}" color="#FFFFFF" />
+      在线客服
+    </button>
+    <button class="btn btn--ghost mt-16" bind:tap="serviceToGroup">去社群找老师</button>
   </ui-sheet>
 
   <!-- 消息通知弹层（真实数据聚合） -->
@@ -183,7 +193,7 @@
         <text class="t-muted">暂无新消息</text>
       </view>
       <view wx:for="{{notifications}}" wx:key="*this" class="f notify-item">
-        <ui-icon name="megaphone" size="{{28}}" color="{{index === 0 ? '#a78bfa' : '#4361ee'}}" extStyle="margin-top:4rpx" />
+        <ui-icon name="megaphone" size="{{28}}" color="{{index === 0 ? '#956400' : '#1F6C9F'}}" extStyle="margin-top:4rpx" />
         <text class="t-sec f-1">{{item}}</text>
         <view class="notify-dot" />
       </view>

@@ -57,7 +57,7 @@
         <view class="mt-6"><text class="t-muted">{{teacher.metaText}}</text></view>
         <view class="mt-6"><text class="t-muted">入群/服务问题都可以在群里 @ 老师</text></view>
       </view>
-      <ui-icon name="headphones" size="{{34}}" color="#34d399" />
+      <ui-icon name="headphones" size="{{34}}" color="#346538" />
     </view>
 
     <!-- 入群二维码弹窗（真实 group_qrcode） -->

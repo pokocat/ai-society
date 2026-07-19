@@ -2,7 +2,11 @@
 const api = require("../../api/mp");
 const { d10, toast } = require("../../utils/fmt");
 
-const PRIORITY_COLOR = { 高: "#ef4444", 中: "#f59e0b", 低: "#4361ee" };
+const PRIORITY = {
+  高: { c: "#9F2F2D", bg: "#FDEBEC" },
+  中: { c: "#956400", bg: "#FBF3DB" },
+  低: { c: "#1F6C9F", bg: "#E1F3FE" },
+};
 
 Page({
   data: {
@@ -22,18 +26,23 @@ Page({
     this.load();
   },
 
+  async onPullDownRefresh() {
+    await this.load();
+    wx.stopPullDownRefresh();
+  },
+
   async load() {
     try {
       const list = await api.getTasks();
       const tasks = (list || []).map(t => {
-        const pc = PRIORITY_COLOR[t.priority] || "#64748b";
+        const pr = PRIORITY[t.priority] || { c: "#787774", bg: "#F1F0EC" };
         return {
           id: t.id,
           title: t.title,
           done: !!t.done,
           typeText: t.task_type,
-          pc,
-          tagStyle: `background:${pc}18;color:${pc}`,
+          pc: pr.c,
+          tagStyle: `background:${pr.bg};color:${pr.c}`,
           deadlineText: t.deadline ? d10(t.deadline) : "",
           points: t.points || 0,
         };

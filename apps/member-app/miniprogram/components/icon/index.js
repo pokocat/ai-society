@@ -36,7 +36,7 @@ Component({
   properties: {
     name: { type: String, value: "" },
     size: { type: Number, value: 32 }, // rpx
-    color: { type: String, value: "#94a3b8" },
+    color: { type: String, value: "#787774" },
     fill: { type: Boolean, value: false }, // 实心（如评分星）
     extStyle: { type: String, value: "" },
   },
@@ -59,9 +59,10 @@ Component({
         this.setData({ iconStyle: "display:none" });
         return;
       }
+      // 1.5 细描边（skill：轻量精细线性图标，弃厚重默认）
       const svg =
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${fill ? color : "none"}" ` +
-        `stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+        `stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
       const style =
         `width:${size}rpx;height:${size}rpx;` +
         `background-image:url("data:image/svg+xml,${encodeURIComponent(svg)}");` +

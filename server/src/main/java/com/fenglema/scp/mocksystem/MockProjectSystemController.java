@@ -4,6 +4,7 @@ import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.sync.SyncService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,9 @@ import java.util.Map;
  * mock-project-system：模拟外部 会员/订单/活动 系统向中台推送数据（演示与联调用）。
  * 真实项目系统按同样的载荷走 /api/v1/webhook 或开放 API 接入（SPEC §13.2）；
  * 本控制器仅在演示环境暴露，等价于外部系统的出站调用。
+ * 生产必须置 SCP_MOCK_ENDPOINTS=false（无鉴权注入口，push-earnings 可直改余额——上架审阅项）。
  */
+@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = true)
 @RestController
 @RequestMapping("/api/v1/mock")
 public class MockProjectSystemController {

@@ -1,14 +1,18 @@
 package com.fenglema.scp.mp;
 
 import com.fenglema.scp.common.ApiResponse;
+import com.fenglema.scp.common.BusinessException;
 import com.fenglema.scp.common.IdempotencyGuard;
 import com.fenglema.scp.common.Perm;
+import com.fenglema.scp.common.SimpleRateLimiter;
 import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.membership.MembershipOrderService;
 import com.fenglema.scp.ops.MemberTaskService;
 import com.fenglema.scp.ops.WithdrawalService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,23 +41,64 @@ public class MpController {
     private final IdempotencyGuard idempotency;
     private final MemberTaskService taskService;
     private final WithdrawalService withdrawalService;
+    private final SimpleRateLimiter rateLimiter;
+    private final int loginRateLimit;
+    private final boolean mockPayEnabled;
 
     public MpController(MpService service, MembershipOrderService orderService, IdempotencyGuard idempotency,
-                        MemberTaskService taskService, WithdrawalService withdrawalService) {
+                        MemberTaskService taskService, WithdrawalService withdrawalService,
+                        SimpleRateLimiter rateLimiter,
+                        @Value("${scp.mp.login-rate-limit:30}") int loginRateLimit,
+                        @Value("${scp.mp.mock-pay-enabled:true}") boolean mockPayEnabled) {
         this.service = service;
         this.orderService = orderService;
         this.idempotency = idempotency;
         this.taskService = taskService;
         this.withdrawalService = withdrawalService;
+        this.rateLimiter = rateLimiter;
+        this.loginRateLimit = loginRateLimit;
+        this.mockPayEnabled = mockPayEnabled;
     }
 
     public record LoginRequest(@NotBlank String code, String inviteCode, String nickname) {
     }
 
-    /** wx.login 登录并档（幂等）；scene 邀请码在此完成归因。免鉴权。 */
+    /** wx.login 登录并档（幂等）；scene 邀请码在此完成归因。免鉴权，按来源 IP 限流（防刷号刷邀请奖励）。 */
     @PostMapping("/login")
-    public ApiResponse<Map<String, Object>> login(@RequestBody LoginRequest req) {
+    public ApiResponse<Map<String, Object>> login(@RequestBody LoginRequest req, HttpServletRequest http) {
+        String ip = http.getHeader("X-Forwarded-For");
+        ip = ip == null || ip.isBlank() ? http.getRemoteAddr() : ip.split(",")[0].trim();
+        if (!rateLimiter.tryAcquire("mp-login:" + ip, loginRateLimit)) {
+            throw BusinessException.conflict("操作过于频繁，请稍后再试");
+        }
         return ApiResponse.ok(service.login(req.code(), req.inviteCode(), req.nickname()));
+    }
+
+    public record NicknameRequest(@NotBlank String nickname) {
+    }
+
+    /** 更新昵称（头像昵称填写能力回传）。 */
+    @PostMapping("/profile/nickname")
+    @Perm(module = "mp", action = Perm.Action.EDIT)
+    public ApiResponse<Map<String, Object>> updateNickname(@RequestBody NicknameRequest req) {
+        return ApiResponse.ok(service.updateNickname(UserContext.get().userId(), req.nickname()));
+    }
+
+    public record PhoneRequest(@NotBlank String code) {
+    }
+
+    /** 绑定手机号（open-type=getPhoneNumber code 换号；演示环境返回明确提示）。 */
+    @PostMapping("/phone")
+    @Perm(module = "mp", action = Perm.Action.EDIT)
+    public ApiResponse<Map<String, Object>> bindPhone(@RequestBody PhoneRequest req) {
+        return ApiResponse.ok(service.bindPhone(UserContext.get().userId(), req.code()));
+    }
+
+    /** 专属小程序码（scene=邀请码）；Mock 模式返回 mock=true 占位。 */
+    @GetMapping("/invite/qrcode")
+    @Perm(module = "mp")
+    public ApiResponse<Map<String, Object>> inviteQrcode() {
+        return ApiResponse.ok(service.inviteQrcode(UserContext.get().userId()));
     }
 
     @GetMapping("/me")
@@ -101,6 +146,10 @@ public class MpController {
     @PostMapping("/orders/{orderNo}/pay")
     @Perm(module = "mp", action = Perm.Action.EDIT)
     public ApiResponse<Map<String, Object>> pay(@PathVariable String orderNo) {
+        if (!mockPayEnabled) {
+            // 生产环境（SCP_MOCK_PAY=false）：支付确认只认微信虚拟支付服务端回调，禁止客户端直报成功
+            throw BusinessException.forbidden("当前环境不支持演示支付，请走微信支付");
+        }
         var user = UserContext.get();
         // 只允许支付自己的订单
         boolean mine = orderService.orders(user.memberNo(), null).stream()

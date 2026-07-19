@@ -17,11 +17,13 @@ Page({
     periodText: "未开通",
     pointsText: "0",
     quickActions: [
-      { label: "入群码", icon: "qr-code", color: "#4f6ef7", bg: "#4f6ef722", type: "tab", url: "/pages/group/index" },
-      { label: "邀请好友", icon: "gift", color: "#10b981", bg: "#10b98122", type: "page", url: "/pages/invite/index" },
-      { label: "课程直播", icon: "tv", color: "#f59e0b", bg: "#f59e0b22", type: "page", url: "/pages/courses/index" },
-      { label: "我的收益", icon: "wallet", color: "#ec4899", bg: "#ec489922", type: "tab", url: "/pages/earnings/index" },
+      { label: "入群码", icon: "qr-code", color: "#1F6C9F", bg: "#E1F3FE", type: "tab", url: "/pages/group/index" },
+      { label: "邀请好友", icon: "gift", color: "#346538", bg: "#EDF3EC", type: "page", url: "/pages/invite/index" },
+      { label: "课程直播", icon: "tv", color: "#956400", bg: "#FBF3DB", type: "page", url: "/pages/courses/index" },
+      { label: "我的收益", icon: "wallet", color: "#9F2F2D", bg: "#FDEBEC", type: "tab", url: "/pages/earnings/index" },
     ],
+    // iOS 虚拟支付受苹果政策限制：iOS 端隐藏购买入口（上架审阅项）
+    iosLimited: false,
     courses: [],
     courseIdx: 0,
     stats: [],
@@ -37,6 +39,13 @@ Page({
 
   onLoad(options) {
     captureInviteCode({ query: options || {} });
+    const info = wx.getDeviceInfo ? wx.getDeviceInfo() : wx.getSystemInfoSync();
+    this.setData({ iosLimited: info.platform === "ios" });
+  },
+
+  async onPullDownRefresh() {
+    await this.load();
+    wx.stopPullDownRefresh();
   },
 
   onShow() {
@@ -82,9 +91,9 @@ Page({
 
       const directInvites = (inv.downline || []).filter(d => Number(d.level) === 1).length;
       const stats = [
-        { label: "影响力(≤3级)", value: String(inv.influence || 0), color: "#7c9aff" },
-        { label: "直接邀请", value: `${directInvites} 人`, color: "#34d399" },
-        { label: "可提现", value: `¥${money(earn.summary.withdrawable)}`, color: "#f59e0b" },
+        { label: "影响力(≤3级)", value: String(inv.influence || 0), color: "#1F6C9F" },
+        { label: "直接邀请", value: `${directInvites} 人`, color: "#346538" },
+        { label: "可提现", value: `¥${money(earn.summary.withdrawable)}`, color: "#956400" },
       ];
 
       const t = group.serviceTeacher;
@@ -136,6 +145,7 @@ Page({
     return {
       title: "我在主理人公社，邀你一起进圈子",
       path: this.data.sharePath,
+      imageUrl: "/assets/share.png",
     };
   },
 

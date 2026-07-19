@@ -37,8 +37,8 @@
     <view wx:if="{{withdrawals.length === 0}}" class="empty-row"><text class="t-muted">暂无提现记录</text></view>
     <view wx:for="{{withdrawals}}" wx:key="id" class="row">
       <view class="f f-1 wd-row">
-        <view class="li-icon" style="background:{{item.paid ? 'rgba(16,185,129,0.15)' : 'rgba(67,97,238,0.15)'}}">
-          <ui-icon name="wallet" size="{{26}}" color="{{item.paid ? '#10b981' : '#7c9aff'}}" />
+        <view class="li-icon" style="background:{{item.paid ? '#EDF3EC' : '#E1F3FE'}}">
+          <ui-icon name="wallet" size="{{26}}" color="{{item.paid ? '#346538' : '#1F6C9F'}}" />
         </view>
         <view class="f-1">
           <text class="t-body">{{item.label}}</text>
@@ -66,7 +66,7 @@
         type="number"
         value="{{amount}}"
         placeholder="最低 100 元"
-        placeholder-style="color:#64748b"
+        placeholder-style="color:#9B9A97"
         class="field-input {{hintError ? 'field-input--error' : ''}}"
         bindinput="onAmount"
       />
@@ -80,7 +80,7 @@
       <picker mode="selector" range="{{methods}}" value="{{methodIdx}}" bindchange="onMethod">
         <view class="f-between method-picker">
           <text class="t-body">{{methods[methodIdx]}}</text>
-          <ui-icon name="chevron-right" size="{{28}}" color="#64748b" />
+          <ui-icon name="chevron-right" size="{{28}}" color="#9B9A97" />
         </view>
       </picker>
     </view>
@@ -90,7 +90,7 @@
       <input
         value="{{account}}"
         placeholder="默认使用实名账户"
-        placeholder-style="color:#64748b"
+        placeholder-style="color:#9B9A97"
         class="field-input"
         bindinput="onAccount"
       />

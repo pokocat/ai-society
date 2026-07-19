@@ -1,15 +1,16 @@
-/* 组件样式隔离：弹层壳样式在组件内维护；slot 内容样式由页面作用域提供 */
+/* 组件样式隔离：弹层壳样式在组件内维护；slot 内容样式由页面作用域提供（浅色主题） */
 .sheet-mask {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100;
-  background: rgba(4, 8, 18, 0.76);
+  background: rgba(24, 23, 21, 0.4);
   display: flex; align-items: flex-end;
 }
 .sheet-body {
   width: 100%; box-sizing: border-box;
-  background: #131f35;
-  border-radius: 46rpx 46rpx 0 0;
+  background: #FFFFFF;
+  border-radius: 32rpx 32rpx 0 0;
+  border-top: 1rpx solid #EAEAEA;
   padding: 38rpx 38rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
-.sheet-title { font-size: 30rpx; font-weight: 600; color: #e2e8f0; }
+.sheet-title { font-size: 30rpx; font-weight: 600; color: #111111; }
 .sheet-close { padding: 8rpx; }

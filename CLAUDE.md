@@ -120,8 +120,13 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 - [x] **运行时连库账号降权**（第 6 条）：应用以 `scp_app`（仅 DML）连接，`scp` 仅迁移用（Flyway 单独连接）。
       `scp_app` 非属主，无法 `DROP/DISABLE` audit_log 触发器、无 DDL、对 audit_log 仅 INSERT/SELECT——
       审计不可篡改由权限隔离兜底。角色见 `scripts/db-init.sh`，授权见 `V3__grant_scp_app.sql`。
-- [ ] **上线前收口**：webhook 无签名校验（`WebhookController` 注释自承 Mock 阶段）、`mock/**` 无鉴权
-      （`push-earnings` 可无认证设余额，务必绝不随生产暴露）、JWT 密钥为仓库固定值、CORS `*`。
+- [x] **上线前收口（配置化，生产环境变量必设）**：`mock/**` 经 `SCP_MOCK_ENDPOINTS=false` 整组下线；
+      演示支付 `SCP_MOCK_PAY=false` 禁用；webhook 验签 `SCP_WEBHOOK_VERIFY=true`+`SCP_WEBHOOK_TOKEN`；
+      JWT `SCP_JWT_SECRET`；CORS `SCP_CORS_ORIGINS`；微信凭证 `WX_SECRET`+`WX_MOCK=false`
+      （code2Session/小程序码/手机号即切真实，见 `mp/WxClient`）。/mp/login 已带 IP 限流 +
+      邀请奖励每日封顶（`resource_rules.invite_award_daily_cap`，V8）。
+      **仍欠**：微信虚拟支付真实回调端点（验签+幂等，落地后演示支付退役）、企微回调 AES 解密、
+      `auth.js` PROD_BASE 换正式备案域名。
 - [ ] **前端诚实度收口（M2）**：见下批次任务——未接线 chrome 的假成功 toast、无后端来源字段的
       占位（证件/写死基准日/推送次数=0 应显示"—"）、AccountAssets 深色遗留文字对比度。
 - [ ] admin-pc 剩余模块接线（工单/权限矩阵/城市分站/报表等，见 docs/技术方案-工程评审稿.md §8.1）。

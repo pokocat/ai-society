@@ -1,10 +1,10 @@
 .empty-card { text-align: center; padding: 70rpx 32rpx; }
 .glow-label { margin: 0 40rpx 10rpx; }
-.glow-label-text { font-size: 22rpx; font-weight: 600; color: #7c9aff; }
+.glow-label-text { font-size: 22rpx; font-weight: 600; color: #1F6C9F; letter-spacing: 2rpx; }
 .group-head { gap: 22rpx; margin-bottom: 26rpx; }
 .cap-row { margin-bottom: 10rpx; }
-.cap-num { font-size: 22rpx; color: #94a3b8; }
-.cap-num--danger { color: #f87171; }
+.cap-num { font-size: 22rpx; color: #787774; }
+.cap-num--danger { color: #9F2F2D; }
 .teacher-card { gap: 26rpx; }
 .qr-img { width: 360rpx; height: 360rpx; }
 

@@ -2,25 +2,28 @@
 .ta-c { text-align: center; }
 
 .code-cap { gap: 10rpx; }
-.code-cap-text { font-size: 24rpx; color: rgba(255, 255, 255, 0.75); }
-.code-wrap { margin: 26rpx 0; }
-/* 邀请码 16 字符需单行放下（卡片内宽约 594rpx），56rpx 会折行 */
-.code { font-size: 44rpx; font-weight: 700; color: #ffffff; letter-spacing: 4rpx; white-space: nowrap; }
+.code-cap-text { font-size: 24rpx; color: #787774; }
+.code-wrap { margin: 26rpx 0 30rpx; }
+/* 邀请码：等宽 + 收紧字距，卡片内宽（约 578rpx）单行放下 16 字符 */
+.code { font-size: 44rpx; font-weight: 700; color: #111111; letter-spacing: 2rpx; white-space: nowrap; }
 .hero-btns { gap: 20rpx; }
-.share-btn { flex: 1; background: rgba(255, 255, 255, 0.92); color: #4361ee; font-weight: 700; }
-.copy-btn { flex: 1; background: rgba(255, 255, 255, 0.16); color: #ffffff; border: 1rpx solid rgba(255, 255, 255, 0.35); }
-.mock-note { font-size: 20rpx; color: rgba(255, 255, 255, 0.55); }
+.share-btn { flex: 1; background: #111111; color: #FFFFFF; font-weight: 700; }
+.share-btn:active { background: #333333; }
+.copy-btn { flex: 1; background: #FFFFFF; color: #2F3437; border: 1rpx solid #DDDBD5; }
+.mock-note { font-size: 20rpx; color: #9B9A97; }
+.qr-img { width: 360rpx; height: 360rpx; }
 
 .mt-0 { margin-top: 0; }
 .mt-8 { margin-top: 8rpx; }
 .mt-18 { margin-top: 18rpx; }
 .mt-22 { margin-top: 22rpx; }
+.mt-30 { margin-top: 30rpx; }
 
 .tree-head { gap: 12rpx; }
-.tree-row { padding-top: 18rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid rgba(255, 255, 255, 0.07); }
+.tree-row { padding-top: 18rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid #F0EFEC; }
 .tree-name { gap: 16rpx; }
 .tree-chip {
-  width: 52rpx; height: 52rpx; border-radius: 18rpx;
+  width: 52rpx; height: 52rpx; border-radius: 16rpx;
   font-size: 24rpx; font-weight: 600; flex-shrink: 0;
 }
 .foot-note { margin: 0 40rpx; }

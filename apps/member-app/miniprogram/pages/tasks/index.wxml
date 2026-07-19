@@ -25,7 +25,7 @@
     <view class="f task-row">
       <view
         class="task-check"
-        style="border-color:{{item.done ? '#10b981' : item.pc}};background:{{item.done ? '#10b981' : 'transparent'}}"
+        style="border-color:{{item.done ? '#346538' : item.pc}};background:{{item.done ? '#346538' : 'transparent'}}"
       >
         <ui-icon wx:if="{{item.done}}" name="check-circle" size="{{22}}" color="#ffffff" />
       </view>
@@ -34,7 +34,7 @@
         <view class="f task-meta">
           <text class="tag" style="{{item.tagStyle}}">{{item.typeText}}</text>
           <view wx:if="{{item.deadlineText}}" class="f meta-clock">
-            <ui-icon name="clock" size="{{20}}" color="#64748b" />
+            <ui-icon name="clock" size="{{20}}" color="#9B9A97" />
             <text class="t-muted">{{item.deadlineText}}</text>
           </view>
           <text wx:if="{{item.points > 0}}" class="t-amber">+{{item.points}}积分</text>

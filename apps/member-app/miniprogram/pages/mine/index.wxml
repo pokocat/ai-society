@@ -1,12 +1,20 @@
 <view class="page">
-  <!-- 居中档案头（渐变头区） -->
+  <!-- 居中档案头（点名字设置昵称） -->
   <view class="hd profile-hd">
-    <view class="avatar avatar--lg avatar-center">{{avatarChar}}</view>
-    <view class="mt-24"><text class="profile-name">{{name}}</text></view>
+    <view class="avatar avatar--lg avatar-center" bind:tap="openNick">{{avatarChar}}</view>
+    <view class="f-center name-row" bind:tap="openNick">
+      <text class="profile-name">{{name}}</text>
+      <view class="name-edit f-center">
+        <ui-icon name="chevron-right" size="{{24}}" color="#9B9A97" extStyle="transform:rotate(90deg)" />
+      </view>
+    </view>
+    <view wx:if="{{isDefaultName}}" class="mt-6">
+      <text class="t-primary" bind:tap="openNick">点这里设置你的昵称</text>
+    </view>
     <view class="mt-10"><text class="t-muted">{{metaText}}</text></view>
     <view class="f-center tags-row">
       <view wx:if="{{isPaid}}" class="tag">
-        <ui-icon name="star" size="{{18}}" color="#7c9aff" fill="{{true}}" />
+        <ui-icon name="star" size="{{18}}" color="#1F6C9F" fill="{{true}}" />
         {{identityTag}}
       </view>
       <text wx:else class="tag tag--gray">未开通会员</text>
@@ -21,6 +29,13 @@
       <text class="info-k">{{item.k}}</text>
       <text class="t-body fw-500">{{item.v}}</text>
     </view>
+    <!-- 手机号绑定（微信快速验证；未绑定时展示） -->
+    <view wx:if="{{!hasPhone}}" class="row">
+      <text class="info-k">手机号</text>
+      <button class="btn btn--ghost btn--mini" open-type="getPhoneNumber" bindgetphonenumber="onPhone">
+        微信快速绑定
+      </button>
+    </view>
   </view>
 
   <!-- 订单记录 -->
@@ -30,7 +45,7 @@
     <view wx:for="{{orders}}" wx:key="orderNo" class="row">
       <view class="f f-1 order-row">
         <view class="li-icon order-icon">
-          <ui-icon name="package" size="{{26}}" color="#7c9aff" />
+          <ui-icon name="package" size="{{26}}" color="#1F6C9F" />
         </view>
         <view class="f-1">
           <text class="t-body">{{item.planName}}</text>
@@ -54,20 +69,29 @@
       data-url="{{item.url}}"
       bind:tap="menuTap"
     >
-      <ui-icon name="{{item.icon}}" size="{{34}}" color="#7c9aff" />
+      <ui-icon name="{{item.icon}}" size="{{34}}" color="#1F6C9F" />
       <view class="f-1">
         <text class="t-body fw-500">{{item.label}}</text>
         <view class="mt-4"><text class="t-muted">{{item.sub}}</text></view>
       </view>
-      <ui-icon name="chevron-right" size="{{30}}" color="#64748b" />
+      <ui-icon name="chevron-right" size="{{30}}" color="#9B9A97" />
     </view>
+    <!-- 在线客服（微信客服消息，免开发通道） -->
+    <button class="menu-item menu-item--btn f" open-type="contact">
+      <ui-icon name="message-circle" size="{{34}}" color="#1F6C9F" />
+      <view class="f-1 ta-l">
+        <text class="t-body fw-500">在线客服</text>
+        <view class="mt-4"><text class="t-muted">开通 · 权益 · 售后问题</text></view>
+      </view>
+      <ui-icon name="chevron-right" size="{{30}}" color="#9B9A97" />
+    </button>
   </view>
 
   <!-- 常见问题 -->
   <block wx:if="{{faq.length > 0}}">
     <view class="section-head">
       <view class="f faq-head">
-        <ui-icon name="help-circle" size="{{28}}" color="#7c9aff" />
+        <ui-icon name="help-circle" size="{{28}}" color="#1F6C9F" />
         <text class="section-title">常见问题</text>
       </view>
     </view>
@@ -84,7 +108,7 @@
           <ui-icon
             name="chevron-right"
             size="{{26}}"
-            color="#64748b"
+            color="#9B9A97"
             extStyle="{{openFaq === index ? 'transform:rotate(90deg)' : ''}}"
           />
         </view>
@@ -96,8 +120,25 @@
   <!-- 退出登录 -->
   <view class="logout-wrap">
     <button class="btn btn--danger" bind:tap="doLogout">
-      <ui-icon name="log-out" size="{{28}}" color="#f87171" />
+      <ui-icon name="log-out" size="{{28}}" color="#9F2F2D" />
       退出登录
     </button>
   </view>
+
+  <!-- 昵称设置弹层（input type=nickname 支持微信昵称快捷填入） -->
+  <ui-sheet wx:if="{{nickOpen}}" title="设置昵称" bind:close="closeNick">
+    <view class="mt-26">
+      <text class="t-sec">昵称（键盘上方可一键使用微信昵称）</text>
+      <input
+        type="nickname"
+        value="{{nickInput}}"
+        placeholder="怎么称呼你？"
+        placeholder-style="color:#9B9A97"
+        class="field-input"
+        maxlength="30"
+        bindinput="onNickInput"
+      />
+    </view>
+    <button class="btn btn--primary mt-30" loading="{{nickSaving}}" bind:tap="saveNick">保存</button>
+  </ui-sheet>
 </view>

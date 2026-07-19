@@ -30,6 +30,11 @@ Page({
     this.load();
   },
 
+  async onPullDownRefresh() {
+    await this.load();
+    wx.stopPullDownRefresh();
+  },
+
   async load() {
     try {
       const data = await api.getMyGroup();

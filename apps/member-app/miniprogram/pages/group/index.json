@@ -1,3 +1,5 @@
 {
-  "navigationBarTitleText": "我的社群"
+  "navigationBarTitleText": "我的社群",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
 }

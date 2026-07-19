@@ -75,17 +75,32 @@ public class ReferralService {
                 .param("code", inviteCode).param("source", source == null ? "推广码" : source)
                 .param("m", memberId).param("ref", referrerId)
                 .update();
-        int growth = db.sql("SELECT growth_points_per_invite FROM resource_rules WHERE id = 1")
-                .query(Integer.class).single();
-        db.sql("""
-                INSERT INTO growth_ledger (member_id, delta, reason, ref_type, ref_id)
-                VALUES (:ref, :delta, '邀请成功', 'member', :mNo)
-                """)
-                .param("ref", referrerId).param("delta", growth).param("mNo", memberNo)
-                .update();
+        // 裂变风控（上架审阅项）：奖励每日封顶（invite_award_daily_cap，护栏 23 规则外置）。
+        // 关系链照常绑定（归因不受限），仅超限当日不再发成长值——防批量小号刷奖励。
+        Map<String, Object> rule = db.sql(
+                        "SELECT growth_points_per_invite, invite_award_daily_cap FROM resource_rules WHERE id = 1")
+                .query(Rows.MAP).single();
+        int growth = ((Number) rule.get("growth_points_per_invite")).intValue();
+        int dailyCap = ((Number) rule.get("invite_award_daily_cap")).intValue();
+        int awardedToday = db.sql("""
+                        SELECT COUNT(*) FROM growth_ledger
+                        WHERE member_id = :ref AND reason = '邀请成功' AND created_at >= date_trunc('day', now())
+                        """)
+                .param("ref", referrerId).query(Integer.class).single();
+        boolean capped = awardedToday >= dailyCap;
+        if (!capped) {
+            db.sql("""
+                    INSERT INTO growth_ledger (member_id, delta, reason, ref_type, ref_id)
+                    VALUES (:ref, :delta, '邀请成功', 'member', :mNo)
+                    """)
+                    .param("ref", referrerId).param("delta", growth).param("mNo", memberNo)
+                    .update();
+        }
         memberService.appendTimeline(memberId, null, "关系绑定", "绑定推荐人 " + referrerNo, "系统");
-        memberService.appendTimeline(referrerId, null, "邀请成功", "邀请 " + memberNo + " 成功，+" + growth + " 成长值", "系统");
-        return Map.of("memberNo", memberNo, "referrerNo", referrerNo, "growthAwarded", growth);
+        memberService.appendTimeline(referrerId, null, "邀请成功", capped
+                ? "邀请 " + memberNo + " 成功（今日奖励已达上限 " + dailyCap + " 次，不再累计成长值）"
+                : "邀请 " + memberNo + " 成功，+" + growth + " 成长值", "系统");
+        return Map.of("memberNo", memberNo, "referrerNo", referrerNo, "growthAwarded", capped ? 0 : growth);
     }
 
     public Map<String, Object> chain(String memberNo) {

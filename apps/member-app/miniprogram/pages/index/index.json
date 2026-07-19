@@ -1,3 +1,5 @@
 {
-  "navigationBarTitleText": "主理人公社"
+  "navigationBarTitleText": "主理人公社",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
 }
