@@ -120,7 +120,8 @@ page {
   background: #1a2640; border-radius: 30rpx; padding: 24rpx;
   box-sizing: border-box;
 }
-.stat-card--half { flex: none; width: calc(50% - 11rpx); padding: 28rpx; }
+/* 50% - gap/2 恰好顶满容器时 rpx→px 舍入会溢出换行，留 3rpx 余量 */
+.stat-card--half { flex: none; width: calc(50% - 14rpx); padding: 28rpx; }
 .stat-label { font-size: 22rpx; color: #64748b; }
 .stat-value { font-size: 30rpx; font-weight: 700; margin-top: 8rpx; }
 .stat-value--lg { font-size: 32rpx; }

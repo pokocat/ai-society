@@ -4,7 +4,8 @@
 .code-cap { gap: 10rpx; }
 .code-cap-text { font-size: 24rpx; color: rgba(255, 255, 255, 0.75); }
 .code-wrap { margin: 26rpx 0; }
-.code { font-size: 56rpx; font-weight: 700; color: #ffffff; letter-spacing: 6rpx; }
+/* 邀请码 16 字符需单行放下（卡片内宽约 594rpx），56rpx 会折行 */
+.code { font-size: 44rpx; font-weight: 700; color: #ffffff; letter-spacing: 4rpx; white-space: nowrap; }
 .hero-btns { gap: 20rpx; }
 .share-btn { flex: 1; background: rgba(255, 255, 255, 0.92); color: #4361ee; font-weight: 700; }
 .copy-btn { flex: 1; background: rgba(255, 255, 255, 0.16); color: #ffffff; border: 1rpx solid rgba(255, 255, 255, 0.35); }
