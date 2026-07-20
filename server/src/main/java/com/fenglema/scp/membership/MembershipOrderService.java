@@ -226,6 +226,9 @@ public class MembershipOrderService {
                 """)
                 .param("m", memberId).param("p", projectId).param("ident", identity).param("days", days)
                 .update();
+        if (direction > 0) {
+            enterPendingPoolIfUnplaced(memberId, projectId);
+        }
         String memberNo = db.sql("SELECT member_no FROM member WHERE id = :id").param("id", memberId)
                 .query(String.class).single();
         db.sql("""
@@ -237,6 +240,34 @@ public class MembershipOrderService {
                 .param("detail", Json.obj("orderNo", order.get("order_no"), "identity", identity,
                         "days", days, "memberNo", memberNo))
                 .update();
+    }
+
+    /**
+     * 付费即进待分配池（闭合「购买 → 入群」链路）。
+     *
+     * 背景：`pendingPool` 以 `member_project_identity.status = '待分配'` 取人，而权益判定
+     * （EntitlementService.hasPaidEntitlement）认 '有效' 与 '待分配' 两种状态——即「待分配」
+     * 的语义是「权益已生效、尚未安置进群」。此前支付后一律写 '有效'，付费会员因此不进池，
+     * 运营在 PC 待分配池看不到人，小程序永远停留在「运营正在为你匹配」。
+     *
+     * 故：支付成功且该会员在本项目下无在途/已入群安置时，把身份状态收敛到 '待分配'。
+     * 已入群（或安置在途）的续费用户保持 '有效'，避免已安置的人被重复投池。
+     */
+    private void enterPendingPoolIfUnplaced(long memberId, String projectId) {
+        int updated = db.sql("""
+                UPDATE member_project_identity SET status = '待分配'
+                WHERE member_id = :m AND project_id = :p AND status = '有效'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM member_group_assignment a
+                      WHERE a.member_id = :m AND a.project_id = :p
+                        AND a.status IN ('待匹配','已推荐','待确认','待加好友','已加好友','待邀请','已邀请','已入群'))
+                """)
+                .param("m", memberId).param("p", projectId)
+                .update();
+        if (updated > 0) {
+            memberService.appendTimeline(memberId, projectId, "待分配",
+                    "会员购买生效，进入待分配池等待安置", "系统");
+        }
     }
 
     /**

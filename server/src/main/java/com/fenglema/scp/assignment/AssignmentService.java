@@ -363,6 +363,12 @@ public class AssignmentService {
                     .param("way", "webhook".equals(via) ? "接口同步" : "人工回填")
                     .update();
         }
+        // 安置完成：身份状态由「待分配」收敛回「有效」，退出待分配池（否则已入群的人会被重复投池）
+        db.sql("""
+                UPDATE member_project_identity SET status = '有效'
+                WHERE member_id = :m AND project_id = :p AND status = '待分配'
+                """)
+                .param("m", memberId).param("p", a.get("project_id")).update();
         String groupName = db.sql("SELECT name FROM community_group WHERE id = :g").param("g", groupId)
                 .query(String.class).single();
         memberService.appendTimeline(memberId, (String) a.get("project_id"), "入群",
