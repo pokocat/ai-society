@@ -9,6 +9,8 @@ const { money, d10, d11, toast } = require("../../utils/fmt");
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     greeting: "登录中…",
     subText: "",
     isPaid: false,
@@ -55,7 +57,16 @@ Page({
     this.load();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       await ensureLogin(); // 先确保登录，避免并发请求各自触发登录
       const [me, inv, earn, allCourses, allTasks, group] = await Promise.all([
@@ -137,6 +148,7 @@ Page({
         this.setData({ plans: [] });
       }
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

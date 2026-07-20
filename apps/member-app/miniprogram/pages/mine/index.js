@@ -10,6 +10,8 @@ const ORDER_TAG = { 已支付: "tag tag--green", 待支付: "tag tag--amber", �
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     name: "…",
     isDefaultName: false,
     avatarChar: "主",
@@ -42,7 +44,16 @@ Page({
     wx.stopPullDownRefresh();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const [me, profile, inv, faq] = await Promise.all([
         api.getMe(), api.getProfile(), api.getInvite(), api.getFaq(),
@@ -88,6 +99,7 @@ Page({
         faq: faq || [],
       });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

@@ -1,0 +1,18 @@
+.errbar { margin: 20rpx 40rpx; }
+.errbar-body {
+  display: flex; align-items: flex-start; gap: 18rpx;
+  padding: 24rpx 26rpx;
+  background: #FDEBEC; border: 1rpx solid #F5D5D7; border-radius: 20rpx;
+}
+.errbar-dot {
+  width: 14rpx; height: 14rpx; border-radius: 50%;
+  background: #9F2F2D; margin-top: 10rpx; flex-shrink: 0;
+}
+.errbar-text { flex: 1; min-width: 0; }
+.errbar-title { display: block; font-size: 26rpx; font-weight: 600; color: #9F2F2D; }
+.errbar-msg { display: block; font-size: 22rpx; color: #8A5A58; margin-top: 6rpx; line-height: 1.5; }
+.errbar-btn {
+  flex-shrink: 0; padding: 12rpx 28rpx; border-radius: 999rpx;
+  background: #9F2F2D; color: #FFFFFF; font-size: 22rpx; font-weight: 600;
+}
+.errbar-btn--busy { opacity: 0.6; }

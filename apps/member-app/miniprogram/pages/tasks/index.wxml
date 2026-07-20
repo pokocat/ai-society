@@ -1,4 +1,5 @@
 <view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
   <view class="hd">
     <text class="hd-title">我的任务</text>
     <view class="f prog-row">

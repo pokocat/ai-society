@@ -10,6 +10,8 @@ const LEVELS = [
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     qrOpen: false,
     qrImage: "",
     qrLoading: false,
@@ -25,7 +27,16 @@ Page({
     this.load();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const data = await api.getInvite();
       const downline = data.downline || [];
@@ -63,6 +74,7 @@ Page({
         hasDownline: downline.length > 0,
       });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

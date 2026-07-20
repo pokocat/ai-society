@@ -1,4 +1,5 @@
 <view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
   <!-- 渐变头区：问候 + 铃铛 + 会员卡 + 快捷宫格 -->
   <view class="hd hd--home">
     <view class="f-between top-row">

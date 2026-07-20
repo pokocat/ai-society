@@ -1,4 +1,5 @@
 <view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
   <!-- 居中档案头（点名字设置昵称） -->
   <view class="hd profile-hd">
     <view class="avatar avatar--lg avatar-center" bind:tap="openNick">{{avatarChar}}</view>

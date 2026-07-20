@@ -23,16 +23,27 @@
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页" },
-      { "pagePath": "pages/group/index", "text": "社群" },
-      { "pagePath": "pages/tasks/index", "text": "任务" },
-      { "pagePath": "pages/earnings/index", "text": "收益" },
-      { "pagePath": "pages/mine/index", "text": "我的" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/group/index",
+        "text": "社群"
+      },
+      {
+        "pagePath": "pages/tasks/index",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/earnings/index",
+        "text": "收益"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
     ]
-  },
-  "usingComponents": {
-    "ui-icon": "/components/icon/index",
-    "ui-sheet": "/components/sheet/index"
   },
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",

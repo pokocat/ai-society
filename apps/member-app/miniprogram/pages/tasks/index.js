@@ -10,6 +10,8 @@ const PRIORITY = {
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     loaded: false,
     tasks: [],
     doneCount: 0,
@@ -31,7 +33,16 @@ Page({
     wx.stopPullDownRefresh();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const list = await api.getTasks();
       const tasks = (list || []).map(t => {
@@ -57,6 +68,7 @@ Page({
         pct: tasks.length ? Math.round((done.length / tasks.length) * 100) : 0,
       });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

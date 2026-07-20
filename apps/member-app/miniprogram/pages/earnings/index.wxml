@@ -1,4 +1,5 @@
 <view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
   <view class="hd hd--earn">
     <text class="hd-title title-block">我的收益</text>
 

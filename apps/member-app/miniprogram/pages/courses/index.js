@@ -10,6 +10,8 @@ const STATUS = {
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     loaded: false,
     courses: [],
   },
@@ -23,7 +25,16 @@ Page({
     wx.stopPullDownRefresh();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const list = await api.getCourses();
       const courses = (list || []).map(c => {
@@ -40,6 +51,7 @@ Page({
       });
       this.setData({ loaded: true, courses });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

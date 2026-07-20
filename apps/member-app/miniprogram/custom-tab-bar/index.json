@@ -1,6 +1,3 @@
 {
-  "component": true,
-  "usingComponents": {
-    "ui-icon": "/components/icon/index"
-  }
+  "component": true
 }

@@ -13,6 +13,8 @@ function statusLabel(status) {
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     loaded: false,
     hasPaid: false,
     hint: "",
@@ -35,7 +37,16 @@ Page({
     wx.stopPullDownRefresh();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const data = await api.getMyGroup();
       const asg = data.assignment;
@@ -76,6 +87,7 @@ Page({
           : null,
       });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },

@@ -2,14 +2,14 @@
   <view
     wx:for="{{list}}"
     wx:key="path"
-    class="tabbar-item"
+    class="tabbar-item {{selected === index ? 'tabbar-item--active' : ''}}"
     data-index="{{index}}"
     data-path="{{item.path}}"
     bind:tap="switchTab"
   >
-    <view class="tabbar-icon {{selected === index ? 'tabbar-icon--active' : ''}}">
-      <ui-icon name="{{item.icon}}" size="{{36}}" color="{{selected === index ? '#111111' : '#9B9A97'}}" />
+    <view class="tabbar-icon">
+      <view class="ti ti--{{item.icon}}" />
     </view>
-    <text class="tabbar-label {{selected === index ? 'tabbar-label--active' : ''}}">{{item.text}}</text>
+    <text class="tabbar-label">{{item.text}}</text>
   </view>
 </view>

@@ -10,6 +10,8 @@ const STATUS_TAG = { 待审核: "tag", 已批准: "tag tag--amber", 已打款: "
 
 Page({
   data: {
+    loadError: "",
+    retrying: false,
     withdrawable: 0,
     withdrawableText: "0",
     syncText: "",
@@ -41,7 +43,16 @@ Page({
     wx.stopPullDownRefresh();
   },
 
+  /** 错误条重试入口 */
+  async retryLoad() {
+    if (this.data.retrying) return;
+    this.setData({ retrying: true });
+    await this.load();
+    this.setData({ retrying: false });
+  },
+
   async load() {
+    if (this.data.loadError) this.setData({ loadError: "" });
     try {
       const data = await api.getEarnings();
       const withdrawable = Number(data.summary.withdrawable || 0);
@@ -66,6 +77,7 @@ Page({
         })),
       });
     } catch (e) {
+      this.setData({ loadError: e.message, retrying: false });
       toast(e.message);
     }
   },
