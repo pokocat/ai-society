@@ -46,8 +46,9 @@ AID=$(echo "$REC" | jqv "['data']['assignmentId']")
 RGID=$(echo "$REC" | jqv "['data']['recommendation']['best']['groupId']")
 [ -n "$AID" ] && ok "推荐方案 #$AID → 群 ${RGID:-?}" || bad "推荐失败: $(echo "$REC" | head -c 300)"
 
-say "6. 确认安置（容量预占 + 派发加好友任务）"
-CONF=$(curl -s "$BASE/assignment/confirm" -H "$AUTH" -H 'Content-Type: application/json' -d "{\"assignmentId\":$AID}")
+say "6. 确认安置·个微路径（定向未绑企微的群 → 容量预占 + 派发加好友任务）"
+CONF=$(curl -s "$BASE/assignment/confirm" -H "$AUTH" -H 'Content-Type: application/json' \
+     -d "{\"assignmentId\":$AID,\"groupId\":\"G-0001\",\"overrideReason\":\"个微人工路径验证\"}")
 CST=$(echo "$CONF" | jqv "['data']['status']")
 TASK_ID=$(echo "$CONF" | jqv "['data']['taskId']")
 GID=$(echo "$CONF" | jqv "['data']['groupId']")
@@ -92,6 +93,38 @@ NB=$(echo "$RB" | jqv "['data']['memberNo']")
 INF=$(curl -s "$BASE/mp/invite" -H "$HA" | jqv "['data']['influence']")
 [ -n "$NB" ] && ok "被邀请人 $NB 建档" || bad "邀请注册失败"
 [ "$INF" -ge 1 ] 2>/dev/null && ok "邀请人影响力 = $INF" || bad "关系链未入账"
+
+say "13. 【企微拉群】活码自助入群：绑定企微客户群的群，确认安置即下发活码"
+RW=$(curl -s "$BASE/mp/login" -H 'Content-Type: application/json' -d "{\"code\":\"join-W-$S\"}")
+TW=$(echo "$RW" | jqv "['data']['token']"); NW=$(echo "$RW" | jqv "['data']['memberNo']")
+HW="Authorization: Bearer $TW"
+ONW=$(curl -s "$BASE/mp/orders" -H "$HW" -H 'Content-Type: application/json' \
+      -d "{\"planCode\":\"$PC\",\"channel\":\"android\"}" | jqv "['data']['order_no']")
+curl -s -X POST "$BASE/mp/orders/$ONW/pay" -H "$HW" > /dev/null
+RECW=$(curl -s "$BASE/assignment/recommend" -H "$AUTH" -H 'Content-Type: application/json' \
+       -d "{\"memberNo\":\"$NW\",\"projectId\":\"flm-membership\"}")
+AIDW=$(echo "$RECW" | jqv "['data']['assignmentId']")
+# 定向到已绑定企微客户群的 G-0004
+CW=$(curl -s "$BASE/assignment/confirm" -H "$AUTH" -H 'Content-Type: application/json' \
+     -d "{\"assignmentId\":$AIDW,\"groupId\":\"G-0004\",\"overrideReason\":\"企微活码路径验证\"}")
+CHAN=$(echo "$CW" | jqv "['data']['channel']")
+CSTW=$(echo "$CW" | jqv "['data']['status']")
+JW=$(echo "$CW" | jqv "['data']['joinWayId']")
+[ "$CHAN" = "企微活码" ] && ok "企微群确认走活码路径（$JW）" || bad "未走活码路径: channel=$CHAN"
+[ "$CSTW" = "已邀请" ] && ok "状态直达「已邀请」——省掉加好友+人工邀请两段人工" || bad "状态异常: $CSTW"
+
+say "14. 小程序侧应给出自助入群二维码"
+GW=$(curl -s "$BASE/mp/my-group" -H "$HW")
+SELF=$(echo "$GW" | jqv "['data']['selfJoin']")
+HINT=$(echo "$GW" | jqv "['data']['joinHint']")
+[ "$SELF" = "True" ] && ok "selfJoin=true，提示：$HINT" || bad "未开放自助入群: $SELF"
+
+say "15. 用户扫码进群 → webhook 归因入群"
+WHW=$(curl -s "$BASE/webhook/wecom/group-event" -H 'Content-Type: application/json' \
+      -d "{\"eventType\":\"join\",\"groupId\":\"G-0004\",\"memberNo\":\"$NW\"}")
+echo "$WHW" | grep -q '"code":0' && ok "扫码入群事件已受理" || bad "webhook 失败: $(echo "$WHW" | head -c 200)"
+JSTW=$(curl -s "$BASE/mp/my-group" -H "$HW" | jqv "['data']['assignment']['status']")
+[ "$JSTW" = "已入群" ] && ok "企微活码全自助入群闭环（无人工介入）" || bad "最终状态: $JSTW"
 
 printf '\n\033[1m结果：%d 通过 / %d 失败\033[0m\n' "$PASS" "$FAIL"
 exit $([ "$FAIL" -eq 0 ] && echo 0 || echo 1)

@@ -304,6 +304,14 @@ public class MpService {
                 .param("g", assignment.get("group_id"))
                 .query(String.class).optional().orElse(null);
         out.put("groupQrcodeUrl", qr);
+        // 自助入群：企微群已下发活码且分配处于「已邀请」时，会员可直接扫码进群（无需等客服加好友）。
+        // selfJoin 供小程序决定是否把二维码做成首要行动点。
+        boolean invited = "已邀请".equals(assignment.get("status"));
+        boolean wecom = assignment.get("join_way_id") != null && qr != null;
+        out.put("selfJoin", invited && wecom);
+        out.put("joinHint", invited && wecom
+                ? "长按识别二维码，直接加入群聊"
+                : null);
         // 我的服务老师：本群主责客服（优先个微客服；个微客服经 account.user_employee_id 落到员工）
         out.put("serviceTeacher", db.sql("""
                         SELECT e.name, e.service_region, gs.role

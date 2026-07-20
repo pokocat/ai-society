@@ -9,6 +9,7 @@ import com.fenglema.scp.common.Rows;
 import com.fenglema.scp.common.UserContext;
 import com.fenglema.scp.identity.MemberService;
 import com.fenglema.scp.membership.EntitlementService;
+import com.fenglema.scp.gateway.CommunityGateway;
 import com.fenglema.scp.resource.GroupService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -45,11 +46,12 @@ public class AssignmentService {
     private final AuditService audit;
     private final ObjectMapper mapper;
     private final EntitlementService entitlement;
+    private final CommunityGateway gateway;
     private final int reservationTtlMinutes;
 
     public AssignmentService(JdbcClient db, RecommendEngine engine, MemberService memberService,
                              GroupService groupService, AuditService audit, ObjectMapper mapper,
-                             EntitlementService entitlement,
+                             EntitlementService entitlement, CommunityGateway gateway,
                              @Value("${scp.reservation.ttl-minutes:30}") int reservationTtlMinutes) {
         this.db = db;
         this.engine = engine;
@@ -58,6 +60,7 @@ public class AssignmentService {
         this.audit = audit;
         this.mapper = mapper;
         this.entitlement = entitlement;
+        this.gateway = gateway;
         this.reservationTtlMinutes = reservationTtlMinutes;
     }
 
@@ -205,6 +208,40 @@ public class AssignmentService {
                     .update();
             return Map.of("assignmentId", assignmentId, "status", "待确认", "approvalId", approvalId,
                     "message", "超容量分配已提交审批");
+        }
+
+        // ── 企微活码路径（SPEC §2.3 允许：join_way 是企微官方能力，非个微外挂自动化）──
+        // 群已绑定企微客户群时，入群不依赖好友关系：直接下发「加入群聊」活码，会员在小程序自助扫码进群，
+        // 省掉「加好友→等通过→人工邀请」两段人工。state 携带会员号，webhook 回调据此归因。
+        String wecomChatId = db.sql("SELECT wecom_chat_id FROM community_group WHERE id = :g")
+                .param("g", groupId).query(String.class).optional().orElse(null);
+        if (wecomChatId != null && !wecomChatId.isBlank()) {
+            reserve("群容量", groupId, assignmentId);
+            String memberNo = db.sql("SELECT member_no FROM member WHERE id = :m").param("m", memberId)
+                    .query(String.class).single();
+            Map<String, Object> jw = gateway.createJoinWay(groupId, memberNo);   // state ≤30 字符
+            db.sql("UPDATE community_group SET join_way_id = :jw, updated_at = now() WHERE id = :g")
+                    .param("jw", jw.get("joinWayId")).param("g", groupId).update();
+            db.sql("""
+                    UPDATE member_group_assignment SET status = '待邀请', group_id = :g, personal_wechat_id = :w,
+                           assign_way = :way, override_reason = :reason, operator = :op,
+                           confirmed_at = now(), updated_at = now()
+                    WHERE id = :id
+                    """)
+                    .param("g", groupId).param("w", personalWechatId)
+                    .param("way", overridden ? "人工调整" : (String) assignment.get("assign_way"))
+                    .param("reason", overrideReason).param("op", operatorName()).param("id", assignmentId)
+                    .update();
+            // 活码已下发给会员 = 邀请已送达，流转到「已邀请」等待扫码入群事件
+            transition(assignmentId, "待邀请", "已邀请", null);
+            audit.log("member_group_assignment", String.valueOf(assignmentId), "确认分配·企微活码",
+                    Map.of("status", status),
+                    Map.of("status", "已邀请", "groupId", groupId, "joinWayId", jw.get("joinWayId")),
+                    projectId, overrideReason, null);
+            return Map.of("assignmentId", assignmentId, "status", "已邀请", "groupId", groupId,
+                    "channel", "企微活码", "joinWayId", jw.get("joinWayId"),
+                    "qrcodeUrl", jw.get("qrcodeUrl"),
+                    "message", "已下发企微入群活码，会员可在小程序自助扫码进群");
         }
 
         // 个微好友额度校验（仅非好友需要新增好友）
