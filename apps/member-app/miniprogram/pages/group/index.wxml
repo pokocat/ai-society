@@ -44,7 +44,13 @@
       <view class="mt-22"><text class="t-muted">{{a.statusHint}}</text></view>
       <view wx:if="{{a.joinedAt}}" class="mt-6"><text class="t-muted">入群时间：{{a.joinedAt}}</text></view>
 
-      <button wx:if="{{qrUrl && !a.isJoined}}" class="btn btn--primary mt-30" bind:tap="openQR">
+      <!-- 企微活码已下发：二维码直接摊开，长按即可进群（自助路径的首要行动点） -->
+      <view wx:if="{{selfJoin && qrUrl && !a.isJoined}}" class="selfjoin">
+        <image src="{{qrUrl}}" show-menu-by-longpress class="selfjoin-qr" />
+        <text class="selfjoin-tip">长按二维码 · 立即进群</text>
+      </view>
+
+      <button wx:elif="{{qrUrl && !a.isJoined}}" class="btn btn--primary mt-30" bind:tap="openQR">
         <ui-icon name="qr-code" size="{{30}}" color="#ffffff" />
         查看入群二维码
       </button>

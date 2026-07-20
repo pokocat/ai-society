@@ -14,3 +14,12 @@
 .mt-22 { margin-top: 22rpx; }
 .mt-30 { margin-top: 30rpx; }
 .mt-40 { margin-top: 40rpx; }
+
+/* 自助入群：活码摊开展示，白底保证扫码识别率 */
+.selfjoin {
+  margin-top: 30rpx; padding: 28rpx;
+  background: #FFFFFF; border: 1rpx solid #EAEAEA; border-radius: 24rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 16rpx;
+}
+.selfjoin-qr { width: 340rpx; height: 340rpx; }
+.selfjoin-tip { font-size: 24rpx; font-weight: 600; color: #111111; }

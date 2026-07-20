@@ -220,9 +220,10 @@ public class GroupService {
                 .param("gid", groupId).query(Integer.class).single();
         db.sql("""
                 INSERT INTO group_qrcode (group_id, version, image_url, valid_until)
-                VALUES (:gid, :v, '/reference-assets/wechat-qr.png', now() + interval '7 days')
+                VALUES (:gid, :v, :url, now() + interval '7 days')
                 """)
-                .param("gid", groupId).param("v", next).update();
+                .param("gid", groupId).param("v", next).param("url", gateway.generateGroupQrcode(groupId).get("imageUrl"))
+                .update();
         db.sql("UPDATE community_group SET qrcode_version = :v, updated_at = now() WHERE id = :gid")
                 .param("v", next).param("gid", groupId).update();
         logEvent(groupId, "二维码轮换", "{\"version\":" + next + "}");

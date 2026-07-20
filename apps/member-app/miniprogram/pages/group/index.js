@@ -16,6 +16,7 @@ Page({
     loadError: "",
     retrying: false,
     loaded: false,
+    selfJoin: false,
     hasPaid: false,
     hint: "",
     subTitle: "尚未分配社群",
@@ -68,7 +69,14 @@ Page({
           statusHint: st.hint,
           joinedAt: asg.joined_at ? d10(asg.joined_at) : "",
         };
-        subTitle = a.isJoined ? "已加入 1 个群" : `入群进度：${st.label}`;
+        // 企微活码已下发：扫码即可自助进群，提示语优先于漏斗话术
+        if (data.selfJoin) {
+          a.statusText = "可入群";
+          a.statusHint = data.joinHint || "长按识别二维码，直接加入群聊";
+        }
+        subTitle = a.isJoined
+          ? "已加入 1 个群"
+          : (data.selfJoin ? "扫码即可进群" : `入群进度：${st.label}`);
       }
       const t = data.serviceTeacher;
       this.setData({
@@ -77,6 +85,7 @@ Page({
         hint: data.hint || "",
         subTitle,
         a,
+        selfJoin: !!data.selfJoin,
         qrUrl: data.groupQrcodeUrl || "",
         teacher: t
           ? {
