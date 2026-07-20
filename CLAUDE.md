@@ -125,6 +125,11 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
       JWT `SCP_JWT_SECRET`；CORS `SCP_CORS_ORIGINS`；微信凭证 `WX_SECRET`+`WX_MOCK=false`
       （code2Session/小程序码/手机号即切真实，见 `mp/WxClient`）。/mp/login 已带 IP 限流 +
       邀请奖励每日封顶（`resource_rules.invite_award_daily_cap`，V8）。
+      另需 `SCP_PUBLIC_BASE_URL`（对外基址，活码图等绝对 URL 由它拼接；必须 https 备案域名，
+      否则小程序加载不到图）。**上线前必跑 `bash scripts/prod-check.sh`**——它逐条打接口验证
+      收口是否真的生效（mock 下线/演示支付禁用/凭证实连/回调验签/CORS 收敛/基址 https），
+      全绿才输出「可以上线」。只核对环境变量清单不算数：本服务统一信封 HTTP 恒 200，
+      鉴权结果在业务码里，肉眼核对极易误判。
       **仍欠**：微信虚拟支付真实回调端点（验签+幂等，落地后演示支付退役）、企微回调 AES 解密、
       `auth.js` PROD_BASE 换正式备案域名。
 - [ ] **前端诚实度收口（M2）**：见下批次任务——未接线 chrome 的假成功 toast、无后端来源字段的
@@ -134,5 +139,14 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
       （membership_plan/order 一方交易、门控三注入点、到期作业）、代理归属优先（引擎第 0 级）、
       企微网关 Mock 扩展（活码/欢迎语/群发/直播）、webhook create/dismiss 事件、内容域
       （欢迎语/群发派发器/排课）、管理台三页（会员权益/内容运营/代理商总览）。V5 迁移 + 5 新测试。
-- [ ] **M3b 小程序**（apps/member-app，微信原生，源码在 miniprogram/）与 **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；
-      M3c 前置的办证清单（ICP/增值电信/企微认证/开放平台）须业务侧并行启动。
+- [x] **M3b 小程序主链路闭环**（apps/member-app，微信原生，源码在 miniprogram/）：
+      「自助注册 → 购买 → 进待分配池 → 运营安置 → 入群 → 裂变关系链」端到端跑通，
+      两条拉群路径都覆盖并各自钉死在对应群上（`scripts/mp-join-flow.sh` 20 项）：
+      **企微活码**（群绑了 `wecom_chat_id` → confirm 直接下发 join_way、状态直达「已邀请」、
+      小程序 `selfJoin` 摊开二维码，用户扫码即进，无人工）与**个微人工**（未绑企微 → 加好友
+      →邀请两段任务回填）。付费与安置的衔接靠 `member_project_identity.status`：
+      购买后收敛到「待分配」进池（`enterPendingPoolIfUnplaced`），`confirmJoin` 再收敛回「有效」退池；
+      小程序游客不进池（否则待分配池被访客淹没，运营无法使用）。
+- [ ] **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；前置办证清单（ICP/增值电信/企微认证/开放平台）
+      须业务侧并行启动。代码侧已就位：网关按 profile 切 `WeComCommunityGateway` 即可，
+      业务代码不改；`prod-check.sh` 可验证切换是否真的生效。

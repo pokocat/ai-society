@@ -30,6 +30,9 @@ springdoc:
     path: /swagger-ui.html
 
 scp:
+  # 对外可访问的服务基址：进入小程序/企微的绝对 URL（活码图等）以此拼接。
+  # 生产必须设为备案域名（https），否则小程序侧图片加载不到；真机调试设为电脑局域网 IP。
+  public-base-url: "${SCP_PUBLIC_BASE_URL:http://127.0.0.1:8080}"
   jwt:
     # 生产必须以 SCP_JWT_SECRET 环境变量注入（上架审阅项；默认值仅限本地开发）
     secret: "${SCP_JWT_SECRET:fenglema-scp-dev-secret-key-change-in-production-0123456789abcdef}"

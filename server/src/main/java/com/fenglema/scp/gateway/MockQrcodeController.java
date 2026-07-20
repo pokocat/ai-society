@@ -1,6 +1,6 @@
 package com.fenglema.scp.gateway;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,19 +35,11 @@ import java.util.concurrent.TimeUnit;
  */
 @RestController
 @RequestMapping("/mock/qrcode")
+@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = true)
 public class MockQrcodeController {
-
-    private final boolean mockEnabled;
-
-    public MockQrcodeController(@Value("${scp.mock.endpoints:true}") boolean mockEnabled) {
-        this.mockEnabled = mockEnabled;
-    }
 
     @GetMapping(value = "/{groupId}.png", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> qrcode(@PathVariable String groupId) throws IOException {
-        if (!mockEnabled) {
-            return ResponseEntity.notFound().build();
-        }
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic())
                 .contentType(MediaType.IMAGE_PNG)
