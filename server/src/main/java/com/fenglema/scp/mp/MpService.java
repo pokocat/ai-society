@@ -91,6 +91,15 @@ public class MpService {
             memberNo = (String) ingest.get("memberNo");
             referralNote = (String) ingest.get("referral");
             memberService.addIdentifier(memberNo, "小程序openid", openid, "小程序");
+            // 小程序自助访客不进待分配池：进线口默认置「待分配」是给外部系统推来的实名会员用的，
+            // 而这里每个点开小程序的人都会建档——不收敛的话，待分配池会被大量未付费「游客」淹没，
+            // 运营无法从中找出真正该安置的人。游客身份置「有效」，待其付费后由
+            // MembershipOrderService.enterPendingPoolIfUnplaced 正式投池。
+            db.sql("""
+                    UPDATE member_project_identity SET status = '有效'
+                    WHERE member_id = :m AND project_id = :p AND status = '待分配' AND identity = '游客'
+                    """)
+                    .param("m", memberId).param("p", defaultProject).update();
         } else {
             memberNo = db.sql("SELECT member_no FROM member WHERE id = :id").param("id", memberId)
                     .query(String.class).single();
