@@ -1,0 +1,25 @@
+.empty-card { text-align: center; padding: 70rpx 32rpx; }
+.glow-label { margin: 0 40rpx 10rpx; }
+.glow-label-text { font-size: 22rpx; font-weight: 600; color: #1F6C9F; letter-spacing: 2rpx; }
+.group-head { gap: 22rpx; margin-bottom: 26rpx; }
+.cap-row { margin-bottom: 10rpx; }
+.cap-num { font-size: 22rpx; color: #787774; }
+.cap-num--danger { color: #9F2F2D; }
+.teacher-card { gap: 26rpx; }
+.qr-img { width: 360rpx; height: 360rpx; }
+
+.mt-6 { margin-top: 6rpx; }
+.mt-8 { margin-top: 8rpx; }
+.mt-14 { margin-top: 14rpx; }
+.mt-22 { margin-top: 22rpx; }
+.mt-30 { margin-top: 30rpx; }
+.mt-40 { margin-top: 40rpx; }
+
+/* 自助入群：活码摊开展示，白底保证扫码识别率 */
+.selfjoin {
+  margin-top: 30rpx; padding: 28rpx;
+  background: #FFFFFF; border: 1rpx solid #EAEAEA; border-radius: 24rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 16rpx;
+}
+.selfjoin-qr { width: 340rpx; height: 340rpx; }
+.selfjoin-tip { font-size: 24rpx; font-weight: 600; color: #111111; }

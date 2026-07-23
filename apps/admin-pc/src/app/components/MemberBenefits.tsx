@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search, Filter, Download, MoreHorizontal, Crown, Star, Zap,
-  Phone, Mail, MessageCircle, ArrowUp, ArrowDown, X,
-  CreditCard, FileText, Gift, Calendar, MapPin, Shield
+  Phone, MessageCircle, X, Loader2, AlertTriangle,
+  CreditCard, Gift, Calendar, MapPin, Shield, TrendingUp,
 } from "lucide-react";
+import { ApiError, membersApi, membershipApi } from "../../api";
+import type { MemberRow, MemberProfile } from "../../api/members";
+import type { MembershipPlan, MembershipOrder } from "../../api/membership";
+import { useProject } from "../contexts/ProjectContext";
 
 const D = {
   bg:       "#0d1629",
@@ -17,92 +21,145 @@ const D = {
   muted:    "#64748b",
 };
 
-const kpiCards = [
-  { label: "总用户数",    value: "2,892",    delta: "+186", deltaDir: "up",   sub: "本月新增",  color: "#4361ee" },
-  { label: "活跃微信账号", value: "1,827",   delta: "+32",  deltaDir: "up",   sub: "在线数量",  color: "#06b6d4" },
-  { label: "活跃社群",    value: "326",      delta: "-3",   deltaDir: "down", sub: "接近满员",  color: "#8b5cf6" },
-  { label: "消息到达率",  value: "68.6%",    delta: "+2.4%",deltaDir: "up",   sub: "较上周",   color: "#10b981" },
-  { label: "本月收益",    value: "¥482,920", delta: "+12.8%",deltaDir:"up",   sub: "较上月",   color: "#f59e0b" },
-];
+// 身份样式（枚举对齐后端 project_identities）
+const TIER_STYLE: Record<string, { color: string; bg: string; icon: any }> = {
+  "黑金":      { color: "#f59e0b", bg: "rgba(245,158,11,0.15)",  icon: Crown  },
+  "尊享官":    { color: "#f59e0b", bg: "rgba(245,158,11,0.15)",  icon: Crown  },
+  "PRO会员":   { color: "#818cf8", bg: "rgba(67,97,238,0.15)",   icon: Star   },
+  "VIP":       { color: "#a78bfa", bg: "rgba(139,92,246,0.15)",  icon: Shield },
+  "体验官":    { color: "#34d399", bg: "rgba(16,185,129,0.15)",  icon: Zap    },
+  "代理":      { color: "#38bdf8", bg: "rgba(56,189,248,0.15)",  icon: Shield },
+  "城市合伙人": { color: "#f472b6", bg: "rgba(236,72,153,0.15)",  icon: Crown  },
+  "运营商":    { color: "#c084fc", bg: "rgba(168,85,247,0.15)",  icon: Shield },
+  "学员":      { color: "#38bdf8", bg: "rgba(56,189,248,0.15)",  icon: Star   },
+  "游客":      { color: "#64748b", bg: "rgba(100,116,139,0.15)", icon: Star   },
+};
+const tierStyle = (identity: string) => TIER_STYLE[identity] ?? TIER_STYLE["游客"];
 
-type MemberTier = "黑金" | "PRO" | "VIP" | "体验官" | "游客";
-
-interface Member {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  wechat: string;
-  tier: MemberTier;
-  joinDate: string;
-  expiry: string;
-  spend: string;
-  orders: number;
-  tickets: number;
-  points: number;
-  status: "正常" | "待审核" | "已过期";
-  city: string;
-  score: number;
-  grade: string;
-  tags: string[];
-  initials: string;
-  color: string;
-}
-
-const MEMBERS: Member[] = [
-  { id: 1, name: "Shirley·王欣",  phone: "138****2891", email: "shirley@example.com", wechat: "shirley_wx",  tier: "黑金",  joinDate: "2023-01-15", expiry: "2025-01-14", spend: "¥48,200", orders: 24, tickets: 3, points: 12480, status: "正常",  city: "北京", score: 88, grade: "A+", tags: ["核心用户","高净值","城市合伙人"], initials: "王", color: "#f59e0b" },
-  { id: 2, name: "Alex·陈磊",     phone: "139****5632", email: "alex@example.com",    wechat: "alex_chen",  tier: "PRO",   joinDate: "2023-06-20", expiry: "2024-06-19", spend: "¥12,800", orders: 18, tickets: 1, points: 5280,  status: "正常",  city: "上海", score: 76, grade: "A",  tags: ["活跃用户","PRO精英"], initials: "陈", color: "#4361ee" },
-  { id: 3, name: "Bella·李婷",    phone: "137****4521", email: "bella@example.com",   wechat: "bella_li",   tier: "VIP",   joinDate: "2023-03-10", expiry: "2024-03-09", spend: "¥28,600", orders: 31, tickets: 5, points: 8920,  status: "正常",  city: "广州", score: 82, grade: "A+", tags: ["重度用户","线下活跃"], initials: "李", color: "#8b5cf6" },
-  { id: 4, name: "David·刘凯",    phone: "135****9871", email: "david@example.com",   wechat: "david_liu",  tier: "PRO",   joinDate: "2024-01-05", expiry: "2025-01-04", spend: "¥6,400",  orders: 9,  tickets: 0, points: 2140,  status: "正常",  city: "深圳", score: 65, grade: "B+", tags: ["新晋PRO"], initials: "刘", color: "#06b6d4" },
-  { id: 5, name: "Eva·赵欣",      phone: "186****3320", email: "eva@example.com",     wechat: "eva_zhao",   tier: "体验官", joinDate: "2024-03-18", expiry: "—",         spend: "¥980",    orders: 2,  tickets: 1, points: 430,   status: "正常",  city: "成都", score: 48, grade: "C",  tags: ["体验用户"], initials: "赵", color: "#10b981" },
-  { id: 6, name: "Frank·周明",    phone: "152****7840", email: "frank@example.com",   wechat: "frank_zhou", tier: "PRO",   joinDate: "2023-09-12", expiry: "2024-09-11", spend: "¥9,200",  orders: 14, tickets: 2, points: 3860,  status: "正常",  city: "杭州", score: 71, grade: "A",  tags: ["稳定复购"], initials: "周", color: "#4361ee" },
-  { id: 7, name: "Grace·吴芳",    phone: "177****6612", email: "grace@example.com",   wechat: "grace_wu",   tier: "游客",  joinDate: "2024-06-01", expiry: "—",         spend: "¥0",      orders: 0,  tickets: 0, points: 80,    status: "待审核", city: "北京", score: 22, grade: "D",  tags: ["潜在用户"], initials: "吴", color: "#64748b" },
-  { id: 8, name: "Helen·郑雪",    phone: "133****4490", email: "helen@example.com",   wechat: "helen_zheng",tier: "PRO",   joinDate: "2023-11-28", expiry: "2024-11-27", spend: "¥7,600",  orders: 11, tickets: 1, points: 3120,  status: "正常",  city: "上海", score: 69, grade: "B+", tags: ["稳定用户"], initials: "郑", color: "#4361ee" },
-  { id: 9, name: "Ivan·孙博",     phone: "188****2230", email: "ivan@example.com",    wechat: "ivan_sun",   tier: "VIP",   joinDate: "2022-12-01", expiry: "2024-11-30", spend: "¥31,400", orders: 28, tickets: 4, points: 10640, status: "正常",  city: "北京", score: 85, grade: "A+", tags: ["长期会员","线下活跃"], initials: "孙", color: "#8b5cf6" },
-  { id: 10,name: "Jenny·韩冰",   phone: "159****8876", email: "jenny@example.com",   wechat: "jenny_han",  tier: "PRO",   joinDate: "2024-02-14", expiry: "2025-02-13", spend: "¥5,200",  orders: 8,  tickets: 0, points: 1860,  status: "正常",  city: "深圳", score: 60, grade: "B",  tags: ["新晋PRO"], initials: "韩", color: "#4361ee" },
-];
-
-const TIER_STYLE: Record<MemberTier, { color: string; bg: string; icon: any }> = {
-  "黑金":  { color: "#f59e0b", bg: "rgba(245,158,11,0.15)",   icon: Crown   },
-  "PRO":   { color: "#818cf8", bg: "rgba(67,97,238,0.15)",    icon: Star    },
-  "VIP":   { color: "#a78bfa", bg: "rgba(139,92,246,0.15)",   icon: Shield  },
-  "体验官": { color: "#34d399", bg: "rgba(16,185,129,0.15)",  icon: Zap     },
-  "游客":  { color: "#64748b", bg: "rgba(100,116,139,0.15)",  icon: Star    },
+const IDENTITY_STATUS_STYLE: Record<string, { color: string; bg: string; dot: string }> = {
+  "有效":   { color: "#34d399", bg: "rgba(16,185,129,0.12)",  dot: "#10b981" },
+  "待分配": { color: "#fbbf24", bg: "rgba(245,158,11,0.12)",  dot: "#f59e0b" },
+  "已过期": { color: "#f87171", bg: "rgba(239,68,68,0.12)",   dot: "#ef4444" },
 };
 
-const STATUS_STYLE = {
-  "正常":  { color: "#34d399", bg: "rgba(16,185,129,0.12)",  dot: "#10b981" },
-  "待审核": { color: "#fbbf24", bg: "rgba(245,158,11,0.12)", dot: "#f59e0b" },
-  "已过期": { color: "#f87171", bg: "rgba(239,68,68,0.12)",  dot: "#ef4444" },
-};
+const HIGH_VALUE = ["尊享官", "黑金", "城市合伙人", "VIP", "运营商"];
+const PAID_STATUS = ["已支付", "已发放"];
 
-type FilterTab = "全部" | "PRO会员" | "VIP" | "黑金" | "待审核";
+const fmtDate = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString("zh-CN") : "—");
+const fmtYuan = (cents: number) => `¥${(cents / 100).toLocaleString("zh-CN")}`;
 
 export default function MemberBenefits() {
-  const [activeTab, setActiveTab] = useState<FilterTab>("全部");
+  const { currentProject } = useProject();
+  const projectId = currentProject.id;
+
+  const [activeTab, setActiveTab] = useState("全部");
   const [search, setSearch] = useState("");
-  const [selectedMember, setSelectedMember] = useState<Member>(MEMBERS[0]);
 
-  const tabs: FilterTab[] = ["全部", "PRO会员", "VIP", "黑金", "待审核"];
+  const [list, setList] = useState<MemberRow[]>([]);
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [orders, setOrders] = useState<MembershipOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = MEMBERS.filter(m => {
-    const matchTab =
-      activeTab === "全部"   ? true :
-      activeTab === "PRO会员" ? m.tier === "PRO" :
-      activeTab === "VIP"   ? m.tier === "VIP" :
-      activeTab === "黑金"   ? m.tier === "黑金" :
-      activeTab === "待审核" ? m.status === "待审核" : true;
-    const matchSearch = !search || m.name.includes(search) || m.phone.includes(search) || m.wechat.includes(search);
+  const [selectedNo, setSelectedNo] = useState("");
+  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [memberOrders, setMemberOrders] = useState<MembershipOrder[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  const identityOf = (r: MemberRow): string =>
+    r.project_identities.find(pi => pi.projectId === projectId)?.identity
+    ?? r.project_identities[0]?.identity ?? "游客";
+  const identityStatusOf = (r: MemberRow): string =>
+    r.project_identities.find(pi => pi.projectId === projectId)?.status
+    ?? r.project_identities[0]?.status ?? "—";
+
+  // 列表 + 套餐 + 会员费订单：并行拉取（均为真实接口）
+  useEffect(() => {
+    if (!projectId) return;
+    let alive = true;
+    setLoading(true); setError("");
+    Promise.all([
+      membersApi.listMembers({ projectId }),
+      membershipApi.listPlans(),
+      membershipApi.listOrders(),
+    ])
+      .then(([rows, planRows, orderRows]) => {
+        if (!alive) return;
+        setList(rows);
+        setPlans(planRows);
+        setOrders(orderRows);
+        setSelectedNo(prev => (prev && rows.some(r => r.member_no === prev) ? prev : rows[0]?.member_no ?? ""));
+      })
+      .catch(e => { if (alive) setError(e instanceof ApiError ? e.message : "加载会员权益数据失败"); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [projectId]);
+
+  // 选中会员：档案 + 会员费订单
+  useEffect(() => {
+    if (!selectedNo) { setProfile(null); setMemberOrders([]); return; }
+    let alive = true;
+    setDetailLoading(true); setDetailError("");
+    Promise.all([
+      membersApi.getMemberProfile(selectedNo),
+      membershipApi.listOrders({ memberNo: selectedNo }),
+    ])
+      .then(([pf, mo]) => { if (alive) { setProfile(pf); setMemberOrders(mo); } })
+      .catch(e => { if (alive) setDetailError(e instanceof ApiError ? e.message : "加载会员档案失败"); })
+      .finally(() => { if (alive) setDetailLoading(false); });
+    return () => { alive = false; };
+  }, [selectedNo]);
+
+  // 身份页签：全部 + 数据里实际出现的身份
+  const tabs = useMemo(() => {
+    const found = new Set<string>();
+    list.forEach(r => found.add(identityOf(r)));
+    return ["全部", ...Array.from(found).sort()];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, projectId]);
+
+  const filtered = list.filter(m => {
+    const matchTab = activeTab === "全部" || identityOf(m) === activeTab;
+    const matchSearch = !search || m.name.includes(search) || (m.phone ?? "").includes(search) || m.member_no.includes(search);
     return matchTab && matchSearch;
   });
 
-  const sm = selectedMember;
-  const tierS = TIER_STYLE[sm.tier];
+  // KPI 全部由真实接口实时统计
+  const paidOrders = orders.filter(o => PAID_STATUS.includes(o.status));
+  const paidCents = paidOrders.reduce((s, o) => s + (Number(o.amount_cents) || 0), 0);
+  const kpiCards = [
+    { label: "总会员数",     value: loading ? "—" : String(list.length),                                              sub: currentProject.shortName, color: "#4361ee" },
+    { label: "付费身份会员", value: loading ? "—" : String(list.filter(r => identityOf(r) !== "游客").length),         sub: "身份≠游客",             color: "#8b5cf6" },
+    { label: "在售套餐",     value: loading ? "—" : String(plans.filter(p => p.status === "上架").length),             sub: `共 ${plans.length} 个`,  color: "#06b6d4" },
+    { label: "会员费订单",   value: loading ? "—" : String(orders.length),                                            sub: `已支付 ${paidOrders.length}`, color: "#10b981" },
+    { label: "已收会费",     value: loading ? "—" : fmtYuan(paidCents),                                               sub: "一方交易累计",           color: "#f59e0b" },
+  ];
+
+  // 选中会员视图模型（缺省字段如实占位 "—"，不臆造数值）
+  const p = profile as any;
+  const curIdentity = p?.projectIdentities?.find((x: any) => x.project_id === projectId);
+  const smIdentity = curIdentity?.identity ?? p?.projectIdentities?.[0]?.identity ?? "游客";
+  const orderList = (p?.orders ?? []) as any[];
+  const spend = orderList.filter(o => o.status === "已完成").reduce((s, o) => s + (Number(o.amount) || 0), 0);
+  const identifiers = (p?.identifiers ?? []) as any[];
+  const wechatId = identifiers.find(i => i.id_type === "个微号")?.id_value ?? "—";
+  const growth = Number(p?.growth ?? 0);
+  const points = Number(p?.points ?? 0);
+  const grade = growth >= 5000 ? "S" : growth >= 2000 ? "A" : growth >= 500 ? "B" : "C";
+  const smTags: string[] = [];
+  if (HIGH_VALUE.includes(smIdentity)) smTags.push("高价值");
+  if (orderList.some(o => String(o.status).includes("退款"))) smTags.push("退款风险");
+  if (((p?.groups ?? []) as any[]).length === 0) smTags.push("未入群");
+  if (p?.referral) smTags.push("有推荐人");
+
+  const smRow = list.find(r => r.member_no === selectedNo);
+  const tierS = tierStyle(smIdentity);
 
   return (
     <div className="flex flex-col h-full" style={{ background: D.bg }}>
 
-      {/* ── KPI Strip ─────────────────────────────────────────── */}
+      {/* ── KPI Strip（真实接口实时统计） ─────────────────────── */}
       <div className="grid grid-cols-5 gap-3 p-4 pb-0">
         {kpiCards.map((k, i) => (
           <div key={i} className="rounded-xl px-4 py-3 relative overflow-hidden" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
@@ -110,10 +167,6 @@ export default function MemberBenefits() {
             <div style={{ color: D.muted, fontSize: "11px" }}>{k.label}</div>
             <div className="font-bold mt-0.5" style={{ color: k.color, fontSize: "18px" }}>{k.value}</div>
             <div className="flex items-center gap-1 mt-0.5">
-              <span style={{ color: k.deltaDir === "up" ? "#10b981" : "#ef4444", fontSize: "10px" }}>
-                {k.deltaDir === "up" ? <ArrowUp size={9} className="inline" /> : <ArrowDown size={9} className="inline" />}
-                {k.delta}
-              </span>
               <span style={{ color: D.muted, fontSize: "10px" }}>{k.sub}</span>
             </div>
           </div>
@@ -123,14 +176,14 @@ export default function MemberBenefits() {
       {/* ── Page header ───────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <div>
-          <h2 className="font-bold" style={{ color: D.text, fontSize: "16px" }}>会员管理</h2>
-          <p style={{ color: D.muted, fontSize: "11px" }}>管理所有会员信息，配置权益和积分规则，查看用户详情</p>
+          <h2 className="font-bold" style={{ color: D.text, fontSize: "16px" }}>会员权益</h2>
+          <p style={{ color: D.muted, fontSize: "11px" }}>按项目查看会员身份与到期情况，追踪会员费订单（一方交易）</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
             <Download size={12} />导出
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
             + 添加会员
           </button>
         </div>
@@ -144,8 +197,7 @@ export default function MemberBenefits() {
 
           {/* Filters bar */}
           <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${D.border}` }}>
-            {/* Tabs */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {tabs.map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{ background: activeTab === t ? "rgba(67,97,238,0.2)" : "transparent", color: activeTab === t ? "#818cf8" : D.muted, border: activeTab === t ? "1px solid rgba(67,97,238,0.3)" : "1px solid transparent" }}>
@@ -154,7 +206,6 @@ export default function MemberBenefits() {
               ))}
             </div>
 
-            {/* Count badge */}
             <div className="flex items-center gap-2 ml-2">
               <span style={{ color: D.muted, fontSize: "11px" }}>共</span>
               <span className="font-bold" style={{ color: D.text, fontSize: "13px" }}>{filtered.length}</span>
@@ -162,14 +213,13 @@ export default function MemberBenefits() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              {/* Search */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: D.surface2, border: `1px solid ${D.border}`, width: 200 }}>
                 <Search size={11} style={{ color: D.muted }} />
                 <input className="bg-transparent outline-none flex-1" style={{ color: D.text, fontSize: "11px" }}
                   placeholder="搜索姓名、手机号..." value={search} onChange={e => setSearch(e.target.value)} />
                 {search && <X size={11} style={{ color: D.muted, cursor: "pointer" }} onClick={() => setSearch("")} />}
               </div>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
+              <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>
                 <Filter size={11} />筛选
               </button>
             </div>
@@ -177,67 +227,65 @@ export default function MemberBenefits() {
 
           {/* Table */}
           <div className="flex-1 overflow-auto" style={{ scrollbarWidth: "thin", scrollbarColor: `${D.surface3} transparent` }}>
+            {loading && (
+              <div className="flex items-center justify-center py-16" style={{ color: D.muted, fontSize: "12px" }}><Loader2 size={14} className="animate-spin mr-2" />加载中…</div>
+            )}
+            {!loading && error && (
+              <div className="flex items-center justify-center py-16" style={{ color: "#f87171", fontSize: "12px" }}><AlertTriangle size={14} className="mr-2" />{error}</div>
+            )}
+            {!loading && !error && (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
               <thead>
                 <tr style={{ background: D.surface2 }}>
-                  {["用户 / 城市", "联系方式", "会员类型", "加入日期", "到期日", "消费金额", "订单", "状态", "操作"].map(h => (
+                  {["用户 / 城市", "联系方式", "会员身份", "身份状态", "加入日期", "推荐人", "会费订单", "操作"].map(h => (
                     <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: D.muted, fontWeight: 500, whiteSpace: "nowrap", borderBottom: `1px solid ${D.border}`, fontSize: "11px" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(m => {
-                  const ts = TIER_STYLE[m.tier];
-                  const ss = STATUS_STYLE[m.status];
-                  const isSelected = selectedMember.id === m.id;
+                  const identity = identityOf(m);
+                  const ts = tierStyle(identity);
+                  const status = identityStatusOf(m);
+                  const ss = IDENTITY_STATUS_STYLE[status] ?? { color: D.textSec, bg: D.surface2, dot: D.muted };
+                  const isSelected = selectedNo === m.member_no;
+                  const feeOrders = orders.filter(o => o.member_no === m.member_no);
                   return (
-                    <tr key={m.id} onClick={() => setSelectedMember(m)} style={{ background: isSelected ? "rgba(67,97,238,0.08)" : "transparent", borderLeft: isSelected ? "2px solid #4361ee" : "2px solid transparent", cursor: "pointer" }}
+                    <tr key={m.member_no} onClick={() => setSelectedNo(m.member_no)} style={{ background: isSelected ? "rgba(67,97,238,0.08)" : "transparent", borderLeft: isSelected ? "2px solid #4361ee" : "2px solid transparent", cursor: "pointer" }}
                       className="transition-all">
-                      {/* User */}
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg, ${m.color}, ${m.color}88)` }}>{m.initials}</div>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs text-white font-bold flex-shrink-0" style={{ background: `linear-gradient(135deg, ${ts.color}, ${ts.color}88)` }}>{(m.name || m.member_no)[0]}</div>
                           <div>
                             <div className="font-medium" style={{ color: D.text, fontSize: "12px" }}>{m.name}</div>
                             <div className="flex items-center gap-1" style={{ color: D.muted, fontSize: "10px" }}>
-                              <MapPin size={9} />{m.city}
+                              <MapPin size={9} />{m.city ?? "—"}
                             </div>
                           </div>
                         </div>
                       </td>
-                      {/* Contact */}
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
-                        <div style={{ color: D.textSec, fontSize: "11px" }}>{m.phone}</div>
-                        <div style={{ color: D.muted, fontSize: "10px" }}>{m.wechat}</div>
+                        <div style={{ color: D.textSec, fontSize: "11px" }}>{m.phone ?? "—"}</div>
+                        <div style={{ color: D.muted, fontSize: "10px" }}>{m.member_no}</div>
                       </td>
-                      {/* Tier */}
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
                         <span className="flex items-center gap-1 px-2 py-0.5 rounded-full w-fit" style={{ background: ts.bg, color: ts.color, fontSize: "11px", fontWeight: 600 }}>
-                          <ts.icon size={10} />{m.tier}
+                          <ts.icon size={10} />{identity}
                         </span>
                       </td>
-                      {/* Join */}
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: D.textSec, fontSize: "11px" }}>{m.joinDate}</td>
-                      {/* Expiry */}
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: D.textSec, fontSize: "11px" }}>{m.expiry}</td>
-                      {/* Spend */}
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
-                        <span className="font-semibold" style={{ color: "#f59e0b", fontSize: "12px" }}>{m.spend}</span>
-                      </td>
-                      {/* Orders */}
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: D.textSec, fontSize: "12px" }}>{m.orders}</td>
-                      {/* Status */}
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
                         <span className="flex items-center gap-1 px-2 py-0.5 rounded-full w-fit" style={{ background: ss.bg, color: ss.color, fontSize: "10px" }}>
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: ss.dot }} />
-                          {m.status}
+                          {status}
                         </span>
                       </td>
-                      {/* Actions */}
+                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: D.textSec, fontSize: "11px" }}>{fmtDate(m.created_at)}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: D.textSec, fontSize: "11px" }}>{m.referrer_name ?? "—"}</td>
+                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}`, color: feeOrders.length > 0 ? "#f59e0b" : D.muted, fontSize: "12px" }}>{feeOrders.length > 0 ? `${feeOrders.length} 单` : "—"}</td>
                       <td style={{ padding: "10px 12px", borderBottom: `1px solid ${D.border}` }}>
                         <div className="flex items-center gap-1">
-                          <button className="px-2 py-1 rounded text-xs" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8" }}>详情</button>
-                          <button className="p-1 rounded" style={{ background: D.surface2, color: D.muted }}>
+                          <button onClick={e => { e.stopPropagation(); setSelectedNo(m.member_no); }} className="px-2 py-1 rounded text-xs" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8" }}>详情</button>
+                          <button disabled title="接线中" className="p-1 rounded opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.muted }}>
                             <MoreHorizontal size={12} />
                           </button>
                         </div>
@@ -245,120 +293,142 @@ export default function MemberBenefits() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={8} style={{ padding: "40px 12px", textAlign: "center", color: D.muted, fontSize: "12px" }}>无匹配会员</td>
+                  </tr>
+                )}
               </tbody>
             </table>
+            )}
           </div>
 
           {/* Table footer */}
           <div className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: `1px solid ${D.border}` }}>
-            <span style={{ color: D.muted, fontSize: "11px" }}>共 {filtered.length} 条 · 第 1 页</span>
-            <div className="flex gap-1">
-              {[1, 2, 3].map(p => (
-                <button key={p} className="w-7 h-7 rounded text-xs" style={{ background: p === 1 ? "rgba(67,97,238,0.2)" : D.surface2, color: p === 1 ? "#818cf8" : D.muted, border: p === 1 ? "1px solid rgba(67,97,238,0.3)" : `1px solid ${D.border}` }}>{p}</button>
-              ))}
-            </div>
+            <span style={{ color: D.muted, fontSize: "11px" }}>共 {filtered.length} 条</span>
           </div>
         </div>
 
         {/* Right: member detail panel */}
         <div className="flex-shrink-0 flex flex-col gap-3 overflow-y-auto" style={{ width: 280, scrollbarWidth: "none" }}>
 
-          {/* Avatar card */}
-          <div className="rounded-xl overflow-hidden" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
-            {/* Cover gradient */}
-            <div className="relative h-20" style={{ background: `linear-gradient(135deg, ${sm.color}40, rgba(67,97,238,0.3))` }}>
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-              {/* Avatar */}
-              <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-full border-4 flex items-center justify-center text-lg text-white font-bold" style={{ background: `linear-gradient(135deg, ${sm.color}, ${sm.color}88)`, borderColor: D.surface }}>
-                {sm.initials}
-              </div>
-              {/* Tier badge top right */}
-              <div className="absolute top-3 right-3">
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: tierS.bg, color: tierS.color }}>
-                  <tierS.icon size={10} />{sm.tier} 会员
-                </span>
-              </div>
+          {detailLoading && (
+            <div className="rounded-xl p-8 flex items-center justify-center" style={{ background: D.surface, border: `1px solid ${D.border}`, color: D.muted, fontSize: "12px" }}>
+              <Loader2 size={14} className="animate-spin mr-2" />加载档案…
             </div>
-
-            <div className="pt-8 px-4 pb-4">
-              <div className="font-bold" style={{ color: D.text, fontSize: "15px" }}>{sm.name}</div>
-              <div style={{ color: D.muted, fontSize: "11px" }}>{sm.city} · {sm.email}</div>
-
-              {/* Grade circle */}
-              <div className="flex items-center gap-3 mt-3">
-                <div className="w-12 h-12 rounded-full border-2 flex flex-col items-center justify-center" style={{ borderColor: sm.color }}>
-                  <div className="font-black leading-none" style={{ color: sm.color, fontSize: "14px" }}>{sm.grade}</div>
+          )}
+          {!detailLoading && detailError && (
+            <div className="rounded-xl p-8 text-center" style={{ background: D.surface, border: `1px solid ${D.border}`, color: "#f87171", fontSize: "12px" }}>{detailError}</div>
+          )}
+          {!detailLoading && !detailError && !smRow && !loading && (
+            <div className="rounded-xl p-8 text-center" style={{ background: D.surface, border: `1px solid ${D.border}`, color: D.muted, fontSize: "12px" }}>选择左侧会员查看权益详情</div>
+          )}
+          {!detailLoading && !detailError && smRow && (
+            <>
+              {/* Avatar card */}
+              <div className="rounded-xl overflow-hidden" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
+                <div className="relative h-20" style={{ background: `linear-gradient(135deg, ${tierS.color}40, rgba(67,97,238,0.3))` }}>
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                  <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-full border-4 flex items-center justify-center text-lg text-white font-bold" style={{ background: `linear-gradient(135deg, ${tierS.color}, ${tierS.color}88)`, borderColor: D.surface }}>
+                    {(smRow.name || smRow.member_no)[0]}
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: tierS.bg, color: tierS.color }}>
+                      <tierS.icon size={10} />{smIdentity}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ color: D.muted, fontSize: "10px" }}>综合评分</div>
-                  <div className="font-bold" style={{ color: D.text, fontSize: "18px" }}>{sm.score}</div>
-                  <div style={{ color: D.muted, fontSize: "10px" }}>满分 100</div>
-                </div>
-                {/* Score bar */}
-                <div className="flex-1">
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: D.surface2 }}>
-                    <div className="h-full rounded-full" style={{ width: `${sm.score}%`, background: `linear-gradient(90deg, ${sm.color}, ${sm.color}88)` }} />
+
+                <div className="pt-8 px-4 pb-4">
+                  <div className="font-bold" style={{ color: D.text, fontSize: "15px" }}>{smRow.name}</div>
+                  <div style={{ color: D.muted, fontSize: "11px" }}>{smRow.city ?? "—"} · {smRow.member_no}</div>
+
+                  {/* 成长等级（由成长值分档，均为后端真实字段） */}
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="w-12 h-12 rounded-full border-2 flex flex-col items-center justify-center" style={{ borderColor: tierS.color }}>
+                      <div className="font-black leading-none" style={{ color: tierS.color, fontSize: "14px" }}>{grade}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: D.muted, fontSize: "10px" }}>成长值</div>
+                      <div className="font-bold" style={{ color: D.text, fontSize: "18px" }}>{growth}</div>
+                    </div>
+                    <TrendingUp size={16} className="ml-auto" style={{ color: tierS.color, opacity: 0.6 }} />
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {smTags.map(t => (
+                      <span key={t} className="px-2 py-0.5 rounded-full" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8", fontSize: "10px" }}>{t}</span>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1 mt-3">
-                {sm.tags.map(t => (
-                  <span key={t} className="px-2 py-0.5 rounded-full" style={{ background: "rgba(67,97,238,0.15)", color: "#818cf8", fontSize: "10px" }}>{t}</span>
+              {/* Contact info */}
+              <div className="rounded-xl p-4" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
+                <div className="font-semibold mb-3" style={{ color: D.text, fontSize: "13px" }}>联系信息</div>
+                {[
+                  { icon: Phone,          label: "手机号",  value: smRow.phone ?? "—" },
+                  { icon: MessageCircle,  label: "微信",    value: wechatId },
+                  { icon: MapPin,         label: "城市",    value: smRow.city ?? "—" },
+                  { icon: Calendar,       label: "加入日期", value: fmtDate(smRow.created_at) },
+                  { icon: Calendar,       label: "到期日",  value: curIdentity?.valid_until ? fmtDate(curIdentity.valid_until) : "长期有效" },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-center gap-2.5 py-2" style={{ borderBottom: i < 4 ? `1px solid ${D.border}` : "none" }}>
+                    <row.icon size={12} style={{ color: D.muted, flexShrink: 0 }} />
+                    <span style={{ color: D.muted, fontSize: "11px", width: 56 }}>{row.label}</span>
+                    <span style={{ color: D.textSec, fontSize: "11px" }}>{row.value}</span>
+                  </div>
                 ))}
               </div>
-            </div>
-          </div>
 
-          {/* Contact info */}
-          <div className="rounded-xl p-4" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
-            <div className="font-semibold mb-3" style={{ color: D.text, fontSize: "13px" }}>联系信息</div>
-            {[
-              { icon: Phone,          label: "手机号", value: sm.phone },
-              { icon: Mail,           label: "邮箱",   value: sm.email },
-              { icon: MessageCircle,  label: "微信",   value: sm.wechat },
-              { icon: MapPin,         label: "城市",   value: sm.city },
-              { icon: Calendar,       label: "加入日期", value: sm.joinDate },
-              { icon: Calendar,       label: "到期日",  value: sm.expiry },
-            ].map((row, i) => (
-              <div key={i} className="flex items-center gap-2.5 py-2" style={{ borderBottom: i < 5 ? `1px solid ${D.border}` : "none" }}>
-                <row.icon size={12} style={{ color: D.muted, flexShrink: 0 }} />
-                <span style={{ color: D.muted, fontSize: "11px", width: 56 }}>{row.label}</span>
-                <span style={{ color: D.textSec, fontSize: "11px" }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats */}
-          <div className="rounded-xl p-4" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
-            <div className="font-semibold mb-3" style={{ color: D.text, fontSize: "13px" }}>数据概览</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { icon: CreditCard, label: "消费总额", value: sm.spend,            color: "#f59e0b" },
-                { icon: CreditCard, label: "订单数",   value: `${sm.orders} 单`,   color: "#4361ee" },
-                { icon: FileText,   label: "工单数",   value: `${sm.tickets} 条`,  color: "#8b5cf6" },
-                { icon: Gift,       label: "积分",     value: sm.points.toLocaleString(), color: "#10b981" },
-              ].map((s, i) => (
-                <div key={i} className="rounded-xl p-3" style={{ background: D.surface2 }}>
-                  <s.icon size={12} style={{ color: s.color }} />
-                  <div className="font-bold mt-1" style={{ color: s.color, fontSize: "14px" }}>{s.value}</div>
-                  <div style={{ color: D.muted, fontSize: "10px" }}>{s.label}</div>
+              {/* Stats（取自会员档案真实字段） */}
+              <div className="rounded-xl p-4" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
+                <div className="font-semibold mb-3" style={{ color: D.text, fontSize: "13px" }}>数据概览</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { icon: CreditCard, label: "消费总额", value: `¥${spend.toLocaleString()}`,  color: "#f59e0b" },
+                    { icon: CreditCard, label: "订单数",   value: `${orderList.length} 单`,      color: "#4361ee" },
+                    { icon: TrendingUp, label: "成长值",   value: String(growth),                color: "#8b5cf6" },
+                    { icon: Gift,       label: "积分",     value: points.toLocaleString(),       color: "#10b981" },
+                  ].map((s, i) => (
+                    <div key={i} className="rounded-xl p-3" style={{ background: D.surface2 }}>
+                      <s.icon size={12} style={{ color: s.color }} />
+                      <div className="font-bold mt-1" style={{ color: s.color, fontSize: "14px" }}>{s.value}</div>
+                      <div style={{ color: D.muted, fontSize: "10px" }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-2">
-            <button className="w-full py-2.5 rounded-xl text-xs font-medium text-white" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
-              发送消息
-            </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button className="py-2 rounded-xl text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>升级会员</button>
-              <button className="py-2 rounded-xl text-xs" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>创建工单</button>
-            </div>
-          </div>
+              {/* 会员费订单（一方交易，中台事实源） */}
+              <div className="rounded-xl p-4" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
+                <div className="font-semibold mb-3" style={{ color: D.text, fontSize: "13px" }}>会员费订单</div>
+                {memberOrders.length === 0 ? (
+                  <div className="text-center py-4" style={{ color: D.muted, fontSize: "11px" }}>暂无会员费订单</div>
+                ) : memberOrders.map(o => (
+                  <div key={o.order_no} className="flex items-center gap-2 py-2" style={{ borderBottom: `1px solid ${D.border}` }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate" style={{ color: D.textSec, fontSize: "11px" }}>{o.plan_name}</div>
+                      <div style={{ color: D.muted, fontSize: "10px" }}>{fmtDate(o.created_at)} · {o.channel}</div>
+                    </div>
+                    <span className="font-semibold" style={{ color: "#f59e0b", fontSize: "11px" }}>{fmtYuan(o.amount_cents)}</span>
+                    <span className="px-1.5 py-0.5 rounded-full" style={{ background: PAID_STATUS.includes(o.status) ? "rgba(16,185,129,0.12)" : D.surface2, color: PAID_STATUS.includes(o.status) ? "#34d399" : D.textSec, fontSize: "10px" }}>{o.status}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action buttons（写操作待接线） */}
+              <div className="flex flex-col gap-2">
+                <button disabled title="接线中" className="w-full py-2.5 rounded-xl text-xs font-medium text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+                  发送消息
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button disabled title="接线中" className="py-2 rounded-xl text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>升级会员</button>
+                  <button disabled title="接线中" className="py-2 rounded-xl text-xs opacity-50 cursor-not-allowed" style={{ background: D.surface2, color: D.textSec, border: `1px solid ${D.border}` }}>创建工单</button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

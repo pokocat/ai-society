@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "我的社群",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "ui-icon": "/components/icon/index",
+    "ui-errbar": "/components/errbar/index"
+  },
+  "backgroundColor": "#F7F6F3"
+}

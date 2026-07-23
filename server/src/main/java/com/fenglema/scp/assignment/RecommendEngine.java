@@ -1,6 +1,7 @@
 package com.fenglema.scp.assignment;
 
 import com.fenglema.scp.common.Rows;
+import com.fenglema.scp.membership.EntitlementService;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -10,17 +11,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 分群推荐引擎（SPEC §7.3 五级优先级，确定性算法）：
- * 1 硬性准入（SQL 过滤）→ 2 业务匹配 → 3 负载均衡 → 4 连续服务 → 5 运营策略（评分加权）。
+ * 分群推荐引擎（SPEC §7.3 五级优先级 + M3 §4.2 第 0 级邀请归属优先，确定性算法）：
+ * 0 邀请归属优先（代理类祖先名下群限定候选集，affinity_first 可关）
+ * → 1 硬性准入（SQL 过滤，含付费门控注入点①）→ 2 业务匹配 → 3 负载均衡
+ * → 4 连续服务 → 5 运营策略（评分加权）。
  * 权重与阈值全部读 resource_rules，可在线调整。
  */
 @Component
 public class RecommendEngine {
 
     private final JdbcClient db;
+    private final EntitlementService entitlement;
 
-    public RecommendEngine(JdbcClient db) {
+    public RecommendEngine(JdbcClient db, EntitlementService entitlement) {
         this.db = db;
+        this.entitlement = entitlement;
     }
 
     public record Candidate(String groupId, String groupName, double score, List<String> hitRules,
@@ -28,16 +33,40 @@ public class RecommendEngine {
                             int matchTier) {
     }
 
-    /** 身份 → 目标群类型（业务匹配层）。 */
-    static String matchGroupType(String identity) {
-        return switch (identity == null ? "" : identity) {
-            case "PRO会员" -> "PRO会员群";
-            case "体验官", "学员" -> "体验官群";
-            case "游客" -> "游客群";
-            case "尊享官", "黑金", "VIP" -> "尊享群";
-            case "代理", "城市合伙人", "运营商" -> "分站管理群";
-            default -> "游客群";
-        };
+    /** 身份 → 目标群类型（业务匹配层）。M3 起字典驱动（dict:identity_group_type），运营可在线调整映射。 */
+    String matchGroupType(String identity) {
+        if (identity == null) {
+            return "游客群";
+        }
+        return db.sql("""
+                        SELECT g.item_label FROM dict_entry m
+                        JOIN dict_entry g ON g.dict_code = 'identity_group_type'
+                                         AND g.item_code = m.item_code AND g.enabled
+                        WHERE m.dict_code = 'member_identity' AND m.item_label = :identity AND m.enabled
+                        """)
+                .param("identity", identity)
+                .query(String.class).optional().orElse("游客群");
+    }
+
+    /**
+     * 第 0 级·邀请归属优先（M3 §4.2）：沿 lv1→lv2→lv3 找最近的代理类祖先
+     * （identity ∈ agent/operator/city_partner 且项目内身份有效），返回其 member.id；无则 null。
+     */
+    Long nearestAgentAncestor(long memberId, String projectId) {
+        return db.sql("""
+                        SELECT anc.ancestor_id FROM referral_relation rr
+                        CROSS JOIN LATERAL unnest(ARRAY[rr.lv1_parent, rr.lv2_parent, rr.lv3_parent])
+                                   WITH ORDINALITY AS anc(ancestor_id, ord)
+                        JOIN member_project_identity mpi ON mpi.member_id = anc.ancestor_id
+                             AND mpi.project_id = :pid AND mpi.status IN ('有效', '待分配')
+                        JOIN dict_entry d ON d.dict_code = 'member_identity' AND d.item_label = mpi.identity
+                             AND d.item_code IN ('agent', 'operator', 'city_partner')
+                        WHERE rr.member_id = :mid AND anc.ancestor_id IS NOT NULL
+                        ORDER BY anc.ord
+                        LIMIT 1
+                        """)
+                .param("mid", memberId).param("pid", projectId)
+                .query(Long.class).optional().orElse(null);
     }
 
     public List<Candidate> recommend(long memberId, String projectId) {
@@ -63,9 +92,14 @@ public class RecommendEngine {
         double wCont = ((Number) rules.get("w_continuity")).doubleValue();
         double wStrat = ((Number) rules.get("w_strategy")).doubleValue();
 
-        // ── 第 1 级：硬性准入（项目 / 群状态 / 编组完备 / 账号状态 / 剩余容量含预占 / 个微硬上限）──
+        // 付费门控注入点①（M3 §4.1）：门控开 ∧ 会员无有效付费权益 → 仅豁免群类型可作候选
+        boolean gateOn = Boolean.TRUE.equals(rules.get("paid_gate_enabled"));
+        boolean hasEntitlement = !gateOn || entitlement.hasPaidEntitlement(memberId, projectId);
+
+        // ── 第 1 级：硬性准入（项目 / 群状态 / 编组完备 / 账号状态 / 剩余容量含预占 / 个微硬上限 / 付费门控）──
         List<Map<String, Object>> groups = db.sql("""
                 SELECT g.id, g.name, g.group_type, g.city, g.member_count, g.target_capacity,
+                       g.owner_member_id,
                        pcs.account_id AS personal_wechat_id,
                        pa.status AS wechat_status, pa.friend_count, pa.serving_group_count,
                        (SELECT count(*) FROM capacity_reservation r
@@ -91,16 +125,38 @@ public class RecommendEngine {
                   AND pa.serving_group_count <= :maxGroups
                   AND NOT EXISTS (SELECT 1 FROM member_group_assignment a
                           WHERE a.member_id = :mid AND a.group_id = g.id AND a.status = '已入群')
+                  AND (:hasEntitlement OR g.group_type IN (
+                          SELECT item_label FROM dict_entry
+                          WHERE dict_code = 'paid_gate_exempt_group_types' AND enabled))
                 """)
                 .param("pid", projectId).param("mid", memberId)
                 .param("hardFriends", hardFriends).param("maxGroups", maxGroups)
+                .param("hasEntitlement", hasEntitlement)
                 .query(Rows.MAP).list();
+
+        // ── 第 0 级：邀请归属优先（M3 §4.2）——代理类祖先名下通过准入的群限定候选集，组内仍按评分排序 ──
+        boolean affinityFirst = Boolean.TRUE.equals(rules.get("affinity_first"));
+        Long agentAncestor = affinityFirst ? nearestAgentAncestor(memberId, projectId) : null;
+        boolean affinityApplied = false;
+        if (agentAncestor != null) {
+            List<Map<String, Object>> owned = groups.stream()
+                    .filter(g -> g.get("owner_member_id") != null
+                            && ((Number) g.get("owner_member_id")).longValue() == agentAncestor)
+                    .toList();
+            if (!owned.isEmpty()) {
+                groups = owned;
+                affinityApplied = true;
+            }
+        }
 
         List<Candidate> candidates = new ArrayList<>();
         for (Map<String, Object> g : groups) {
             List<String> hits = new ArrayList<>();
             List<String> risks = new ArrayList<>();
             hits.add("硬性准入：项目/群状态/编组/账号/容量均通过");
+            if (affinityApplied) {
+                hits.add("邀请归属优先：候选集限定为邀请人（代理）名下群");
+            }
 
             int memberCount = ((Number) g.get("member_count")).intValue();
             int reserved = ((Number) g.get("reserved")).intValue();

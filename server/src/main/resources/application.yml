@@ -30,11 +30,42 @@ springdoc:
     path: /swagger-ui.html
 
 scp:
+  # 对外可访问的服务基址：进入小程序/企微的绝对 URL（活码图等）以此拼接。
+  # 生产必须设为备案域名（https），否则小程序侧图片加载不到；真机调试设为电脑局域网 IP。
+  public-base-url: "${SCP_PUBLIC_BASE_URL:http://127.0.0.1:8080}"
   jwt:
-    secret: "fenglema-scp-dev-secret-key-change-in-production-0123456789abcdef"
+    # 生产必须以 SCP_JWT_SECRET 环境变量注入（上架审阅项；默认值仅限本地开发）
+    secret: "${SCP_JWT_SECRET:fenglema-scp-dev-secret-key-change-in-production-0123456789abcdef}"
     ttl-hours: 72
   reservation:
     ttl-minutes: 30
+  cors:
+    # 生产收敛到管理台域名（逗号分隔）；默认 * 仅限开发
+    allowed-origins: "${SCP_CORS_ORIGINS:*}"
+  mock-endpoints:
+    # mock-project-system 无鉴权注入口：生产必须 SCP_MOCK_ENDPOINTS=false
+    enabled: ${SCP_MOCK_ENDPOINTS:true}
+  webhook:
+    # 企微回调验签：生产置 true 并配置 token
+    verify-signature: ${SCP_WEBHOOK_VERIFY:false}
+    token: "${SCP_WEBHOOK_TOKEN:}"
+  wx:
+    # 微信小程序凭证：生产注入 WX_SECRET 并置 WX_MOCK=false 即切真实 code2Session/小程序码/手机号
+    appid: "${WX_APPID:wxe473d97a68e6683e}"
+    secret: "${WX_SECRET:}"
+    mock: ${WX_MOCK:true}
+  wecom:
+    # 企微「内部群机器人」webhook（官方文档 91770，真实通道）：
+    # 在企微内部运营群添加群机器人 → 复制 webhook 地址填到这里（或设 env）。
+    # 留空=跳过通知（开发/CI）。注意：官方限制机器人仅内部群可用，客户群不可加。
+    ops-robot-webhook: ${SCP_WECOM_OPS_ROBOT_WEBHOOK:}
+  mp:
+    # 会员小程序默认权益落地项目（M3b 单项目；多项目切换 M4）
+    default-project: flm-membership
+    # /mp/login 每 IP 每分钟上限（裂变防刷）
+    login-rate-limit: 30
+    # 演示支付端点开关：生产 SCP_MOCK_PAY=false（支付确认只认微信支付服务端回调）
+    mock-pay-enabled: ${SCP_MOCK_PAY:true}
 
 logging:
   level:

@@ -25,12 +25,24 @@ public abstract class TestSupport {
         return String.valueOf(SEQ.incrementAndGet());
     }
 
-    /** 经同步层进线一个待分配会员（走真实入口），返回 memberNo。 */
+    /**
+     * 经同步层进线一个待分配会员（走真实入口），返回 memberNo。
+     * M3 起：付费档身份（paid_identity 字典）自动补 30 天有效期——测试语义为「外部已付费会员」，
+     * 与 M3 前用例的前提一致；门控拦截行为由 MembershipM3aTest 用无权益会员显式验证。
+     */
     protected String ingestMember(String name, String city, String projectId, String identity, String referrerNo) {
         var result = syncService.ingestPendingMember("test", "人工导入",
                 new SyncService.IncomingMember(name, "1" + uid(), city, "转介绍",
-                        projectId, identity, referrerNo, null, null, null));
-        return (String) result.get("memberNo");
+                        projectId, identity, referrerNo, null, null, null, null));
+        String memberNo = (String) result.get("memberNo");
+        db.sql("""
+                UPDATE member_project_identity SET valid_until = now() + interval '30 days'
+                WHERE member_id = (SELECT id FROM member WHERE member_no = :no)
+                  AND project_id = :pid
+                  AND identity IN (SELECT item_label FROM dict_entry WHERE dict_code = 'paid_identity' AND enabled)
+                """)
+                .param("no", memberNo).param("pid", projectId).update();
+        return memberNo;
     }
 
     /** 建一个配齐「建群企微 + 双客服」的可承接测试群，返回 groupId。 */

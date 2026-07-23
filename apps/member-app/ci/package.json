@@ -1,0 +1,8 @@
+{
+  "name": "member-app-ci",
+  "private": true,
+  "description": "小程序上传/提审工具（miniprogram-ci）；上传密钥经 MP_PRIVATE_KEY_PATH 注入，勿入仓库",
+  "dependencies": {
+    "miniprogram-ci": "^2.1.0"
+  }
+}

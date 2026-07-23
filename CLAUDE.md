@@ -1,4 +1,4 @@
-# CLAUDE.md — 蜂乐玛社群运营中台 · Agent 工作守则
+# CLAUDE.md — 主理人社群运营中台 · Agent 工作守则
 
 本仓库由 AI agent 持续开发维护。以下护栏是**硬性要求**，任何后续改动（无论 AI 还是人）都必须遵守。
 业务权威基线：设计仓库 `pokocat/ai-bossclub-design` 的《业务逻辑与项目说明》V1.0（下称 SPEC）；
@@ -11,7 +11,7 @@ ontology/     # OWL 本体（设计期概念权威）+ 概念→表→API 映射
 server/       # Spring Boot 3.3 / Java 21 / PostgreSQL 16 / Flyway / JdbcClient 后端
 apps/         # 前端子应用（admin-pc 迁入中；member-app / jinfu-app 延后）
 packages/shared/openapi.yaml   # API 契约（springdoc 导出，前端据此生成 client）
-scripts/      # db-init.sh（起库，幂等）/ smoke.sh（端到端冒烟，14 步 22 断言）
+scripts/      # db-init.sh（起库，幂等）/ smoke.sh（端到端冒烟，15 步，含 M3 付费→安置→入群闭环）
 docs/         # 技术方案评审稿；docs/prototype/ 为早期原型归档
 ```
 
@@ -69,9 +69,12 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 
 ## 四、业务边界铁律（源自 SPEC，违反=方向性错误）
 
-15. **中台不建交易域**（SPEC §2.2）：订单/佣金/收益只有 `order_reference`/`earnings_snapshot`
-    **只读镜像**（经 sync 层进入）；提现只做**审批协同**，打款归外部系统。任何"在中台算佣金/记账"
-    的需求先在方案层面对齐边界，不要直接写代码。
+15. **中台不建交易域——会员费一方订单除外**（SPEC §2.2，M3 方案 §3 边界变更）：
+    **项目方**订单/佣金/收益只有 `order_reference`/`earnings_snapshot` **只读镜像**（经 sync 层进入）；
+    提现只做**审批协同**，打款归外部系统；**返佣永不进中台**（用户决策「只记录不返佣」）。
+    唯一例外：**会员费**（小程序虚拟支付收款）为一方交易，`membership_plan`/`membership_order`
+    以中台为事实源——状态机管控、回调幂等、审计留痕，规格与其余护栏一致。任何其他"在中台算佣金/记账"
+    的需求仍须先在方案层面对齐边界，不要直接写代码。
 16. **入群是一等对象**（SPEC §4.7）：任何入群/退群必须经 `member_group_assignment` 八态漏斗。
     **禁止只改群人数**。只有 webhook 入群事件或人工确认两条路径可置「已入群」（SPEC §6.7）。
 17. **不做个微客户端自动化**（SPEC §2.3）：加好友/邀请一律是「任务派发→人工执行→回填结果」。
@@ -117,8 +120,33 @@ bash scripts/smoke.sh            # 冒烟，必须 0 失败
 - [x] **运行时连库账号降权**（第 6 条）：应用以 `scp_app`（仅 DML）连接，`scp` 仅迁移用（Flyway 单独连接）。
       `scp_app` 非属主，无法 `DROP/DISABLE` audit_log 触发器、无 DDL、对 audit_log 仅 INSERT/SELECT——
       审计不可篡改由权限隔离兜底。角色见 `scripts/db-init.sh`，授权见 `V3__grant_scp_app.sql`。
-- [ ] **上线前收口**：webhook 无签名校验（`WebhookController` 注释自承 Mock 阶段）、`mock/**` 无鉴权
-      （`push-earnings` 可无认证设余额，务必绝不随生产暴露）、JWT 密钥为仓库固定值、CORS `*`。
+- [x] **上线前收口（配置化，生产环境变量必设）**：`mock/**` 经 `SCP_MOCK_ENDPOINTS=false` 整组下线；
+      演示支付 `SCP_MOCK_PAY=false` 禁用；webhook 验签 `SCP_WEBHOOK_VERIFY=true`+`SCP_WEBHOOK_TOKEN`；
+      JWT `SCP_JWT_SECRET`；CORS `SCP_CORS_ORIGINS`；微信凭证 `WX_SECRET`+`WX_MOCK=false`
+      （code2Session/小程序码/手机号即切真实，见 `mp/WxClient`）。/mp/login 已带 IP 限流 +
+      邀请奖励每日封顶（`resource_rules.invite_award_daily_cap`，V8）。
+      另需 `SCP_PUBLIC_BASE_URL`（对外基址，活码图等绝对 URL 由它拼接；必须 https 备案域名，
+      否则小程序加载不到图）。**上线前必跑 `bash scripts/prod-check.sh`**——它逐条打接口验证
+      收口是否真的生效（mock 下线/演示支付禁用/凭证实连/回调验签/CORS 收敛/基址 https），
+      全绿才输出「可以上线」。只核对环境变量清单不算数：本服务统一信封 HTTP 恒 200，
+      鉴权结果在业务码里，肉眼核对极易误判。
+      **仍欠**：微信虚拟支付真实回调端点（验签+幂等，落地后演示支付退役）、企微回调 AES 解密、
+      `auth.js` PROD_BASE 换正式备案域名。
 - [ ] **前端诚实度收口（M2）**：见下批次任务——未接线 chrome 的假成功 toast、无后端来源字段的
       占位（证件/写死基准日/推送次数=0 应显示"—"）、AccountAssets 深色遗留文字对比度。
 - [ ] admin-pc 剩余模块接线（工单/权限矩阵/城市分站/报表等，见 docs/技术方案-工程评审稿.md §8.1）。
+- [x] **M3a 微信生态·后端+管理台**（docs/技术方案-M3微信生态社群.md §7）：权益域
+      （membership_plan/order 一方交易、门控三注入点、到期作业）、代理归属优先（引擎第 0 级）、
+      企微网关 Mock 扩展（活码/欢迎语/群发/直播）、webhook create/dismiss 事件、内容域
+      （欢迎语/群发派发器/排课）、管理台三页（会员权益/内容运营/代理商总览）。V5 迁移 + 5 新测试。
+- [x] **M3b 小程序主链路闭环**（apps/member-app，微信原生，源码在 miniprogram/）：
+      「自助注册 → 购买 → 进待分配池 → 运营安置 → 入群 → 裂变关系链」端到端跑通，
+      两条拉群路径都覆盖并各自钉死在对应群上（`scripts/mp-join-flow.sh` 20 项）：
+      **企微活码**（群绑了 `wecom_chat_id` → confirm 直接下发 join_way、状态直达「已邀请」、
+      小程序 `selfJoin` 摊开二维码，用户扫码即进，无人工）与**个微人工**（未绑企微 → 加好友
+      →邀请两段任务回填）。付费与安置的衔接靠 `member_project_identity.status`：
+      购买后收敛到「待分配」进池（`enterPendingPoolIfUnplaced`），`confirmJoin` 再收敛回「有效」退池；
+      小程序游客不进池（否则待分配池被访客淹没，运营无法使用）。
+- [ ] **M3c 企微/虚拟支付实连**：见 M3 方案 §6/§7；前置办证清单（ICP/增值电信/企微认证/开放平台）
+      须业务侧并行启动。代码侧已就位：网关按 profile 切 `WeComCommunityGateway` 即可，
+      业务代码不改；`prod-check.sh` 可验证切换是否真的生效。

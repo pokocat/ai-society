@@ -1,0 +1,58 @@
+.hd--home { padding-bottom: 8rpx; }
+.top-row { margin-bottom: 36rpx; }
+.greet-row { gap: 12rpx; }
+.greet { font-size: 34rpx; font-weight: 700; color: #111111; letter-spacing: -0.5rpx; }
+.sub-row { gap: 10rpx; margin-top: 8rpx; }
+.bell-wrap { position: relative; }
+.bell {
+  width: 68rpx; height: 68rpx; border-radius: 50%;
+  background: #FFFFFF; border: 1rpx solid #EAEAEA;
+}
+
+.hero-flush { margin-left: 6rpx; margin-right: 6rpx; }
+.hero-top { align-items: flex-start; margin-bottom: 36rpx; }
+.hero-id-row { margin-bottom: 14rpx; }
+/* eyebrow 徽标（skill：小号胶囊 + 宽字距） */
+.hero-eyebrow {
+  display: inline-block;
+  padding: 4rpx 18rpx; border-radius: 999rpx;
+  font-size: 20rpx; font-weight: 600; letter-spacing: 2rpx;
+  background: #E1F3FE; color: #1F6C9F;
+}
+.hero-name { font-size: 38rpx; font-weight: 700; color: #111111; letter-spacing: -0.5rpx; }
+.hero-bottom { align-items: flex-end; }
+.hero-k { font-size: 22rpx; color: #9B9A97; }
+.hero-v { font-size: 26rpx; font-weight: 500; color: #2F3437; }
+.hero-v--strong { font-size: 30rpx; font-weight: 700; color: #111111; }
+.ta-r { text-align: right; }
+
+.mt-4 { margin-top: 4rpx; }
+.mt-6 { margin-top: 6rpx; }
+.mt-10 { margin-top: 10rpx; }
+.mt-16 { margin-top: 16rpx; }
+.mt-20 { margin-top: 20rpx; }
+.mt-30 { margin-top: 30rpx; }
+.fw-500 { font-weight: 500; }
+
+.course-row { gap: 20rpx; }
+.dots { gap: 10rpx; padding: 10rpx 0 10rpx 16rpx; }
+
+.teacher-card { gap: 26rpx; }
+.todo-row { gap: 22rpx; }
+.card--list { padding-top: 6rpx; padding-bottom: 6rpx; }
+
+.invite-title-row { gap: 12rpx; }
+.invite-btns { gap: 22rpx; margin-top: 28rpx; }
+.invite-share-btn { flex: 1; font-size: 28rpx; padding: 20rpx 0; }
+
+.sheet-teacher {
+  gap: 22rpx; margin-top: 30rpx; padding: 24rpx;
+  border-radius: 20rpx; background: #F7F6F3; border: 1rpx solid #EAEAEA;
+}
+.notify-empty { padding: 30rpx 0; }
+.notify-item {
+  gap: 20rpx; padding: 22rpx; border-radius: 18rpx;
+  background: #F7F6F3; border: 1rpx solid #F0EFEC;
+  margin-bottom: 16rpx; align-items: flex-start;
+}
+.notify-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #1F6C9F; margin-top: 12rpx; flex-shrink: 0; }

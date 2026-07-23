@@ -5,13 +5,14 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <https://fenglema.com/ontology/scp> a owl:Ontology ;
-    rdfs:label "蜂乐玛社群运营中台本体"@zh ;
+    rdfs:label "主理人社群运营中台本体"@zh ;
     rdfs:comment """设计期概念权威（design-time authority）。
 本体定义中台全部核心业务概念、对象属性与公理，是数据库 schema 与 API DTO 的映射源头
 （对照关系见同目录 MAPPING.md）。运行时存储为 PostgreSQL，不做运行时推理——
 本文件服务于建模评审、术语统一与未来的语义校验（Jena/RDF4J 可直接加载）。
-概念与状态机对齐《蜂乐玛社群运营中台-业务逻辑与项目说明》V1.0（SPEC §4/§5/§8/§13.3）。"""@zh ;
-    owl:versionInfo "0.1.0" .
+概念与状态机对齐《主理人社群运营中台-业务逻辑与项目说明》V1.0（SPEC §4/§5/§8/§13.3）；
+M3 增量（权益域/代理归属/企微化/运营内容域）对齐《技术方案-M3微信生态社群》§4。"""@zh ;
+    owl:versionInfo "0.2.0" .
 
 #################################################################
 # 一、顶层划分
@@ -214,7 +215,7 @@
 :OrderReference a owl:Class ;
     rdfs:subClassOf :BusinessObject ;
     rdfs:label "订单引用（只读镜像）"@zh ;
-    rdfs:comment "订单、支付、退款、佣金和财务结果由外部订单/支付系统负责（SPEC §2.2）；中台仅保留外部订单的引用镜像用于档案与查询，保留来源系统、外部 ID、同步时间和版本（SPEC §13.1）。"@zh .
+    rdfs:comment "项目方订单、支付、退款、佣金和财务结果由外部订单/支付系统负责（SPEC §2.2）；中台仅保留外部订单的引用镜像用于档案与查询，保留来源系统、外部 ID、同步时间和版本（SPEC §13.1）。注意与 :MembershipOrder（会员费一方订单，中台为事实源）相区分——边界变更见 M3 方案 §3。"@zh .
 
 :ActivityRecord a owl:Class ;
     rdfs:subClassOf :BusinessObject ;
@@ -237,6 +238,42 @@
     rdfs:subClassOf :BusinessObject ;
     rdfs:label "邀请码/推广码"@zh ;
     rdfs:comment "短码与场景值映射，7 天有效自动轮换；扫码归因写入统一会员档案。"@zh .
+
+#################################################################
+# 八之二、权益域（M3 §4.1：会员费一方交易 + 付费门控）
+#################################################################
+
+:MembershipPlan a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "会员套餐"@zh ;
+    rdfs:comment "可购买的会员权益套餐：授予身份（grantsIdentity→dict member_identity 付费档）、权益时长（买断周期：月/季/年卡）、双端定价（iOS 单独定价对冲苹果税）、项目范围与上下架状态。M3 先做主动支付买断，自动续费订阅待 DAU 达标后 M4。"@zh .
+
+:MembershipOrder a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "会员费订单（一方交易）"@zh ;
+    rdfs:comment """会员费是中台唯一的一方交易域（M3 方案 §3 边界变更）：小程序虚拟支付收款，中台为该类订单的事实源，区别于 :OrderReference 只读镜像。
+状态机：待支付→已支付→（退款中→已退款）/已关闭；TRANSITIONS 表管控，禁直改。
+支付回调以 callback_id 幂等（重复回调返回首次结果）；amount 与费率快照留痕（费率随政策变动）。
+支付成功事务内：upsert 会员项目身份（grant_identity、status=有效、valid_until 续费叠加）+ 时间线 + 审计。"""@zh .
+
+#################################################################
+# 八之三、运营内容域（M3 §4.4：欢迎语/群发/讲课）
+#################################################################
+
+:WelcomeTemplate a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "入群欢迎语模板"@zh ;
+    rdfs:comment "企微入群欢迎语素材（唯一全自动出站通道）：按群类型/项目圈定范围，content 为结构化 JSONB（文本+附件），映射企微素材库 id（≤100 条约束在服务层校验）。"@zh .
+
+:BroadcastPlan a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "群发排期"@zh ;
+    rdfs:comment "客户群群发是半自动通道（API 建任务→群主客户端一键确认；每群每天≤1 条，额度在派发器校验）。派发时按目标范围生成 task_item（task_type=群发确认），群主确认后回填留痕——复用「任务派发→人工执行→回填」模式（SPEC §2.3）。状态：草稿→待派发→派发中→已完成/已取消。"@zh .
+
+:CourseSession a owl:Class ;
+    rdfs:subClassOf :BusinessObject ;
+    rdfs:label "讲课排期"@zh ;
+    rdfs:comment "企微群直播讲课：排课→网关 createLive→开播（外部会员微信内观看）→回放 url 回填（回放存 3 年）。直播链接经欢迎语/群发分发，不占群发额度。状态：已排期→直播中→已结束/已取消。"@zh .
 
 #################################################################
 # 九、治理域（SPEC §11/§12/§13.2）
@@ -364,6 +401,17 @@
     rdfs:domain :RiskEvent ;
     rdfs:range :TaskItem .
 
+:ownedByMember a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "群归属代理"@zh ;
+    rdfs:domain :CommunityGroup ;
+    rdfs:range :Member ;
+    rdfs:comment "「代理名下的群」（M3 §4.2 需求③）：代理/运营商/城市合伙人邀请的新会员优先安置进其名下群（推荐引擎第 0 级「邀请归属优先」硬规则，resource_rules.affinity_first 可关）。归属调整属高风险动作，走审批单。"@zh .
+
+:orderOfPlan a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:label "订单所购套餐"@zh ;
+    rdfs:domain :MembershipOrder ;
+    rdfs:range :MembershipPlan .
+
 #################################################################
 # 十一、关键数据属性（阈值公理，运行时读 resource_rules 表）
 #################################################################
@@ -397,3 +445,25 @@
     rdfs:label "邀请成长值"@zh ;
     rdfs:range xsd:integer ;
     rdfs:comment "邀请成功默认 +288，可配置。"@zh .
+
+:wecomChatId a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "企微客户群 chat_id"@zh ;
+    rdfs:domain :CommunityGroup ;
+    rdfs:range xsd:string ;
+    rdfs:comment "群载体迁企微后的官方群标识（M3 §4.3）；进退群回调经 chat_id 关联进八态漏斗。唯一（部分索引）。"@zh .
+
+:grantsIdentity a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:label "套餐授予身份"@zh ;
+    rdfs:domain :MembershipPlan ;
+    rdfs:range xsd:string ;
+    rdfs:comment "取值 = dict member_identity 付费档（pro/premium/black_gold/vip）。支付成功后写入会员项目身份，valid_until 按 duration_days 叠加。"@zh .
+
+:wecomGroupCap a owl:DatatypeProperty ;
+    rdfs:label "企微客户群硬上限"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "微信平台硬顶：含微信用户的客户群 200 人/群，不可升级。target_capacity 不得超过此值；运行时读 resource_rules.wecom_group_cap。"@zh .
+
+:broadcastDailyQuota a owl:DatatypeProperty ;
+    rdfs:label "客户群群发日额度"@zh ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "派发器对单群单日群发确认任务的额度。官方频控为每群每月≤当月天数、可在企微管理端调为每周7条/每天1条（官方文档 92135）；本值须与企业在企微管理端的群发规则一致，默认 1（最严档）。运行时读 resource_rules.broadcast_daily_quota。"@zh .

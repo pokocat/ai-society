@@ -207,10 +207,10 @@ function UsersWorkbench() {
           <p style={{ color: L.muted, fontSize: "11px" }}>查看并管理所有用户信息、服务记录与操作日志</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button disabled title="M2 接线" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.surface2, color: L.textSec, border: `1px solid ${L.border}` }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.surface2, color: L.textSec, border: `1px solid ${L.border}` }}>
             <Download size={12} />导出
           </button>
-          <button disabled title="M2 接线" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+          <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
             <Plus size={12} />添加用户
           </button>
         </div>
@@ -331,9 +331,9 @@ function UsersWorkbench() {
                 </div>
                 {/* Action buttons（写操作待 M2 接线） */}
                 <div className="flex gap-2 flex-shrink-0">
-                  <button disabled title="M2 接线" className="px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: "#818cf8", border: `1px solid rgba(67,97,238,0.3)` }}>发提醒</button>
-                  <button disabled title="M2 接线" className="px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}>分配群</button>
-                  <button disabled title="M2 接线" className="px-3 py-1.5 rounded-lg text-xs text-white flex items-center gap-1 opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
+                  <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: L.primaryBg, color: "#818cf8", border: `1px solid rgba(67,97,238,0.3)` }}>发提醒</button>
+                  <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }}>分配群</button>
+                  <button disabled title="接线中" className="px-3 py-1.5 rounded-lg text-xs text-white flex items-center gap-1 opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>
                     <Plus size={11} />建工单
                   </button>
                 </div>
@@ -447,7 +447,7 @@ function UsersWorkbench() {
                   <div className="text-center py-10">
                     <Users size={28} className="mx-auto mb-3" style={{ color: L.muted }} />
                     <div className="text-sm mb-3" style={{ color: L.muted }}>会员尚未分配群组</div>
-                    <button disabled title="M2 接线" className="px-5 py-2 rounded-xl text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>立即分配群组</button>
+                    <button disabled title="接线中" className="px-5 py-2 rounded-xl text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(90deg, #4361ee, #7c3aed)" }}>立即分配群组</button>
                   </div>
                 ) : (
                   <div className="space-y-2.5">

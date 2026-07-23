@@ -38,7 +38,7 @@ public class SyncService {
 
     public record IncomingMember(String name, String phone, String city, String sourceChannel,
                                  String projectId, String identity, String referrerNo, String inviteCode,
-                                 String unionid, String wechatId) {
+                                 String unionid, String wechatId, String mpOpenid) {
     }
 
     /** 待分配会员进线（SPEC §6.4）：统一会员匹配（去重）→ 项目身份（待分配）→ 可选推荐关系绑定。 */
@@ -57,6 +57,9 @@ public class SyncService {
             if (existing == null && in.wechatId() != null) {
                 existing = findByIdentifier("个微号", in.wechatId());
             }
+            if (existing == null && in.mpOpenid() != null) {
+                existing = findByIdentifier("小程序openid", in.mpOpenid());
+            }
             long memberId;
             String memberNo;
             boolean created = existing == null;
@@ -72,6 +75,7 @@ public class SyncService {
                 registerIdentifier(memberId, "手机号", in.phone(), sourceSystem);
                 registerIdentifier(memberId, "unionid", in.unionid(), sourceSystem);
                 registerIdentifier(memberId, "个微号", in.wechatId(), sourceSystem);
+                registerIdentifier(memberId, "小程序openid", in.mpOpenid(), sourceSystem);
             } else {
                 memberId = existing;
                 memberNo = db.sql("SELECT member_no FROM member WHERE id = :id").param("id", memberId)

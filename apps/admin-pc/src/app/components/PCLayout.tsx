@@ -8,6 +8,7 @@ import {
   Plug, CheckCircle2, RefreshCw, Network, X, UserCog, Palette, ShieldCheck, SlidersHorizontal
 } from "lucide-react";
 import { useProject } from "../contexts/ProjectContext";
+import { approvalsApi, riskApi } from "../../api";
 import type { AuthUser } from "../../api/auth";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -23,9 +24,9 @@ const navGroups = [
   {
     label: "工作台",
     items: [
-      { id: "workspace",    label: "跨项目工作台", icon: Network,         badge: "12" },
+      { id: "workspace",    label: "跨项目工作台", icon: Network,         badge: null },
       { id: "overview",     label: "经营总览",     icon: LayoutDashboard, badge: null },
-      { id: "integrations", label: "项目接入中心", icon: Plug,            badge: "2"  },
+      { id: "integrations", label: "项目接入中心", icon: Plug,            badge: null },
       { id: "resourceconfig", label: "项目资源配置", icon: SlidersHorizontal, badge: null },
     ]
   },
@@ -33,7 +34,7 @@ const navGroups = [
     label: "账号与人员",
     items: [
       { id: "accounts",   label: "账号资产中心",  icon: Database,        badge: null },
-      { id: "wechat",     label: "微信管理",      icon: MessageCircle,   badge: "2"  },
+      { id: "wechat",     label: "微信管理",      icon: MessageCircle,   badge: null },
       { id: "staff",      label: "员工资源绑定",  icon: User,            badge: null },
       { id: "permissions", label: "权限设置",      icon: Shield,          badge: null },
     ]
@@ -42,24 +43,32 @@ const navGroups = [
     label: "社群与客服",
     items: [
       { id: "community",  label: "微信群管理",    icon: Users2,          badge: null },
-      { id: "assignment", label: "会员入群分配",  icon: GitBranch,       badge: "8"  },
+      { id: "assignment", label: "会员入群分配",  icon: GitBranch,       badge: null },
       { id: "cs",         label: "客服与服务资源", icon: Headphones,      badge: null },
       { id: "channel",    label: "渠道流量绑定",  icon: Radio,           badge: null },
     ]
   },
   {
+    label: "会员权益与内容",
+    items: [
+      { id: "membership", label: "会员权益中心", icon: ShieldCheck,   badge: null },
+      { id: "content",    label: "内容运营中心", icon: Radio,         badge: null },
+      { id: "agents",     label: "代理商总览",   icon: Network,       badge: null },
+    ],
+  },
+  {
     label: "会员运营",
     items: [
-      { id: "users",      label: "会员运营工作台", icon: User, badge: "3" },
+      { id: "users",      label: "会员运营工作台", icon: User, badge: null },
     ]
   },
   {
     label: "交易与服务",
     items: [
-      { id: "orders",     label: "支付订单",     icon: CreditCard,     badge: "3"  },
+      { id: "orders",     label: "支付订单",     icon: CreditCard,     badge: null },
       { id: "commission", label: "分销佣金",     icon: DollarSign,     badge: null },
-      { id: "tickets",    label: "工单中心",     icon: FileText,       badge: "12" },
-      { id: "approval",   label: "审批中心",     icon: ClipboardCheck, badge: "18" },
+      { id: "tickets",    label: "工单中心",     icon: FileText,       badge: null },
+      { id: "approval",   label: "审批中心",     icon: ClipboardCheck, badge: null },
     ]
   },
   {
@@ -112,7 +121,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
   const activeItem = navItems.find(i => i.id === activeModule);
   const displayName = user?.displayName ?? "未登录";
   const roleLabel = ROLE_LABELS[user?.roleCode ?? ""] ?? user?.roleCode ?? "—";
-  const avatarChar = displayName.trim().charAt(0) || "蜂";
+  const avatarChar = displayName.trim().charAt(0) || "主";
   const { projects, currentProject, currentProjectId, setCurrentProjectId, syncProject } = useProject();
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -122,6 +131,39 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(
     navGroups.map((group, index) => [group.label, index < 4])
   ));
+
+  // 顶栏/侧边栏的实时计数：待审批单数、未解决高风险数（真实接口，加载失败则不显示角标）
+  const [pendingApprovals, setPendingApprovals] = useState<number | null>(null);
+  const [openHighRisks, setOpenHighRisks] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const rows = await approvalsApi.listApprovals({ status: "待审批" });
+        if (!cancelled) setPendingApprovals(rows.length);
+      } catch { /* 未授权或接口异常时不显示角标 */ }
+      try {
+        const risks = await riskApi.listRiskEvents({ level: "高" });
+        if (!cancelled) setOpenHighRisks(risks.filter(r => r.status === "待处理" || r.status === "处理中").length);
+      } catch { /* 同上 */ }
+    };
+    load();
+    const timer = window.setInterval(load, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
+  const liveBadges: Record<string, number> = {};
+  if (pendingApprovals) liveBadges.approval = pendingApprovals;
+  if (openHighRisks) liveBadges.risk = openHighRisks;
+  const bellCount = (pendingApprovals ?? 0) + (openHighRisks ?? 0);
+
+  const today = useMemo(() => {
+    const now = new Date();
+    const week = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()];
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${week}`;
+  }, []);
 
   const searchResults = useMemo(() => {
     const keyword = topSearch.trim();
@@ -167,7 +209,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
             <Zap size={14} style={{ color: D.ink }} />
           </div>
           <div className="min-w-0">
-            <div className="font-bold leading-tight" style={{ fontSize: "13px", color: D.sideText }}>蜂乐玛</div>
+            <div className="font-bold leading-tight" style={{ fontSize: "13px", color: D.sideText }}>主理人</div>
             <div className="truncate" style={{ color: D.sideMuted, fontSize: "10px" }}>私域社群运营中台</div>
           </div>
           <div className="ml-auto">
@@ -175,11 +217,13 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
           </div>
         </div>
 
-        {/* Risk alert —— 点击跳转风险中心 */}
-        <div onClick={() => onModuleChange("risk")} className="mx-3 mt-3 px-2.5 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]" style={{ background: "rgba(255,77,79,0.12)", border: "1px solid rgba(255,77,79,0.32)" }}>
-          <AlertTriangle size={11} style={{ color: D.danger, flexShrink: 0 }} />
-          <span style={{ color: "#ffb4b5", fontSize: "11px" }}>高风险事项待处理</span>
-        </div>
+        {/* Risk alert —— 有未解决高风险事件时才显示，点击跳转风险中心 */}
+        {(openHighRisks ?? 0) > 0 && (
+          <div onClick={() => onModuleChange("risk")} className="mx-3 mt-3 px-2.5 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-[1.02]" style={{ background: "rgba(255,77,79,0.12)", border: "1px solid rgba(255,77,79,0.32)" }}>
+            <AlertTriangle size={11} style={{ color: D.danger, flexShrink: 0 }} />
+            <span style={{ color: "#ffb4b5", fontSize: "11px" }}>{openHighRisks} 个高风险事项待处理</span>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 py-2 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
@@ -222,9 +266,9 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
                   >
                     <Icon size={14} style={{ flexShrink: 0, color: isActive ? D.ink : D.sideMuted }} />
                     <span className="flex-1">{item.label}</span>
-                    {item.badge && (
-                      <span className="px-1.5 py-0.5 rounded-full animate-pulse" style={{ background: isActive ? D.ink : "rgba(182,255,0,0.16)", color: isActive ? D.primary : D.sideMuted, fontSize: "9px" }}>
-                        {item.badge}
+                    {liveBadges[item.id] != null && (
+                      <span className="px-1.5 py-0.5 rounded-full" style={{ background: isActive ? D.ink : "rgba(182,255,0,0.16)", color: isActive ? D.primary : D.sideMuted, fontSize: "9px" }}>
+                        {liveBadges[item.id]}
                       </span>
                     )}
                   </button>
@@ -333,25 +377,28 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
             <div className="relative">
               <button aria-label="打开通知中心" title="通知中心" onClick={() => setOpenPanel(panel => panel === "notifications" ? null : "notifications")} className="relative w-8 h-8 rounded-md flex items-center justify-center" style={{ background: openPanel === "notifications" ? D.surface2 : "transparent", border: `1px solid ${openPanel === "notifications" ? D.border : "transparent"}` }}>
                 <Bell size={15} style={{ color: D.textSec }} />
-                <div className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-red-500 text-white flex items-center justify-center animate-pulse" style={{ fontSize: "9px" }}>3</div>
+                {bellCount > 0 && (
+                  <div className="absolute top-0.5 right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-red-500 text-white flex items-center justify-center" style={{ fontSize: "9px" }}>{bellCount > 99 ? "99+" : bellCount}</div>
+                )}
               </button>
               {openPanel === "notifications" && (
                 <div className="absolute right-0 top-10 z-50 w-[300px] rounded-md shadow-2xl overflow-hidden" style={{ background: D.surface, border: `1px solid ${D.border}` }}>
-                  <div className="px-3 py-2.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${D.border}` }}>
+                  <div className="px-3 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
                     <span style={{ color: D.text, fontSize: "11px", fontWeight: 600 }}>通知中心</span>
-                    <button disabled title="M2 接线" className="disabled:opacity-50 disabled:cursor-not-allowed" style={{ color: D.muted, fontSize: "9px" }}>全部已读</button>
                   </div>
-                  {/* 通知项为只读展示（定位/跳转尚未接线，M2）：不再弹假「已定位」toast */}
-                  {[
-                    ["高风险", "2 个社群容量接近上限，需要分流", D.danger],
-                    ["待审批", "18 个权限与退款审批等待处理", D.warning],
-                    ["同步完成", `${currentProject.shortName} 数据刚刚同步`, D.success],
-                  ].map(([tag, text, color]) => (
-                    <div key={tag} className="w-full px-3 py-2.5 text-left" style={{ borderBottom: `1px solid ${D.border}` }}>
+                  {/* 通知项由实时接口计数生成，点击跳转对应模块 */}
+                  {([
+                    (openHighRisks ?? 0) > 0 ? ["高风险", `${openHighRisks} 个高风险事项待处理`, D.danger, "risk"] as const : null,
+                    (pendingApprovals ?? 0) > 0 ? ["待审批", `${pendingApprovals} 个审批单等待处理`, D.warning, "approval"] as const : null,
+                  ].filter(Boolean) as ReadonlyArray<readonly [string, string, string, string]>).map(([tag, text, color, moduleId]) => (
+                    <button key={tag} onClick={() => { onModuleChange(moduleId); setOpenPanel(null); }} className="w-full px-3 py-2.5 text-left" style={{ borderBottom: `1px solid ${D.border}` }}>
                       <span className="px-1.5 py-0.5 rounded" style={{ color, background: `${color}18`, fontSize: "8px" }}>{tag}</span>
                       <span className="block mt-1.5" style={{ color: D.textSec, fontSize: "10px" }}>{text}</span>
-                    </div>
+                    </button>
                   ))}
+                  {bellCount === 0 && (
+                    <div className="px-3 py-4" style={{ color: D.muted, fontSize: "10px" }}>暂无待办通知</div>
+                  )}
                 </div>
               )}
             </div>
@@ -380,7 +427,7 @@ export default function PCLayout({ activeModule, onModuleChange, children, user,
               )}
             </div>
             <div className="px-2.5 py-1 rounded-md" style={{ background: D.surface2, color: D.muted, fontSize: "11px", border: `1px solid ${D.border}` }}>
-              2026-07-07 周二
+              {today}
             </div>
             <div className="relative">
               <button aria-label="打开账号菜单" title="账号菜单" onClick={() => setOpenPanel(panel => panel === "profile" ? null : "profile")} className="flex items-center gap-2 rounded-md px-1 py-0.5">

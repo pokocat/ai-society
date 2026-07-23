@@ -1,0 +1,27 @@
+.hd--earn { padding-bottom: 10rpx; }
+.title-block { display: block; margin-bottom: 30rpx; }
+.hero-flush { margin: 0 6rpx; }
+.hero-k { font-size: 22rpx; color: #9B9A97; }
+.amt-wrap { margin: 10rpx 0 14rpx; }
+.amt { font-size: 64rpx; font-weight: 700; color: #111111; letter-spacing: -1rpx; }
+.hero-note { font-size: 22rpx; color: #9B9A97; }
+
+.withdraw-wrap { margin: 0 40rpx 30rpx; }
+.withdraw-hint { margin-top: 12rpx; text-align: center; }
+.card--list { padding-top: 6rpx; padding-bottom: 6rpx; }
+.empty-row { padding: 30rpx 0; }
+.wd-row { gap: 20rpx; }
+.foot-note { margin: 0 40rpx; }
+
+.form-balance { margin-top: 30rpx; padding: 24rpx; border-radius: 20rpx; background: #F7F6F3; border: 1rpx solid #EAEAEA; }
+.form-balance-k { font-size: 20rpx; color: #9B9A97; }
+.form-balance-v { font-size: 44rpx; font-weight: 600; color: #111111; }
+.form-hint { margin-top: 10rpx; min-height: 30rpx; }
+.form-hint-text { font-size: 20rpx; color: #9B9A97; }
+.form-hint-text--error { color: #9F2F2D; }
+.method-picker { margin-top: 14rpx; padding: 22rpx 26rpx; border-radius: 16rpx; background: #F7F6F3; border: 1rpx solid #EAEAEA; }
+
+.mt-6 { margin-top: 6rpx; }
+.mt-26 { margin-top: 26rpx; }
+.mt-30 { margin-top: 30rpx; }
+.mt-40 { margin-top: 40rpx; }

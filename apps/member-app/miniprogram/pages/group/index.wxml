@@ -1,0 +1,82 @@
+<view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
+  <view class="hd">
+    <text class="hd-title">我的社群</text>
+    <view><text class="hd-sub">{{subTitle}}</text></view>
+  </view>
+
+  <view wx:if="{{!loaded}}" class="card"><text class="t-muted">加载中…</text></view>
+
+  <view wx:elif="{{!a}}" class="card empty-card">
+    <text class="t-title">{{hasPaid ? '正在为你匹配社群' : '开通会员后进群'}}</text>
+    <view class="mt-14"><text class="t-muted">{{hint}}</text></view>
+    <button wx:if="{{!hasPaid}}" class="btn btn--gradient mt-40" bind:tap="goHome">去开通会员</button>
+  </view>
+
+  <block wx:else>
+    <!-- 群卡（渐变高亮） -->
+    <view class="glow-label">
+      <text class="glow-label-text">{{a.isJoined ? '已加入' : '为你安排的群'}}</text>
+    </view>
+    <view class="card-glow">
+      <view class="f group-head">
+        <view class="avatar avatar--md">{{a.char}}</view>
+        <view class="f-1">
+          <text class="t-strong">{{a.groupName}}</text>
+          <view class="mt-6">
+            <text class="t-muted">{{a.memberCount}} 人{{teacher ? ' · ' + teacher.name : ''}}</text>
+          </view>
+        </view>
+        <text class="tag {{a.isJoined ? 'tag--green' : ''}}">{{a.statusText}}</text>
+      </view>
+
+      <!-- 群容量 -->
+      <view class="f-between cap-row">
+        <text class="t-muted">群容量</text>
+        <text class="cap-num {{a.nearFull ? 'cap-num--danger' : ''}}">
+          {{a.memberCount}}/{{a.capacity}}{{a.nearFull ? ' · 接近满群' : ''}}
+        </text>
+      </view>
+      <view class="progress-track">
+        <view class="progress-fill {{a.nearFull ? 'progress-fill--danger' : ''}}" style="width:{{a.ratioPct}}%" />
+      </view>
+
+      <view class="mt-22"><text class="t-muted">{{a.statusHint}}</text></view>
+      <view wx:if="{{a.joinedAt}}" class="mt-6"><text class="t-muted">入群时间：{{a.joinedAt}}</text></view>
+
+      <!-- 企微活码已下发：二维码直接摊开，长按即可进群（自助路径的首要行动点） -->
+      <view wx:if="{{selfJoin && qrUrl && !a.isJoined}}" class="selfjoin">
+        <image src="{{qrUrl}}" show-menu-by-longpress class="selfjoin-qr" />
+        <text class="selfjoin-tip">长按二维码 · 立即进群</text>
+      </view>
+
+      <button wx:elif="{{qrUrl && !a.isJoined}}" class="btn btn--primary mt-30" bind:tap="openQR">
+        <ui-icon name="qr-code" size="{{30}}" color="#ffffff" />
+        查看入群二维码
+      </button>
+    </view>
+
+    <!-- 服务老师 -->
+    <view wx:if="{{teacher}}" class="card f teacher-card">
+      <view class="avatar avatar--md">{{teacher.char}}</view>
+      <view class="f-1">
+        <text class="t-strong">{{teacher.name}}</text>
+        <view class="mt-6"><text class="t-muted">{{teacher.metaText}}</text></view>
+        <view class="mt-6"><text class="t-muted">入群/服务问题都可以在群里 @ 老师</text></view>
+      </view>
+      <ui-icon name="headphones" size="{{34}}" color="#346538" />
+    </view>
+
+    <!-- 入群二维码弹窗（真实 group_qrcode） -->
+    <view wx:if="{{showQR && qrUrl}}" class="modal-mask" catch:touchmove="noop" bind:tap="closeQR">
+      <view class="modal-body" catch:tap="noop">
+        <text class="t-strong">{{a.groupName}}</text>
+        <view class="mt-8"><text class="t-muted">长按识别进群</text></view>
+        <view class="qr-box">
+          <image src="{{qrUrl}}" show-menu-by-longpress class="qr-img" />
+        </view>
+        <button class="btn btn--ghost mt-30" bind:tap="closeQR">关闭</button>
+      </view>
+    </view>
+  </block>
+</view>

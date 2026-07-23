@@ -1,0 +1,204 @@
+<view class="page">
+  <ui-errbar wx:if="{{loadError}}" msg="{{loadError}}" retrying="{{retrying}}" bind:retry="retryLoad" />
+  <!-- 渐变头区：问候 + 铃铛 + 会员卡 + 快捷宫格 -->
+  <view class="hd hd--home">
+    <view class="f-between top-row">
+      <view>
+        <view class="f greet-row">
+          <text class="greet">{{greeting}}</text>
+          <ui-icon name="sparkles" size="{{26}}" color="#956400" />
+        </view>
+        <view class="f sub-row">
+          <ui-icon name="star" size="{{20}}" color="#956400" fill="{{true}}" />
+          <text class="t-muted">{{subText}}</text>
+        </view>
+      </view>
+      <view class="bell-wrap" bind:tap="openNotify">
+        <view class="bell f-center">
+          <ui-icon name="bell" size="{{32}}" color="#787774" />
+        </view>
+        <view wx:if="{{notifications.length > 0}}" class="badge">{{notifications.length}}</view>
+      </view>
+    </view>
+
+    <!-- 会员卡 -->
+    <view class="card-hero hero-flush">
+      <view class="f-between hero-top">
+        <view>
+          <view class="f hero-id-row">
+            <text class="hero-eyebrow">{{identityLabel}}</text>
+          </view>
+          <text class="hero-name">主理人私域会员</text>
+        </view>
+        <view class="avatar avatar--card avatar--sm">{{avatarChar}}</view>
+      </view>
+      <view class="f-between hero-bottom">
+        <view>
+          <text class="hero-k">会员有效期</text>
+          <view><text class="hero-v">{{periodText}}</text></view>
+        </view>
+        <view class="ta-r">
+          <text class="hero-k">积分余额</text>
+          <view><text class="hero-v hero-v--strong">{{pointsText}} 分</text></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷宫格 -->
+    <view class="qa-grid">
+      <view
+        wx:for="{{quickActions}}"
+        wx:key="label"
+        class="qa-tile"
+        data-type="{{item.type}}"
+        data-url="{{item.url}}"
+        bind:tap="quickTap"
+      >
+        <view class="qa-icon" style="background:{{item.bg}}">
+          <ui-icon name="{{item.icon}}" size="{{32}}" color="{{item.color}}" />
+        </view>
+        <text class="qa-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程公告轮播（真实排课；无排课不显示） -->
+  <view wx:if="{{courses.length > 0}}" class="card mt-30" bind:tap="goCourses">
+    <view class="f-between">
+      <view class="f f-1 course-row">
+        <view class="dot--pulse" />
+        <view class="f-1">
+          <text class="t-body fw-500">{{courses[courseIdx].title}}</text>
+          <view class="mt-4"><text class="t-muted">{{courses[courseIdx].metaText}}</text></view>
+        </view>
+      </view>
+      <view class="f dots" catch:tap="noop">
+        <view
+          wx:for="{{courses}}"
+          wx:key="index"
+          class="dot {{index === courseIdx ? 'dot--active' : ''}}"
+          data-i="{{index}}"
+          bind:tap="setCourseIdx"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的数据（真实：关系链影响力/直接邀请/可提现） -->
+  <view class="section-head section-head--first">
+    <text class="section-title">我的数据</text>
+  </view>
+  <view class="stat-grid">
+    <view wx:for="{{stats}}" wx:key="label" class="stat-card">
+      <text class="stat-label">{{item.label}}</text>
+      <view><text class="stat-value" style="color:{{item.color}}">{{item.value}}</text></view>
+    </view>
+  </view>
+
+  <!-- 我的服务老师（本群主责客服；未分配不显示） -->
+  <block wx:if="{{teacher}}">
+    <view class="section-head"><text class="section-title">我的服务老师</text></view>
+    <view class="card f teacher-card">
+      <view class="avatar avatar--md">{{teacher.char}}</view>
+      <view class="f-1">
+        <text class="t-strong">{{teacher.name}}</text>
+        <view class="mt-6"><text class="t-muted">{{teacher.metaText}}</text></view>
+      </view>
+      <view class="btn btn--primary btn--mini" bind:tap="openService">联系</view>
+    </view>
+  </block>
+
+  <!-- 待办任务（真实 member_task；无待办不显示） -->
+  <block wx:if="{{todos.length > 0}}">
+    <view class="section-head">
+      <text class="section-title">待办事项</text>
+      <text class="t-primary" bind:tap="goTasks">查看全部</text>
+    </view>
+    <view class="card card--list">
+      <view wx:for="{{todos}}" wx:key="id" class="row" bind:tap="goTasks">
+        <view class="f f-1 todo-row">
+          <view class="todo-dot {{item.urgent ? 'todo-dot--urgent' : ''}}" />
+          <text class="t-sec">{{item.title}}</text>
+        </view>
+        <text class="t-muted">{{item.timeText}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 未开通会员：套餐购买（真实下单 + Mock 支付；iOS 端受平台政策限制隐藏购买入口） -->
+  <block wx:if="{{!isPaid && !iosLimited && plans.length > 0}}">
+    <view class="section-head"><text class="section-title">开通会员</text></view>
+    <view class="card">
+      <view wx:for="{{plans}}" wx:key="code" class="row">
+        <view>
+          <text class="t-strong">{{item.name}}</text>
+          <view class="mt-4"><text class="t-muted">{{item.metaText}}</text></view>
+        </view>
+        <button
+          class="btn btn--primary btn--mini"
+          loading="{{busyCode === item.code}}"
+          data-code="{{item.code}}"
+          bind:tap="buy"
+        >
+          ¥{{item.priceText}} 开通
+        </button>
+      </view>
+      <view class="mt-16"><text class="t-muted">当前为演示支付（Mock）；正式版走微信虚拟支付</text></view>
+    </view>
+  </block>
+  <block wx:if="{{!isPaid && iosLimited}}">
+    <view class="section-head"><text class="section-title">开通会员</text></view>
+    <view class="card">
+      <text class="t-sec">受 iOS 平台政策限制，暂不支持在 iPhone 上购买会员。可联系在线客服协助开通。</text>
+      <button class="btn btn--ghost mt-16" open-type="contact">联系在线客服</button>
+    </view>
+  </block>
+
+  <!-- 邀请入口（分享按钮附近不出现利益字样——审核合规） -->
+  <view class="card">
+    <view class="f invite-title-row">
+      <ui-icon name="gift" size="{{32}}" color="#346538" />
+      <text class="t-title">邀请好友，一起进圈</text>
+    </view>
+    <view class="mt-10"><text class="t-muted">把圈子分享给同频的朋友，一起交流成长</text></view>
+    <view class="f invite-btns">
+      <button class="btn btn--gradient invite-share-btn" open-type="share">转发给好友</button>
+      <button class="btn btn--ghost f-1" bind:tap="goInvite">我的邀请</button>
+    </view>
+  </view>
+
+  <!-- 联系服务老师弹层 -->
+  <ui-sheet wx:if="{{serviceOpen && teacher}}" title="联系服务老师" bind:close="closeService">
+    <view class="f sheet-teacher">
+      <view class="avatar avatar--sm">{{teacher.char}}</view>
+      <view class="f-1">
+        <text class="t-body fw-500">{{teacher.name}}</text>
+        <view class="mt-6"><text class="t-muted">{{teacher.metaText}} · 专属服务</text></view>
+      </view>
+      <ui-icon name="headphones" size="{{34}}" color="#346538" />
+    </view>
+    <view class="mt-20">
+      <text class="t-muted">入群、权益、课程问题都可以在社群里 @ 老师，老师会第一时间回复。</text>
+    </view>
+    <button class="btn btn--primary mt-30" open-type="contact">
+      <ui-icon name="message-circle" size="{{28}}" color="#FFFFFF" />
+      在线客服
+    </button>
+    <button class="btn btn--ghost mt-16" bind:tap="serviceToGroup">去社群找老师</button>
+  </ui-sheet>
+
+  <!-- 消息通知弹层（真实数据聚合） -->
+  <ui-sheet wx:if="{{notifyOpen}}" title="消息通知" bind:close="closeNotify">
+    <view class="mt-30">
+      <view wx:if="{{notifications.length === 0}}" class="notify-empty">
+        <text class="t-muted">暂无新消息</text>
+      </view>
+      <view wx:for="{{notifications}}" wx:key="*this" class="f notify-item">
+        <ui-icon name="megaphone" size="{{28}}" color="{{index === 0 ? '#956400' : '#1F6C9F'}}" extStyle="margin-top:4rpx" />
+        <text class="t-sec f-1">{{item}}</text>
+        <view class="notify-dot" />
+      </view>
+    </view>
+    <button class="btn btn--ghost mt-20" bind:tap="closeNotify">知道了</button>
+  </ui-sheet>
+</view>

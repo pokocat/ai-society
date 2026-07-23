@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "邀请好友",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "ui-icon": "/components/icon/index",
+    "ui-errbar": "/components/errbar/index"
+  },
+  "backgroundColor": "#F7F6F3"
+}

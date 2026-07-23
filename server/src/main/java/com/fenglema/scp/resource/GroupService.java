@@ -2,7 +2,9 @@ package com.fenglema.scp.resource;
 
 import com.fenglema.scp.common.AuditService;
 import com.fenglema.scp.common.BusinessException;
+import com.fenglema.scp.common.Json;
 import com.fenglema.scp.common.Rows;
+import com.fenglema.scp.gateway.CommunityGateway;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +18,12 @@ public class GroupService {
 
     private final JdbcClient db;
     private final AuditService audit;
+    private final CommunityGateway gateway;
 
-    public GroupService(JdbcClient db, AuditService audit) {
+    public GroupService(JdbcClient db, AuditService audit, CommunityGateway gateway) {
         this.db = db;
         this.audit = audit;
+        this.gateway = gateway;
     }
 
     public List<Map<String, Object>> list(String projectId, String status, String groupType, boolean poolOnly) {
@@ -97,6 +101,13 @@ public class GroupService {
             int current = ((Number) before.get("member_count")).intValue();
             if (req.targetCapacity() < current) {
                 throw BusinessException.conflict("目标容量不得低于当前人数 " + current);
+            }
+            // M3 §4.3：企微客户群硬顶（含微信用户 200 人/群，平台限制不可升级）
+            Integer wecomCap = db.sql("SELECT wecom_group_cap FROM resource_rules WHERE id = 1")
+                    .query(Integer.class).single();
+            if (req.targetCapacity() > wecomCap) {
+                throw BusinessException.conflict("目标容量 " + req.targetCapacity()
+                        + " 超过企微客户群硬顶 " + wecomCap + "（平台限制，不可上调）");
             }
         }
         db.sql("""
@@ -209,13 +220,37 @@ public class GroupService {
                 .param("gid", groupId).query(Integer.class).single();
         db.sql("""
                 INSERT INTO group_qrcode (group_id, version, image_url, valid_until)
-                VALUES (:gid, :v, '/reference-assets/wechat-qr.png', now() + interval '7 days')
+                VALUES (:gid, :v, :url, now() + interval '7 days')
                 """)
-                .param("gid", groupId).param("v", next).update();
+                .param("gid", groupId).param("v", next).param("url", gateway.generateGroupQrcode(groupId).get("imageUrl"))
+                .update();
         db.sql("UPDATE community_group SET qrcode_version = :v, updated_at = now() WHERE id = :gid")
                 .param("v", next).param("gid", groupId).update();
         logEvent(groupId, "二维码轮换", "{\"version\":" + next + "}");
         return detail(groupId);
+    }
+
+    /**
+     * 「加入群聊」活码（M3 §4.3 入群通道+归因主机制）：state ≤30 字符携带归因上下文
+     * （企微平台限制）。网关创建后回填 join_way_id；满员自动开新群由企微侧 auto_create_room 承担。
+     */
+    @Transactional
+    public Map<String, Object> createJoinWay(String groupId, String state) {
+        Map<String, Object> group = get(groupId);
+        if (state != null && state.length() > 30) {
+            throw new BusinessException("state 超过企微 30 字符上限（当前 " + state.length() + "）");
+        }
+        Map<String, Object> joinWay = gateway.createJoinWay(groupId, state);
+        db.sql("UPDATE community_group SET join_way_id = :j, updated_at = now() WHERE id = :g")
+                .param("j", joinWay.get("joinWayId")).param("g", groupId).update();
+        logEvent(groupId, "活码创建", Json.obj("joinWayId", joinWay.get("joinWayId"), "state", state));
+        audit.log("community_group", groupId, "创建入群活码",
+                Map.of("joinWayId", String.valueOf(group.get("join_way_id"))),
+                Map.of("joinWayId", joinWay.get("joinWayId")),
+                (String) group.get("project_id"), null, null);
+        Map<String, Object> out = new HashMap<>(joinWay);
+        out.put("groupId", groupId);
+        return out;
     }
 
     /**

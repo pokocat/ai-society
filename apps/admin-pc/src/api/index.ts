@@ -11,3 +11,6 @@ export * as approvalsApi from "./approvals";
 export * as rulesApi from "./rules";
 export * as riskApi from "./risk";
 export * as employeesApi from "./employees";
+export * as membershipApi from "./membership";
+export * as contentApi from "./content";
+export * as referralApi from "./referral";

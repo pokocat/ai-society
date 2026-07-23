@@ -81,4 +81,14 @@ public class GroupController {
     public ApiResponse<Map<String, Object>> rotateQrcode(@PathVariable String id) {
         return ApiResponse.ok(service.rotateQrcode(id));
     }
+
+    public record JoinWayRequest(String state) {
+    }
+
+    /** 创建企微「加入群聊」活码（M3：state ≤30 字符携带归因上下文，如邀请码）。 */
+    @PostMapping("/{id}/join-way")
+    @Perm(module = "community", action = Perm.Action.EDIT)
+    public ApiResponse<Map<String, Object>> createJoinWay(@PathVariable String id, @RequestBody JoinWayRequest req) {
+        return ApiResponse.ok(service.createJoinWay(id, req.state()));
+    }
 }

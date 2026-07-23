@@ -67,14 +67,15 @@ function AccountActions({ account, employees, onReload, notify }: {
         </button>
         {menuOpen && (
           <div className="absolute left-0 right-0 bottom-full mb-1 z-30 rounded-lg overflow-hidden shadow-2xl" style={{ background: "#131f35", border: "1px solid rgba(99,102,241,0.25)" }}>
+            {/* 深色下拉面板内用浅灰文字，避免橄榄灰在深底上看不清 */}
             {legal.length === 0 ? (
-              <div className="px-3 py-2 text-xs" style={{ color: S.muted }}>无可用流转</div>
+              <div className="px-3 py-2 text-xs" style={{ color: "#94a3b8" }}>无可用流转</div>
             ) : legal.map(target => (
               <button key={target} onClick={() => changeStatus(target)}
                 className="w-full px-3 py-2 text-left text-xs flex items-center justify-between hover:opacity-90"
                 style={{ color: "#e2e8f0", borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
                 <span>{displayStatus(target)}</span>
-                <ChevronDown size={11} style={{ color: S.muted, transform: "rotate(-90deg)" }} />
+                <ChevronDown size={11} style={{ color: "#94a3b8", transform: "rotate(-90deg)" }} />
               </button>
             ))}
           </div>
@@ -91,7 +92,7 @@ function AccountActions({ account, employees, onReload, notify }: {
         <div className="rounded-lg p-2.5 flex flex-col gap-2" style={{ background: "#1a2640", border: "1px solid rgba(99,102,241,0.15)" }}>
           <div className="flex items-center justify-between">
             <span className="text-xs" style={{ color: "#4361ee" }}>发起账号交接</span>
-            <X size={12} style={{ color: S.muted, cursor: "pointer" }} onClick={() => setHandoverOpen(false)} />
+            <X size={12} style={{ color: "#94a3b8", cursor: "pointer" }} onClick={() => setHandoverOpen(false)} />
           </div>
           <select className="w-full px-2 py-1.5 rounded-md text-xs outline-none" style={inp} value={toEmp} onChange={e => setToEmp(e.target.value)}>
             <option value="" style={{ background: "#131f35" }}>选择交接对象…</option>
@@ -351,7 +352,7 @@ function OverviewTab({ search, accounts, employees, onReload, notify }: TabProps
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-2">
-            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑</button>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑</button>
             {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
           </div>
         </div>
@@ -397,7 +398,7 @@ function NewPhoneModal({ onClose, onCreated }: { onClose: () => void; onCreated:
       <div className="w-[560px] rounded-2xl overflow-hidden shadow-2xl" style={{ background: "#131f35", border: "1px solid rgba(99,102,241,0.25)" }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(99,102,241,0.15)" }}>
           <span className="text-white font-semibold">新增手机号</span>
-          <button onClick={onClose}><X size={16} style={{ color: S.muted }} /></button>
+          <button onClick={onClose}><X size={16} style={{ color: "#94a3b8" }} /></button>
         </div>
 
         <div className="p-6 space-y-5" style={{ maxHeight: "70vh", overflowY: "auto" }}>
@@ -408,15 +409,15 @@ function NewPhoneModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>手机号码 *</label>
+                <label className="block text-xs mb-1.5" style={{ color: "#94a3b8" }}>手机号码 *</label>
                 <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="138-xxxx-xxxx" value={form.number} onChange={e => set("number", e.target.value)} />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs mb-1.5" style={{ color: S.muted }}>号码归属区域</label>
+                <label className="block text-xs mb-1.5" style={{ color: "#94a3b8" }}>号码归属区域</label>
                 <input className="w-full px-3 py-2 rounded-lg text-xs outline-none" style={inp} placeholder="如 北京市朝阳区" value={form.region} onChange={e => set("region", e.target.value)} />
               </div>
             </div>
-            <div className="mt-3 text-xs flex items-start gap-1.5" style={{ color: S.muted }}>
+            <div className="mt-3 text-xs flex items-start gap-1.5" style={{ color: "#94a3b8" }}>
               <AlertTriangle size={12} style={{ marginTop: 1, flexShrink: 0 }} />
               运营商 / 身份证 / 证件上传 / 分配归属等尚未接入后端（M2），暂不在此录入，避免收集后无法保存。
             </div>
@@ -473,7 +474,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
         {/* 表格 */}
         <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
           {/* 表头 */}
-          <div className="flex items-center px-4 py-2.5 flex-shrink-0" style={{ background: "#1a2640", borderBottom: `1px solid ${S.border}`, minWidth: "fit-content" }}>
+          <div className="flex items-center px-4 py-2.5 flex-shrink-0" style={{ background: S.surface2, borderBottom: `1px solid ${S.border}`, minWidth: "fit-content" }}>
             {([["手机号码",140],["运营商",80],["归属区域",120],["身份证人",90],["身份证号",150],["证件",64],["分配给",90],["归属项目",130],["已注册账号",200],["状态",80]] as [string,number][]).map(([l,w]) => (
               <div key={l} className="flex-shrink-0 text-xs" style={{ width: w, color: S.muted }}>{l}</div>
             ))}
@@ -504,7 +505,7 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
                   <div className="flex-shrink-0 text-xs font-medium" style={{ width: 90, color: S.text }}>{p.idOwner}</div>
                   {/* 身份证号 */}
                   <div className="flex-shrink-0 flex items-center gap-1.5 text-xs" style={{ width: 150 }}>
-                    <span style={{ color: "#64748b", fontFamily: "monospace" }}>
+                    <span style={{ color: S.muted, fontFamily: "monospace" }}>
                       {showIdNum[p.id] ? p.idNumber : maskId(p.idNumber)}
                     </span>
                     {p.idNumber !== "—" && (
@@ -646,16 +647,16 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
               {detail.registrations.length > 0 ? detail.registrations.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg mb-1.5" style={{ background: "rgba(99,102,241,0.06)", border: `1px solid ${S.border}` }}>
                   <Globe size={11} style={{ color: "#4361ee" }} />
-                  <span className="text-xs" style={{ color: "#64748b" }}>{r}</span>
+                  <span className="text-xs" style={{ color: S.muted }}>{r}</span>
                 </div>
               )) : (
-                <div className="text-xs px-2.5 py-2 rounded-lg" style={{ background: "#1a2640", color: S.muted }}>该手机号尚未注册任何平台账号</div>
+                <div className="text-xs px-2.5 py-2 rounded-lg" style={{ background: S.surface2, color: S.textSec }}>该手机号尚未注册任何平台账号</div>
               )}
             </div>
 
             {/* 备注 */}
             {detail.note && (
-              <div className="p-3 rounded-xl text-xs" style={{ background: "#1a2640", border: `1px solid ${S.border}`, color: "#64748b", lineHeight: 1.6 }}>
+              <div className="p-3 rounded-xl text-xs" style={{ background: S.surface2, border: `1px solid ${S.border}`, color: S.textSec, lineHeight: 1.6 }}>
                 {detail.note}
               </div>
             )}
@@ -673,9 +674,9 @@ function PhoneTab({ search, accounts, employees, onReload, notify }: TabProps) {
 
           {/* 操作按钮 */}
           <div className="p-4 flex flex-col gap-2 flex-shrink-0" style={{ borderTop: `1px solid ${S.border}` }}>
-            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
             {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
-            <button disabled title="M2 接线" className="py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>登记关联账号</button>
+            <button disabled title="接线中" className="py-2 rounded-lg text-xs opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>登记关联账号</button>
           </div>
         </div>
       )}
@@ -694,7 +695,7 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
   return (
     <div className="flex gap-4 flex-1 min-h-0">
       <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-        <div className="flex items-center px-4 py-2.5 gap-4 flex-shrink-0" style={{ background: "#1a2640", borderBottom: `1px solid ${S.border}` }}>
+        <div className="flex items-center px-4 py-2.5 gap-4 flex-shrink-0" style={{ background: S.surface2, borderBottom: `1px solid ${S.border}` }}>
           <ColHead width="160px">微信号</ColHead>
           <ColHead width="160px">绑定手机</ColHead>
           <ColHead width="70px">好友数</ColHead>
@@ -765,7 +766,7 @@ function WechatTab({ search, accounts, employees, onReload, notify }: TabProps) 
             </div>
           ))}
           <div className="flex flex-col gap-2 mt-auto">
-            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
             {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
           </div>
         </div>
@@ -858,7 +859,7 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs" style={{ color: S.muted }}>保管人</span>
-            <span className="text-xs" style={{ color: "#64748b" }}>{m.manager}</span>
+            <span className="text-xs" style={{ color: S.textSec }}>{m.manager}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs" style={{ color: S.muted }}>最近发布</span>
@@ -989,15 +990,15 @@ function MediaTab({ search, accounts, employees, onReload, notify }: TabProps) {
 
           {/* 备注 */}
           {detail.note && (
-            <div className="p-3 rounded-xl text-xs" style={{ background: "rgba(99,102,241,0.05)", color: "#64748b", lineHeight: 1.6 }}>
+            <div className="p-3 rounded-xl text-xs" style={{ background: "rgba(99,102,241,0.05)", color: S.muted, lineHeight: 1.6 }}>
               {detail.note}
             </div>
           )}
 
           <div className="flex flex-col gap-2 mt-auto">
-            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs text-white opacity-50 cursor-not-allowed" style={{ background: "linear-gradient(135deg, #4361ee, #3451d1)" }}>编辑信息</button>
             {detailAccount && <AccountActions account={detailAccount} employees={employees} onReload={onReload} notify={notify} />}
-            <button disabled title="M2 接线" className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1 opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>
+            <button disabled title="接线中" className="w-full py-2 rounded-lg text-xs flex items-center justify-center gap-1 opacity-50 cursor-not-allowed" style={{ background: "rgba(99,102,241,0.08)", color: "#4361ee" }}>
               <ExternalLink size={11} /> 打开平台后台
             </button>
           </div>
@@ -1014,7 +1015,7 @@ function EmailOtherTab({ search, accounts }: TabProps) {
   const filtered = rows.filter(e => e.identifier.includes(search) || e.manager.includes(search) || e.type.includes(search) || e.usedFor.includes(search));
   return (
     <div className="flex-1 rounded-xl overflow-hidden flex flex-col" style={{ background: S.surface, border: `1px solid ${S.border}` }}>
-      <div className="flex items-center px-4 py-2.5 gap-4 flex-shrink-0" style={{ background: "#1a2640", borderBottom: `1px solid ${S.border}` }}>
+      <div className="flex items-center px-4 py-2.5 gap-4 flex-shrink-0" style={{ background: S.surface2, borderBottom: `1px solid ${S.border}` }}>
         <ColHead width="90px">账号类型</ColHead>
         <ColHead width="230px">账号标识</ColHead>
         <ColHead width="280px">用于哪些平台/用途</ColHead>
@@ -1167,7 +1168,7 @@ export default function AccountAssets() {
           <Search size={13} style={{ color: S.muted }} />
           <input
             className="bg-transparent outline-none text-xs flex-1"
-            style={{ color: "#64748b" }}
+            style={{ color: S.textSec }}
             placeholder={activeTab === "phone" ? "搜索手机号、运营商、保管人..." : activeTab === "wx" ? "搜索微信号、保管人、项目..." : activeTab === "media" ? "搜索平台、账号名称、登录ID..." : "搜索账号、保管人..."}
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -1178,7 +1179,7 @@ export default function AccountAssets() {
         <div className="relative flex-shrink-0">
           <select
             className="appearance-none px-3 py-2 pr-7 rounded-xl text-xs outline-none cursor-pointer"
-            style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}
+            style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.textSec }}
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
@@ -1189,7 +1190,7 @@ export default function AccountAssets() {
           <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: S.muted }} />
         </div>
 
-        <button disabled title="M2 接线" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs flex-shrink-0 opacity-50 cursor-not-allowed" style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}>
+        <button disabled title="接线中" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs flex-shrink-0 opacity-50 cursor-not-allowed" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.muted }}>
           <Filter size={12} /> 导出
         </button>
       </div>
@@ -1202,7 +1203,7 @@ export default function AccountAssets() {
       ) : error ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-sm" style={{ color: "#ef4444" }}>
           <div className="flex items-center gap-2"><AlertTriangle size={16} /> {error}</div>
-          <button onClick={reload} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: S.surface, border: `1px solid ${S.border}`, color: "#64748b" }}>重试</button>
+          <button onClick={reload} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: S.surface, border: `1px solid ${S.border}`, color: S.textSec }}>重试</button>
         </div>
       ) : (
         <>

@@ -74,7 +74,7 @@ export default function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AuthUser)
           </div>
           <div>
             <div className="font-bold leading-tight flex items-center gap-2" style={{ fontSize: 16, color: D.ink }}>
-              蜂乐玛
+              主理人
               <span className="px-1.5 py-0.5 rounded font-bold" style={{ background: D.primary2, color: D.ink, fontSize: 9 }}>PRO</span>
             </div>
             <div style={{ color: D.muted, fontSize: 11 }}>私域社群运营中台</div>
