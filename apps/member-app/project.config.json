@@ -2,7 +2,7 @@
   "miniprogramRoot": "miniprogram/",
   "projectname": "member-app",
   "description": "主理人公社 · 会员小程序（M3b，微信原生）",
-  "appid": "wxe473d97a68e6683e",
+  "appid": "wx9023a21551b66bde",
   "compileType": "miniprogram",
   "setting": {
     "urlCheck": false,
