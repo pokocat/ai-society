@@ -28,6 +28,35 @@ class AssignmentFlowTest extends TestSupport {
     @Autowired
     TaskService taskService;
 
+    /** M2：企微活码入群不得写个微「好友」边（会与 account.friend_count 口径矛盾、误导下次 isFriend 判断）。 */
+    @Test
+    void wecomConfirmJoinDoesNotWritePhantomFriendEdge() {
+        String groupId = createServiceableGroup("北京", "PRO会员群", 100, 5);
+        db.sql("UPDATE community_group SET wecom_chat_id = :c WHERE id = :g")
+                .param("c", "wecom-chat-" + uid()).param("g", groupId).update();
+        String wechatId = db.sql("SELECT account_id FROM group_staffing WHERE group_id = :g AND role = '个微客服' AND is_primary")
+                .param("g", groupId).query(String.class).single();
+        String memberNo = ingestMember("企微入群会员" + uid(), "北京", "flm-membership", "PRO会员", null);
+        long memberId = memberIdOf(memberNo);
+        long assignmentId = db.sql("""
+                        INSERT INTO member_group_assignment (member_id, project_id, group_id, status, assign_way, personal_wechat_id)
+                        VALUES (:m, 'flm-membership', :g, '已邀请', 'AI推荐', :w) RETURNING id
+                        """)
+                .param("m", memberId).param("g", groupId).param("w", wechatId)
+                .query(Long.class).single();
+
+        assignmentService.confirmJoin(assignmentId, "webhook");
+
+        int friendEdges = db.sql("""
+                        SELECT count(*) FROM member_wechat_relation
+                        WHERE member_id = :m AND account_id = :a AND relation = '好友'
+                        """)
+                .param("m", memberId).param("a", wechatId).query(Integer.class).single();
+        assertEquals(0, friendEdges, "企微客户群入群不应产生个微好友关系");
+        assertEquals("已入群", db.sql("SELECT status FROM member_group_assignment WHERE id = :id")
+                .param("id", assignmentId).query(String.class).single());
+    }
+
     @Test
     void fullJoinLoopWithWritebacks() {
         String groupId = createServiceableGroup("北京", "PRO会员群", 100, 10);

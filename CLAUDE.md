@@ -18,9 +18,13 @@ docs/         # 技术方案评审稿；docs/prototype/ 为早期原型归档
 ```bash
 bash scripts/db-init.sh          # PostgreSQL：scp_dev / scp_test（user=scp）
 cd server && mvn test            # 全量测试，必须全绿
-mvn spring-boot:run              # 启动（Flyway 自动迁移+种子）
-bash scripts/smoke.sh            # 冒烟，必须 0 失败
+SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run   # 本地启动（dev profile 开 mock 注入口/演示支付；默认 profile 为生产 fail-closed）
+bash scripts/smoke.sh            # 冒烟，必须 0 失败（依赖 dev profile 的 mock 端点）
 ```
+
+> **安全默认**：`mock/**` 注入口、演示支付默认 **fail-closed**（生产不注册/禁用），本地演示须用 `dev` profile。
+> 生产以 `prod` profile 启动时，`ProdSafetyGuard` 逐条校验危险开关（mock/支付/验签/JWT/CORS/WX），不合规**拒绝启动**；
+> 运行时再跑 `bash scripts/prod-check.sh` 打接口复核。
 
 演示账号（密码均 `demo123`）：`boss`（创始人/PC）、`liyuntian`（会员端）、`zhaoyichuan`（金服端）。
 

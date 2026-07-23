@@ -32,6 +32,9 @@ public class ReferralService {
         if (memberId == referrerId) {
             throw BusinessException.conflict("不能推荐自己");
         }
+        // H2：锁定推荐人行，串行化「同一邀请码多个新号并发进线」——否则各事务都读到当日奖励未达上限、
+        // 全部发奖，突破 invite_award_daily_cap（TOCTOU）。关系链绑定不受影响，仅串行化发奖判定（护栏 25）。
+        db.sql("SELECT id FROM member WHERE id = :id FOR UPDATE").param("id", referrerId).query(Long.class).single();
         // 公理①：单推荐人
         boolean bound = !db.sql("SELECT 1 FROM referral_relation WHERE member_id = :id")
                 .param("id", memberId).query(Rows.MAP).list().isEmpty();

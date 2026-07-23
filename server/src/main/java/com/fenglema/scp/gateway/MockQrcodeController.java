@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RestController
 @RequestMapping("/mock/qrcode")
-@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = false)
 public class MockQrcodeController {
 
     @GetMapping(value = "/{groupId}.png", produces = MediaType.IMAGE_PNG_VALUE)
