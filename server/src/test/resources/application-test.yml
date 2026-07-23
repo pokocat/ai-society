@@ -8,3 +8,13 @@ spring:
     url: jdbc:postgresql://127.0.0.1:5432/scp_test
     user: scp
     password: scp_dev_pw
+    placeholders:
+      # 测试保留演示数据（部分用例登录演示账号 / 用种子群）；生产默认 clean
+      seedmode: demo
+
+# 测试环境显式开启 mock 注入口/演示支付（生产默认 fail-closed，见 application.yml）
+scp:
+  mock-endpoints:
+    enabled: true
+  mp:
+    mock-pay-enabled: true

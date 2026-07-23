@@ -9,6 +9,8 @@ import com.fenglema.scp.gateway.OpsRobotNotifier;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -176,6 +178,7 @@ public class ContentService {
                           AND (CAST(:gtype AS text) IS NULL OR g.group_type = :gtype)
                           AND (CAST(:ownerNo AS text) IS NULL OR g.owner_member_id =
                                 (SELECT id FROM member WHERE member_no = :ownerNo))
+                        ORDER BY g.id
                         """)
                 .param("pid", scope.get("projectId"))
                 .param("gtype", scope.get("groupType"))
@@ -192,6 +195,10 @@ public class ContentService {
         int skipped = 0;
         List<String> chatIds = new java.util.ArrayList<>();
         for (Map<String, Object> g : groups) {
+            // M1：先锁群行再「当日计数→插入」，串行化并发派发（不同计划命中同群会双双读到 0 各插一条，
+            // 突破每群每日额度）。plan 已 FOR UPDATE，群按 id 升序加锁避免死锁（护栏 11/25）。
+            db.sql("SELECT id FROM community_group WHERE id = :g FOR UPDATE")
+                    .param("g", g.get("id")).query(String.class).single();
             int today = db.sql("""
                             SELECT count(*) FROM task_item
                             WHERE group_id = :g AND task_type = '群发确认' AND created_at::date = now()::date
@@ -222,20 +229,33 @@ public class ContentService {
                 Map.of("status", status),
                 Map.of("status", "派发中", "taskCreated", created, "skippedByQuota", skipped),
                 (String) scope.get("projectId"), null, null);
-        // 内部群机器人提醒群主去客户端确认（官方 webhook，真实通道；未配置则跳过）。
-        // best-effort：通知失败不影响派发结果。
-        boolean robotNotified = opsRobot.sendMarkdown(
-                "**【群发确认】**《" + plan.get("title") + "》已派发\n"
-                        + "> 覆盖群数：<font color=\"info\">" + created + "</font>"
-                        + (skipped > 0 ? "（" + skipped + " 群因当日额度跳过）" : "") + "\n"
+        // M8：内部群机器人通知移到事务提交后执行——避免在持有 broadcast_plan/群 行锁的事务内同步外呼，
+        // 慢响应/超时会持锁并占用 DB 连接阻塞后续派发。best-effort：通知失败不影响派发结果。
+        final int createdF = created;
+        final int skippedF = skipped;
+        final String planTitle = String.valueOf(plan.get("title"));
+        Runnable notify = () -> opsRobot.sendMarkdown(
+                "**【群发确认】**《" + planTitle + "》已派发\n"
+                        + "> 覆盖群数：<font color=\"info\">" + createdF + "</font>"
+                        + (skippedF > 0 ? "（" + skippedF + " 群因当日额度跳过）" : "") + "\n"
                         + "> 请相关群主在企微客户端「客户群群发」中**确认发送**，完成后在中台任务回填。");
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notify.run();
+                }
+            });
+        } else {
+            notify.run();
+        }
 
         Map<String, Object> out = new HashMap<>();
         out.put("planId", planId);
         out.put("status", "派发中");
         out.put("taskCreated", created);
         out.put("skippedByQuota", skipped);   // 无静默截断：跳过数如实返回
-        out.put("opsRobotNotified", robotNotified);
+        out.put("opsRobotNotified", opsRobot.enabled());   // 是否会在提交后通知（已配置 webhook）
         out.put("gateway", gwResult);
         return out;
     }

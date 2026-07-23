@@ -12,9 +12,26 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class GroupService {
+
+    /**
+     * 群「人工」状态迁移表（§12）：流转型状态（待建群/待配置/可承接/服务中/容量预警/已满）之间的
+     * 自动迁移由 refreshStatus 负责；此表只约束人工 patch 能落的目标态——进入冻结/待交接/已归档等管理态，
+     * 或从冻结/待交接解回待配置（再由 refreshStatus 收敛）。已归档为终态。
+     */
+    static final Map<String, Set<String>> STATUS_TRANSITIONS = Map.of(
+            "待建群", Set.of("冻结", "已归档"),
+            "待配置", Set.of("冻结", "待交接", "已归档"),
+            "可承接", Set.of("冻结", "待交接", "已归档"),
+            "服务中", Set.of("冻结", "待交接", "已归档"),
+            "容量预警", Set.of("冻结", "待交接", "已归档"),
+            "已满", Set.of("冻结", "待交接", "已归档"),
+            "冻结", Set.of("待配置", "已归档"),
+            "待交接", Set.of("待配置", "已归档"),
+            "已归档", Set.of());
 
     private final JdbcClient db;
     private final AuditService audit;
@@ -97,6 +114,13 @@ public class GroupService {
     @Transactional
     public Map<String, Object> patch(String id, GroupController.PatchGroup req) {
         Map<String, Object> before = get(id);
+        // M3（§12）：状态变更走群状态机校验，禁止 patch 直接跳到非法目标态（原 COALESCE 直写可任意跳转）
+        if (req.status() != null && !req.status().equals(before.get("status"))) {
+            String from = (String) before.get("status");
+            if (!STATUS_TRANSITIONS.getOrDefault(from, Set.of()).contains(req.status())) {
+                throw BusinessException.conflict("群状态不允许从「" + from + "」人工迁移到「" + req.status() + "」");
+            }
+        }
         if (req.targetCapacity() != null) {
             int current = ((Number) before.get("member_count")).intValue();
             if (req.targetCapacity() < current) {

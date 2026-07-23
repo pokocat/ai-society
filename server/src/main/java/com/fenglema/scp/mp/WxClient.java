@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -59,8 +60,9 @@ public class WxClient {
         if (mock) {
             return mockOpenid(code);
         }
-        JsonNode resp = getJson(API + "/sns/jscode2session?appid=" + appid + "&secret=" + secret
-                + "&js_code=" + code + "&grant_type=authorization_code");
+        // M7：所有拼入 URL 的动态值一律 URL 编码——code 来自客户端，含 &/#/空格 会注入额外查询参数或截断 grant_type
+        JsonNode resp = getJson(API + "/sns/jscode2session?appid=" + enc(appid) + "&secret=" + enc(secret)
+                + "&js_code=" + enc(code) + "&grant_type=authorization_code");
         if (resp.path("errcode").asInt(0) != 0) {
             throw new BusinessException("微信登录失败：" + resp.path("errcode").asInt()
                     + " " + resp.path("errmsg").asText());
@@ -77,7 +79,7 @@ public class WxClient {
         if (mock) {
             return null;
         }
-        byte[] body = postBytes(API + "/wxa/getwxacodeunlimit?access_token=" + accessToken(),
+        byte[] body = postBytes(API + "/wxa/getwxacodeunlimit?access_token=" + enc(accessToken()),
                 writeJson(java.util.Map.of("scene", scene, "page", page, "check_path", false, "width", 430)));
         // 出错时微信返回 JSON 而非图片
         if (body.length > 0 && body[0] == '{') {
@@ -91,7 +93,7 @@ public class WxClient {
         if (mock) {
             throw new BusinessException("演示环境未接入微信凭证，手机号绑定将在正式版开放");
         }
-        JsonNode resp = postJson(API + "/wxa/business/getuserphonenumber?access_token=" + accessToken(),
+        JsonNode resp = postJson(API + "/wxa/business/getuserphonenumber?access_token=" + enc(accessToken()),
                 writeJson(java.util.Map.of("code", phoneCode)));
         if (resp.path("errcode").asInt(-1) != 0) {
             throw new BusinessException("手机号获取失败：" + resp.path("errmsg").asText());
@@ -103,8 +105,8 @@ public class WxClient {
         if (cachedToken != null && Instant.now().isBefore(tokenExpiry)) {
             return cachedToken;
         }
-        JsonNode resp = getJson(API + "/cgi-bin/token?grant_type=client_credential&appid=" + appid
-                + "&secret=" + secret);
+        JsonNode resp = getJson(API + "/cgi-bin/token?grant_type=client_credential&appid=" + enc(appid)
+                + "&secret=" + enc(secret));
         if (resp.path("errcode").asInt(0) != 0 || resp.path("access_token").isMissingNode()) {
             throw new BusinessException("access_token 获取失败：" + resp.path("errmsg").asText());
         }
@@ -113,18 +115,26 @@ public class WxClient {
         return cachedToken;
     }
 
+    /** URL 查询参数编码（M7：防客户端可控值注入/截断出站请求）。 */
+    private static String enc(String v) {
+        return URLEncoder.encode(v == null ? "" : v, StandardCharsets.UTF_8);
+    }
+
     private JsonNode getJson(String url) {
-        return parse(send(HttpRequest.newBuilder(URI.create(url)).GET().build()));
+        return parse(send(HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(10)).GET().build()));
     }
 
     private JsonNode postJson(String url, String jsonBody) {
         return parse(send(HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8)).build()));
     }
 
     private byte[] postBytes(String url, String jsonBody) {
         return send(HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8)).build());
     }

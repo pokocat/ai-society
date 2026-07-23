@@ -4,9 +4,11 @@ import com.fenglema.scp.common.ApiResponse;
 import com.fenglema.scp.common.IdempotencyGuard;
 import com.fenglema.scp.common.Perm;
 import com.fenglema.scp.common.UserContext;
+import com.fenglema.scp.common.BusinessException;
 import com.fenglema.scp.identity.MemberService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,13 +35,16 @@ public class MembershipController {
     private final EntitlementService entitlement;
     private final MemberService memberService;
     private final IdempotencyGuard idempotency;
+    private final boolean mockPayEnabled;
 
     public MembershipController(MembershipOrderService service, EntitlementService entitlement,
-                                MemberService memberService, IdempotencyGuard idempotency) {
+                                MemberService memberService, IdempotencyGuard idempotency,
+                                @Value("${scp.mp.mock-pay-enabled:false}") boolean mockPayEnabled) {
         this.service = service;
         this.entitlement = entitlement;
         this.memberService = memberService;
         this.idempotency = idempotency;
+        this.mockPayEnabled = mockPayEnabled;
     }
 
     // ── 套餐 ──
@@ -101,6 +106,10 @@ public class MembershipController {
     @Perm(module = "membership", action = Perm.Action.EDIT)
     public ApiResponse<Map<String, Object>> mockPay(@PathVariable String orderNo,
                                                     @RequestParam(required = false) String callbackId) {
+        // M5：与小程序侧 pay 同款生产闸——SCP_MOCK_PAY=false 时禁用，真实回调只经验签后的 paymentCallback
+        if (!mockPayEnabled) {
+            throw BusinessException.forbidden("当前环境不支持演示支付，请走微信虚拟支付回调");
+        }
         String cb = callbackId != null ? callbackId : "MOCKCB-" + orderNo;
         return ApiResponse.ok(service.paymentCallback(orderNo, cb));
     }

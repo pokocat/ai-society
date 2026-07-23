@@ -3,6 +3,9 @@
 # 登录 → mock 外部系统进线待分配会员（带推荐人）→ 会员购买（虚拟支付 Mock，权益生效=付费门控放行）
 # → 推荐 → 确认 → 加好友回填 → 自动邀请任务 → 邀请回填 → webhook 入群事件
 # → 断言：状态/群人数/预占消耗/档案时间线/影响力/成长值 → 超载阻断。
+#
+# 前置：服务须以 dev profile 启动（开 mock 注入口/演示支付）：
+#   SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
 set -uo pipefail
 BASE="${BASE:-http://127.0.0.1:8080/api/v1}"
 PASS=0; FAIL=0

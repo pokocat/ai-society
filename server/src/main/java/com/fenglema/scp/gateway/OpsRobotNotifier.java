@@ -4,9 +4,11 @@ import com.fenglema.scp.common.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -29,7 +31,11 @@ public class OpsRobotNotifier {
 
     public OpsRobotNotifier(@Value("${scp.wecom.ops-robot-webhook:}") String webhookUrl) {
         this.webhookUrl = webhookUrl == null ? "" : webhookUrl.trim();
-        this.http = RestClient.create();
+        // M8：连接/读取超时，防企微侧慢响应挂起线程（best-effort 通知，宁可快速失败）
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) Duration.ofSeconds(2).toMillis());
+        factory.setReadTimeout((int) Duration.ofSeconds(3).toMillis());
+        this.http = RestClient.builder().requestFactory(factory).build();
     }
 
     public boolean enabled() {

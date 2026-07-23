@@ -18,9 +18,21 @@ docs/         # 技术方案评审稿；docs/prototype/ 为早期原型归档
 ```bash
 bash scripts/db-init.sh          # PostgreSQL：scp_dev / scp_test（user=scp）
 cd server && mvn test            # 全量测试，必须全绿
-mvn spring-boot:run              # 启动（Flyway 自动迁移+种子）
-bash scripts/smoke.sh            # 冒烟，必须 0 失败
+SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run   # 本地启动（dev profile 开 mock 注入口/演示支付；默认 profile 为生产 fail-closed）
+bash scripts/smoke.sh            # 冒烟，必须 0 失败（依赖 dev profile 的 mock 端点）
 ```
+
+> **安全默认**：`mock/**` 注入口、演示支付默认 **fail-closed**（生产不注册/禁用），本地演示须用 `dev` profile。
+> 生产以 `prod` profile 启动时，`ProdSafetyGuard` 逐条校验危险开关（mock/支付/验签/JWT/CORS/WX），不合规**拒绝启动**；
+> 运行时再跑 `bash scripts/prod-check.sh` 打接口复核。
+
+> **部署纯净化（种子与配置解耦）**：演示数据（项目/账号/会员/群/订单/样例套餐）与系统配置
+> （字典/规则/角色/权限）通过 Flyway 占位符 `${seedmode}` 分离：
+> - **生产默认 `seedmode=clean`**（`application.yml`）：`V9__clean_deploy_strip_demo.sql` 清空除配置表外的全部表，
+>   部署即纯净；`AdminBootstrap` 在 `app_user` 为空时用 `SCP_ADMIN_USERNAME`/`SCP_ADMIN_PASSWORD` 建首个 founder 管理员
+>   （密码不写死，未设则跳过并告警）。运营登录后自行建项目/账号/套餐。
+> - **dev/test `seedmode=demo`**：V9 完全 no-op，保留 V2 演示数据供本地演示/冒烟/测试。
+> 保留表硬编码为 `dict_entry / resource_rules / role / role_permission`（+ Flyway 历史）——新增系统配置表须同步进 V9 keep 列表。
 
 演示账号（密码均 `demo123`）：`boss`（创始人/PC）、`liyuntian`（会员端）、`zhaoyichuan`（金服端）。
 

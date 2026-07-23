@@ -44,12 +44,14 @@ public class MpController {
     private final SimpleRateLimiter rateLimiter;
     private final int loginRateLimit;
     private final boolean mockPayEnabled;
+    private final boolean trustForwardedFor;
 
     public MpController(MpService service, MembershipOrderService orderService, IdempotencyGuard idempotency,
                         MemberTaskService taskService, WithdrawalService withdrawalService,
                         SimpleRateLimiter rateLimiter,
                         @Value("${scp.mp.login-rate-limit:30}") int loginRateLimit,
-                        @Value("${scp.mp.mock-pay-enabled:true}") boolean mockPayEnabled) {
+                        @Value("${scp.mp.mock-pay-enabled:false}") boolean mockPayEnabled,
+                        @Value("${scp.mp.trust-forwarded-for:false}") boolean trustForwardedFor) {
         this.service = service;
         this.orderService = orderService;
         this.idempotency = idempotency;
@@ -58,6 +60,7 @@ public class MpController {
         this.rateLimiter = rateLimiter;
         this.loginRateLimit = loginRateLimit;
         this.mockPayEnabled = mockPayEnabled;
+        this.trustForwardedFor = trustForwardedFor;
     }
 
     public record LoginRequest(@NotBlank String code, String inviteCode, String nickname) {
@@ -66,8 +69,15 @@ public class MpController {
     /** wx.login 登录并档（幂等）；scene 邀请码在此完成归因。免鉴权，按来源 IP 限流（防刷号刷邀请奖励）。 */
     @PostMapping("/login")
     public ApiResponse<Map<String, Object>> login(@RequestBody LoginRequest req, HttpServletRequest http) {
-        String ip = http.getHeader("X-Forwarded-For");
-        ip = ip == null || ip.isBlank() ? http.getRemoteAddr() : ip.split(",")[0].trim();
+        // M9：默认用 getRemoteAddr()——X-Forwarded-For 客户端可伪造，每请求换一个即绕过限流。
+        // 仅当部署在会覆盖客户端 XFF 的可信反代后，才置 scp.mp.trust-forwarded-for=true 取 XFF 首段。
+        String ip = http.getRemoteAddr();
+        if (trustForwardedFor) {
+            String xff = http.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isBlank()) {
+                ip = xff.split(",")[0].trim();
+            }
+        }
         if (!rateLimiter.tryAcquire("mp-login:" + ip, loginRateLimit)) {
             throw BusinessException.conflict("操作过于频繁，请稍后再试");
         }

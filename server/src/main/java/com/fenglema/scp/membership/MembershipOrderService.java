@@ -106,6 +106,11 @@ public class MembershipOrderService {
     @Transactional
     public Map<String, Object> createOrder(String memberNo, String planCode, String channel, String projectId) {
         long memberId = memberService.idOf(memberNo);
+        // M6：渠道服务端白名单校验（非法值原会撞 CHECK 变 500）。渠道决定入账金额/费率快照，
+        // M3c 真实回调应由支付平台裁定渠道并经 paymentCallback 的金额校验兜底，不纯信客户端自报。
+        if (!Set.of("ios", "android", "other").contains(channel)) {
+            throw new BusinessException("非法支付渠道：" + channel + "（仅 ios/android/other）");
+        }
         Map<String, Object> plan = db.sql("SELECT * FROM membership_plan WHERE plan_code = :c AND status = '上架'")
                 .param("c", planCode)
                 .query(Rows.MAP).optional()
@@ -140,8 +145,18 @@ public class MembershipOrderService {
      * 支付成功回调（幂等：同 callback_id 重复回调返回首次结果）。
      * Mock 阶段由 /mock/virtual-pay 触发；M3c 接真实虚拟支付回调（验签后调本方法）。
      */
-    @Transactional
     public Map<String, Object> paymentCallback(String orderNo, String callbackId) {
+        return paymentCallback(orderNo, callbackId, null);
+    }
+
+    /**
+     * 支付成功回调（幂等：同 callback_id 重复回调返回首次结果）。
+     * H1 修复：仅接受「待支付」订单——「退款驳回」（退款中→已支付）改走 changeStatus 且不重发权益，
+     * 杜绝退款窗口内二次回调净多发一个周期。
+     * M6：paidAmountCents 非空时（M3c 真实回调）校验实付金额与订单一致，late/伪造回调无法被金额兜底绕过。
+     */
+    @Transactional
+    public Map<String, Object> paymentCallback(String orderNo, String callbackId, Integer paidAmountCents) {
         if (callbackId == null || callbackId.isBlank()) {
             throw new BusinessException("回调缺少幂等键 callbackId");
         }
@@ -157,6 +172,15 @@ public class MembershipOrderService {
                 .param("no", orderNo)
                 .query(Rows.MAP).optional()
                 .orElseThrow(() -> BusinessException.notFound("订单 " + orderNo));
+        String from = (String) order.get("status");
+        if (!"待支付".equals(from)) {
+            throw BusinessException.conflict("支付回调仅接受待支付订单（当前「" + from + "」）");
+        }
+        if (paidAmountCents != null
+                && paidAmountCents.intValue() != ((Number) order.get("amount_cents")).intValue()) {
+            throw BusinessException.conflict("回调实付金额 " + paidAmountCents
+                    + " 与订单金额 " + order.get("amount_cents") + " 不符");
+        }
         transition(order, "已支付");
         db.sql("""
                 UPDATE membership_order SET status = '已支付', paid_at = now(), callback_id = :c, updated_at = now()
@@ -178,7 +202,10 @@ public class MembershipOrderService {
                 .param("no", orderNo)
                 .query(Rows.MAP).optional()
                 .orElseThrow(() -> BusinessException.notFound("订单 " + orderNo));
-        if ("已支付".equals(to)) {
+        // H1：置「已支付」仅两条合法来源——①待支付经支付回调（幂等，走 paymentCallback）；
+        // ②退款中→已支付的「退款驳回」（此处，且权益从未被撤，故不重发）。其余一律禁止人工直改。
+        String fromStatus = (String) order.get("status");
+        if ("已支付".equals(to) && !"退款中".equals(fromStatus)) {
             throw BusinessException.conflict("置「已支付」只能经支付回调（幂等），不可人工直改");
         }
         transition(order, to);
@@ -212,22 +239,34 @@ public class MembershipOrderService {
         String projectId = (String) order.get("project_id");
         String identity = (String) plan.get("grant_identity");
         int days = ((Number) plan.get("duration_days")).intValue() * direction;
-        db.sql("""
-                INSERT INTO member_project_identity (member_id, project_id, identity, status, source, valid_from, valid_until)
-                VALUES (:m, :p, :ident, '有效', '会员购买', now(), now() + make_interval(days => :days))
-                ON CONFLICT (member_id, project_id) DO UPDATE SET
-                  identity = EXCLUDED.identity,
-                  status = '有效',
-                  source = '会员购买',
-                  valid_until = GREATEST(
-                      GREATEST(COALESCE(member_project_identity.valid_until, now()), now())
-                          + make_interval(days => :days),
-                      now())
-                """)
-                .param("m", memberId).param("p", projectId).param("ident", identity).param("days", days)
-                .update();
         if (direction > 0) {
+            // 发放/续期：身份升级到套餐档位，有效期在「现有效期与今天的较晚者」上叠加时长（续费不吃亏）
+            db.sql("""
+                    INSERT INTO member_project_identity (member_id, project_id, identity, status, source, valid_from, valid_until)
+                    VALUES (:m, :p, :ident, '有效', '会员购买', now(), now() + make_interval(days => :days))
+                    ON CONFLICT (member_id, project_id) DO UPDATE SET
+                      identity = EXCLUDED.identity,
+                      status = '有效',
+                      source = '会员购买',
+                      valid_until = GREATEST(
+                          GREATEST(COALESCE(member_project_identity.valid_until, now()), now())
+                              + make_interval(days => :days),
+                          now())
+                    """)
+                    .param("m", memberId).param("p", projectId).param("ident", identity).param("days", days)
+                    .update();
             enterPendingPoolIfUnplaced(memberId, projectId);
+        } else {
+            // M10 退款回收：仅扣减本单时长（最早收敛到 now），不改写身份档位、不强制 status——
+            // 跨档叠加（先买年卡尊享官、后买月卡PRO 再退月卡）时避免把身份误降级为被退套餐档位。
+            // 局限：多单叠加的精确按单核销需权益流水账（后续迭代），当前退款按时长近似回收。
+            db.sql("""
+                    UPDATE member_project_identity
+                    SET valid_until = GREATEST(COALESCE(valid_until, now()) + make_interval(days => :days), now())
+                    WHERE member_id = :m AND project_id = :p
+                    """)
+                    .param("m", memberId).param("p", projectId).param("days", days)
+                    .update();
         }
         String memberNo = db.sql("SELECT member_no FROM member WHERE id = :id").param("id", memberId)
                 .query(String.class).single();

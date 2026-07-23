@@ -338,10 +338,19 @@ public class AssignmentService {
     /** 退群处理（修复：webhook quit 原来只减人数不刷新群状态，导致满群退人后永不回收、被推荐引擎永久剔除）。 */
     @Transactional
     public Map<String, Object> handleQuit(long assignmentId, String groupId) {
+        Map<String, Object> a = db.sql("SELECT member_id, project_id FROM member_group_assignment WHERE id = :id")
+                .param("id", assignmentId).query(Rows.MAP).single();
         transition(assignmentId, "已入群", "已退群", "群成员退群事件");
         db.sql("UPDATE community_group SET member_count = GREATEST(member_count - 1, 0), updated_at = now() WHERE id = :g")
                 .param("g", groupId).update();
         groupService.refreshStatus(groupId);
+        // M4：退群变更留痕 + 时间线（原来两者皆无，退群在 append-only 事实源里无痕，叠加 webhook 无签名难取证）
+        long memberId = ((Number) a.get("member_id")).longValue();
+        String projectId = (String) a.get("project_id");
+        memberService.appendTimeline(memberId, projectId, "退群", "退出群 " + groupId + "（退群事件）", operatorName());
+        audit.log("member_group_assignment", String.valueOf(assignmentId), "退群",
+                Map.of("status", "已入群"), Map.of("status", "已退群", "groupId", groupId),
+                projectId, "群成员退群事件", null);
         return Map.of("assignmentId", assignmentId, "status", "已退群", "groupId", groupId);
     }
 
@@ -390,7 +399,13 @@ public class AssignmentService {
                 .param("g", groupId).update();
         db.sql("UPDATE capacity_reservation SET status = '已消耗' WHERE assignment_id = :id AND status = '生效'")
                 .param("id", assignmentId).update();
-        if (wechatId != null) {
+        // M2：仅「个微承接」路径（真实加过好友、friend_count 已 +1）才写好友边；企微活码入群走客户群、
+        // 不产生个微好友关系——此时 personal_wechat_id 只是群的个微客服，写 '好友' 会造出与 account.friend_count
+        // 口径矛盾的幽灵边，并误导下次 recommend 的 isFriend 判断。以群是否绑企微客户群区分两条路径。
+        String wecomChatId = db.sql("SELECT wecom_chat_id FROM community_group WHERE id = :g")
+                .param("g", groupId).query(String.class).optional().orElse(null);
+        boolean wecomGroup = wecomChatId != null && !wecomChatId.isBlank();
+        if (wechatId != null && !wecomGroup) {
             db.sql("""
                     INSERT INTO member_wechat_relation (member_id, account_id, relation, confirm_way)
                     VALUES (:m, :a, '好友', :way)
@@ -411,6 +426,11 @@ public class AssignmentService {
         memberService.appendTimeline(memberId, (String) a.get("project_id"), "入群",
                 "加入 " + groupName + "（" + ("webhook".equals(via) ? "入群事件确认" : "人工确认") + "）", operatorName());
         groupService.refreshStatus(groupId);
+        // M4：置「已入群」是最敏感的状态变更（叠加 webhook 无签名时更需取证）→ 审计留痕（护栏 21）
+        audit.log("member_group_assignment", String.valueOf(assignmentId), "入群确认",
+                Map.of("status", String.valueOf(a.get("status"))),
+                Map.of("status", "已入群", "groupId", groupId, "via", via == null ? "人工" : via),
+                (String) a.get("project_id"), null, null);
         return Map.of("assignmentId", assignmentId, "status", "已入群", "groupId", groupId);
     }
 

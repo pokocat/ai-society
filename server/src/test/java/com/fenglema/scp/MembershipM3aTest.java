@@ -97,6 +97,73 @@ class MembershipM3aTest extends TestSupport {
         assertFalse(entitlement.hasPaidEntitlement(memberId, PROJECT), "退款后权益应被回收");
     }
 
+    private OffsetDateTime validUntil(long memberId) {
+        return db.sql("SELECT valid_until FROM member_project_identity WHERE member_id = :m AND project_id = :p")
+                .param("m", memberId).param("p", PROJECT).query(OffsetDateTime.class).single();
+    }
+
+    /** H1：退款窗口内二次回调 / 退款驳回都不得二次发放权益（原缺陷：白嫖一个周期）。 */
+    @Test
+    void refundWindowReplayDoesNotDoubleGrant() {
+        String memberNo = ingestVisitor("退款窗口会员");
+        long memberId = memberIdOf(memberNo);
+        Map<String, Object> order = orderService.createOrder(memberNo, "MPLAN-PRO-M", "android", PROJECT);
+        String orderNo = (String) order.get("order_no");
+        orderService.paymentCallback(orderNo, "CB-" + uid());
+        OffsetDateTime after1 = validUntil(memberId);
+
+        orderService.changeStatus(orderNo, "退款中", "用户申请");
+        // 退款中再来一发回调（换 callbackId）→ 必须被拒（只接受待支付），有效期不变
+        assertThrows(BusinessException.class, () -> orderService.paymentCallback(orderNo, "CB2-" + uid()));
+        assertEquals(after1, validUntil(memberId), "退款中二次回调不得叠加有效期");
+
+        // 退款驳回：退款中 → 已支付，权益从未被撤，不得二次发放
+        Map<String, Object> rejected = orderService.changeStatus(orderNo, "已支付", "退款驳回");
+        assertEquals("已支付", rejected.get("status"));
+        assertEquals(after1, validUntil(memberId), "退款驳回不得二次发放权益");
+        assertTrue(entitlement.hasPaidEntitlement(memberId, PROJECT));
+    }
+
+    /** M6：非法渠道被拒（非 500）；回调实付金额与订单不符被拒，金额一致才放行。 */
+    @Test
+    void invalidChannelRejectedAndCallbackAmountVerified() {
+        String memberNo = ingestVisitor("渠道会员");
+        assertThrows(BusinessException.class,
+                () -> orderService.createOrder(memberNo, "MPLAN-PRO-M", "wechat", PROJECT));
+
+        Map<String, Object> order = orderService.createOrder(memberNo, "MPLAN-PRO-M", "android", PROJECT);
+        String orderNo = (String) order.get("order_no");
+        int amount = ((Number) order.get("amount_cents")).intValue();
+        assertThrows(BusinessException.class,
+                () -> orderService.paymentCallback(orderNo, "CB-" + uid(), amount + 100));
+        Map<String, Object> paid = orderService.paymentCallback(orderNo, "CB-" + uid(), amount);
+        assertEquals("已支付", paid.get("status"));
+    }
+
+    /** M10：跨档叠加退款不得把身份降级——先买月卡PRO、再买年卡尊享官，退月卡后仍是尊享官。 */
+    @Test
+    void crossTierRefundDoesNotDowngradeIdentity() {
+        String memberNo = ingestVisitor("叠加会员");
+        long memberId = memberIdOf(memberNo);
+
+        Map<String, Object> monthPro = orderService.createOrder(memberNo, "MPLAN-PRO-M", "android", PROJECT);
+        String monthNo = (String) monthPro.get("order_no");
+        orderService.paymentCallback(monthNo, "CB-" + uid());
+
+        Map<String, Object> yearPrem = orderService.createOrder(memberNo, "MPLAN-PREM-Y", "android", PROJECT);
+        orderService.paymentCallback((String) yearPrem.get("order_no"), "CB2-" + uid());
+        String beforeRefund = db.sql("SELECT identity FROM member_project_identity WHERE member_id = :m AND project_id = :p")
+                .param("m", memberId).param("p", PROJECT).query(String.class).single();
+        assertEquals("尊享官", beforeRefund, "买年卡尊享官后身份应升级");
+
+        orderService.changeStatus(monthNo, "退款中", "用户申请");
+        orderService.changeStatus(monthNo, "已退款", "审批通过");
+        String afterRefund = db.sql("SELECT identity FROM member_project_identity WHERE member_id = :m AND project_id = :p")
+                .param("m", memberId).param("p", PROJECT).query(String.class).single();
+        assertEquals("尊享官", afterRefund, "退月卡PRO不得把身份降级为PRO会员（年卡尊享官仍在）");
+        assertTrue(entitlement.hasPaidEntitlement(memberId, PROJECT), "年卡仍在，退月卡后仍有权益");
+    }
+
     // ── 付费门控：引擎准入（注入点①）+ confirm 前置（注入点②） ──
 
     @Test

@@ -19,7 +19,7 @@ import java.util.Map;
  * 本控制器仅在演示环境暴露，等价于外部系统的出站调用。
  * 生产必须置 SCP_MOCK_ENDPOINTS=false（无鉴权注入口，push-earnings 可直改余额——上架审阅项）。
  */
-@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "scp.mock-endpoints.enabled", havingValue = "true", matchIfMissing = false)
 @RestController
 @RequestMapping("/api/v1/mock")
 public class MockProjectSystemController {

@@ -15,6 +15,10 @@ spring:
     url: jdbc:postgresql://127.0.0.1:5432/scp_dev
     user: scp
     password: scp_dev_pw
+    placeholders:
+      # 种子模式：clean=生产纯净（V9 清空演示内容，仅留字典/规则/角色/权限）；
+      # demo=保留 V2 演示数据（dev/test profile 覆盖为 demo）。
+      seedmode: ${SCP_SEED_MODE:clean}
 
 server:
   port: 8080
@@ -30,6 +34,12 @@ springdoc:
     path: /swagger-ui.html
 
 scp:
+  # clean 部署引导管理员：V9 清空演示内容后 app_user 为空，AdminBootstrap 用这些创建首个 founder。
+  # 密码不写死——生产必设 SCP_ADMIN_PASSWORD；未设则跳过创建并告警（避免弱口令入库）。
+  admin:
+    username: ${SCP_ADMIN_USERNAME:admin}
+    password: ${SCP_ADMIN_PASSWORD:}
+    display-name: "${SCP_ADMIN_DISPLAY_NAME:系统管理员}"
   # 对外可访问的服务基址：进入小程序/企微的绝对 URL（活码图等）以此拼接。
   # 生产必须设为备案域名（https），否则小程序侧图片加载不到；真机调试设为电脑局域网 IP。
   public-base-url: "${SCP_PUBLIC_BASE_URL:http://127.0.0.1:8080}"
@@ -43,8 +53,8 @@ scp:
     # 生产收敛到管理台域名（逗号分隔）；默认 * 仅限开发
     allowed-origins: "${SCP_CORS_ORIGINS:*}"
   mock-endpoints:
-    # mock-project-system 无鉴权注入口：生产必须 SCP_MOCK_ENDPOINTS=false
-    enabled: ${SCP_MOCK_ENDPOINTS:true}
+    # mock-project-system 无鉴权注入口：默认 fail-closed（false），本地演示用 dev profile 或显式 SCP_MOCK_ENDPOINTS=true
+    enabled: ${SCP_MOCK_ENDPOINTS:false}
   webhook:
     # 企微回调验签：生产置 true 并配置 token
     verify-signature: ${SCP_WEBHOOK_VERIFY:false}
@@ -64,8 +74,11 @@ scp:
     default-project: flm-membership
     # /mp/login 每 IP 每分钟上限（裂变防刷）
     login-rate-limit: 30
-    # 演示支付端点开关：生产 SCP_MOCK_PAY=false（支付确认只认微信支付服务端回调）
-    mock-pay-enabled: ${SCP_MOCK_PAY:true}
+    # 演示支付端点开关：默认 fail-closed（false）——支付确认只认微信支付服务端回调；本地演示用 dev profile
+    mock-pay-enabled: ${SCP_MOCK_PAY:false}
+    # 限流取 IP 是否信任 X-Forwarded-For：默认 false（用 getRemoteAddr，防伪造）；
+    # 仅当部署在会覆盖客户端 XFF 的可信反代后置 true
+    trust-forwarded-for: ${SCP_MP_TRUST_XFF:false}
 
 logging:
   level:
