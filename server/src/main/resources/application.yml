@@ -15,6 +15,10 @@ spring:
     url: jdbc:postgresql://127.0.0.1:5432/scp_dev
     user: scp
     password: scp_dev_pw
+    placeholders:
+      # 种子模式：clean=生产纯净（V9 清空演示内容，仅留字典/规则/角色/权限）；
+      # demo=保留 V2 演示数据（dev/test profile 覆盖为 demo）。
+      seedmode: ${SCP_SEED_MODE:clean}
 
 server:
   port: 8080
@@ -30,6 +34,12 @@ springdoc:
     path: /swagger-ui.html
 
 scp:
+  # clean 部署引导管理员：V9 清空演示内容后 app_user 为空，AdminBootstrap 用这些创建首个 founder。
+  # 密码不写死——生产必设 SCP_ADMIN_PASSWORD；未设则跳过创建并告警（避免弱口令入库）。
+  admin:
+    username: ${SCP_ADMIN_USERNAME:admin}
+    password: ${SCP_ADMIN_PASSWORD:}
+    display-name: "${SCP_ADMIN_DISPLAY_NAME:系统管理员}"
   # 对外可访问的服务基址：进入小程序/企微的绝对 URL（活码图等）以此拼接。
   # 生产必须设为备案域名（https），否则小程序侧图片加载不到；真机调试设为电脑局域网 IP。
   public-base-url: "${SCP_PUBLIC_BASE_URL:http://127.0.0.1:8080}"
